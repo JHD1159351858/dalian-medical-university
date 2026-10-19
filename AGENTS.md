@@ -1,5 +1,42 @@
 # 项目上下文
 
+## 项目来源与重建依据
+
+本项目由用户上传的 `hospital-agent-platform-source-20261019.zip` 源码包导入重建。源项目为 React + Vite + Express 全栈应用，本平台重建采用 Next.js 16 App Router 模板，前端与 API 均走 Next.js，Express 后端迁移为 Next.js Route Handlers。
+
+源项目业务定位：面向临床问诊训练的 3D 医院情境模拟。学生以接诊医生身份在三维场景中移动，靠近患者后开展文字问诊；系统不提供评分、诊断结论、处方或治疗方案。
+
+## 核心功能模块
+
+| 模块 | 路径/文件 | 说明 |
+|------|-----------|------|
+| 小镇首页 | `src/app/page.tsx` / `src/home/*` | 3D 医院小镇背景，点击「开始实训」进入医院场景 |
+| 3D 医院场景 | `src/scene/*` | Three.js / React Three Fiber 医院、患者、医生角色与交互 |
+| 问诊流程 | `src/app/training/page.tsx` / `src/diagnosis/*` | 患者主诉、医生提问、AI 回复、语音朗读 |
+| 体格检查 | `src/exam/*` | 腹部触诊等体格检查流程 |
+| 临床模块 | `src/clinical/*` | 中医四诊、辅助检查、临床诊断、处置方案 |
+| 后端 API | `src/app/api/*` | `/api/health`、SSE `/api/chat`、TTS `/api/tts`、WebSocket `/api/speech-stream` |
+
+## 状态机（src/app/training/flow.ts）
+
+主要阶段：`loading -> ready -> walking -> waiting -> patientSpeech -> doctorDialog -> diagnosis -> physicalExam -> fourDiagnosis -> auxiliaryExam -> clinicalDiagnosis -> treatment -> exiting -> completed`
+
+关键事件：`WORLD_READY`、`START`、`ARRIVED`、`INTERACT`、`PATIENT_SPEECH_DONE`、`BEGIN_DIAGNOSIS`、`BEGIN_EXAM`、`BEGIN_FOUR_DIAGNOSIS`、`BEGIN_AUXILIARY_EXAM`、`BEGIN_CLINICAL_DIAGNOSIS`、`BEGIN_TREATMENT`、`COMPLETE_CASE`、`BACK`、`FINISH`、`DEPARTED`、`RESET`。
+
+## 环境变量
+
+| 变量 | 来源 | 用途 |
+|------|------|------|
+| `DEPLOY_RUN_PORT` | 平台注入 | 服务监听端口 |
+| `CODER_PROJECTS_DOMAIN` | 平台注入 | 对外域名 |
+| `CODER_PROJECTS_ENV` | 平台注入 | 环境标识 |
+| `OPENAPI_BASE_URL` | 平台/业务配置 | Coze API 基地址 |
+| `OPENAPI_TOKEN` | 平台/业务配置 | Coze API 鉴权 |
+| `PATIENT_BOT_ID` | 平台/业务配置 | 患者智能体 ID |
+| `PATIENT_VOICE_ID` | 平台/业务配置 | 患者语音音色 ID |
+
+**注意**：禁止将密钥写进前端代码或 public，服务端 API 负责所有上游调用。
+
 ### 版本技术栈
 
 - **Framework**: Next.js 16 (App Router)
@@ -7,6 +44,7 @@
 - **Language**: TypeScript 5
 - **UI 组件**: shadcn/ui (基于 Radix UI)
 - **Styling**: Tailwind CSS 4
+- **3D**: three, @react-three/fiber, @react-three/drei
 
 ## 目录结构
 

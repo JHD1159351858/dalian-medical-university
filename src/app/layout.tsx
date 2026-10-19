@@ -7,31 +7,19 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: '新应用 | 超星诺亚编程平台（NoahCoder）',
-    template: '%s | 超星诺亚编程平台（NoahCoder）',
+    default: '临床问诊实训 · 大连医科大学',
+    template: '%s · 临床问诊实训 · 大连医科大学',
   },
   description:
-    '超星诺亚编程平台（NoahCoder）是一款一站式云端 Vibe Coding 开发平台。通过对话轻松构建智能体、工作流和网站，实现从创意到上线的无缝衔接。',
-  keywords: [
-    '超星诺亚编程平台（NoahCoder）',
-    'NoahCoder',
-    'Vibe Coding',
-    'AI 编程',
-    '智能体搭建',
-    '工作流搭建',
-    '网站搭建',
-    '网站部署',
-    '全栈开发',
-    'AI 工程师',
-  ],
-  authors: [{ name: 'NoahCoder Team', url: '' }],
+    '大连医科大学临床问诊实训：与数字患者开展标准化问诊。',
+  keywords: ['临床问诊', '医学实训', '标准化病人', '大连医科大学'],
   generator: 'NoahCoder',
   openGraph: {
-    title: '超星诺亚编程平台（NoahCoder） | 你的 AI 工程师已就位',
+    title: '临床问诊实训 · 大连医科大学',
     description:
-      '我正在使用超星诺亚编程平台（NoahCoder） Vibe Coding，让创意瞬间上线。告别拖拽，拥抱心流。',
+      '走进医院，成为接诊医生。从第一句主诉，到一次完整的问诊。',
     url: '',
-    siteName: '超星诺亚编程平台（NoahCoder）',
+    siteName: '临床问诊实训 · 大连医科大学',
     locale: 'zh_CN',
     type: 'website',
   },

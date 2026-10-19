@@ -135,3 +135,35 @@
 body {
   @apply font-sans;
 }
+
+/* Clinical Desk Design System */
+:root {
+  --desk-bg: #e9f1f2;
+  --desk-surface: #f8fbfb;
+  --desk-surface-soft: #eef6f6;
+  --desk-ink: #173d49;
+  --desk-muted: #70878f;
+  --desk-line: #d4e4e6;
+  --desk-accent: #19758a;
+  --desk-accent-dark: #0d4d66;
+  --desk-accent-soft: #dceff1;
+  --desk-success: #3b9079;
+  --desk-danger: #a64747;
+  --desk-shadow: 31 71 81;
+}
+
+html, body, #root {
+  width: 100%;
+  min-width: 320px;
+  height: 100%;
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

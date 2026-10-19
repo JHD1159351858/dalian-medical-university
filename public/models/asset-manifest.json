@@ -1,0 +1,386 @@
+{
+  "schemaVersion": 1,
+  "generator": "Blender 5.2.1 LTS",
+  "coordinateSystem": {
+    "up": "+Y",
+    "forward": "+Z",
+    "unit": "meter",
+    "ground": 0,
+    "sourceBlenderToRuntime": "(x, y, z) -> (x, z, -y)"
+  },
+  "sources": {
+    "患者.glb": {
+      "bytes": 79154800,
+      "sha256": "4e7721a14a26574c23c0116ed5754acd611cd3d82cd5a788b8abff2a799c944b",
+      "format": "glTF 2.0 binary",
+      "version": 2
+    },
+    "医生.glb": {
+      "bytes": 84044356,
+      "sha256": "f287070619b1afcf21bb969a0bd188826bb063b1ef14d5bfdf0f13e4a88184a1",
+      "format": "glTF 2.0 binary",
+      "version": 2
+    },
+    "医院场景_极致还原.blend": {
+      "bytes": 649895,
+      "sha256": "9f6697622863bc986277d6558806651160f61afa0cc9b584a951252c2e851ed1",
+      "format": "Blender project",
+      "version": null,
+      "savedVersion": "5.2.44"
+    }
+  },
+  "characters": {
+    "patient": {
+      "file": "patient.glb",
+      "heightMeters": 1.65,
+      "sourceTriangles": 1499400,
+      "textureMaxDimension": 2048,
+      "binding": {
+        "method": "continuous spatial anatomical envelopes on original-derived mesh",
+        "maxInfluences": 4,
+        "weightedVertices": 105606,
+        "unweightedVertices": 0
+      },
+      "walk": {
+        "durationSeconds": 1.2,
+        "strideMeters": 0.56,
+        "recommendedSpeedMetersPerSecond": 0.46666666666666673,
+        "stanceFraction": 0.6,
+        "rootMotion": false
+      },
+      "animations": {
+        "Idle": {
+          "durationSeconds": 2.4
+        },
+        "Walk": {
+          "durationSeconds": 1.2
+        },
+        "Talk": {
+          "durationSeconds": 2.4
+        }
+      },
+      "bytes": 7186380,
+      "sha256": "94ff1b3f77ae5e03a3dbd9618221411cf09b90a3e2f178598ae4417f90f7b7a7",
+      "triangles": 100000,
+      "meshes": 1,
+      "materials": 1,
+      "skins": 1,
+      "clips": [
+        "Idle",
+        "Walk",
+        "Talk"
+      ],
+      "joints": [
+        "Root",
+        "Hips",
+        "Coat.L",
+        "Coat.R",
+        "Spine",
+        "Chest",
+        "Neck",
+        "Head",
+        "UpperArm.L",
+        "Forearm.L",
+        "Hand.L",
+        "UpperArm.R",
+        "Forearm.R",
+        "Hand.R",
+        "Thigh.L",
+        "Shin.L",
+        "Foot.L",
+        "Toe.L",
+        "Thigh.R",
+        "Shin.R",
+        "Foot.R",
+        "Toe.R"
+      ],
+      "measuredHeightMeters": 1.6508028432981519,
+      "restBounds": {
+        "min": [
+          -0.44579192996025085,
+          3.362444476806559e-05,
+          -0.4444284439086914
+        ],
+        "max": [
+          0.4453948736190796,
+          1.65083646774292,
+          0.34645378589630127
+        ]
+      }
+    },
+    "doctor": {
+      "file": "doctor.glb",
+      "heightMeters": 1.72,
+      "sourceTriangles": 1499876,
+      "textureMaxDimension": 2048,
+      "binding": {
+        "method": "continuous spatial anatomical envelopes on original-derived mesh",
+        "maxInfluences": 4,
+        "weightedVertices": 109380,
+        "unweightedVertices": 0
+      },
+      "walk": {
+        "durationSeconds": 1.2,
+        "strideMeters": 0.56,
+        "recommendedSpeedMetersPerSecond": 0.46666666666666673,
+        "stanceFraction": 0.6,
+        "rootMotion": false
+      },
+      "animations": {
+        "Idle": {
+          "durationSeconds": 2.4
+        },
+        "Walk": {
+          "durationSeconds": 1.2
+        },
+        "Talk": {
+          "durationSeconds": 2.4
+        }
+      },
+      "bytes": 7493528,
+      "sha256": "1e00888654b8158953ab7387d22db93adab0acd6c5d2f3d02cfbc306d432eb95",
+      "triangles": 100000,
+      "meshes": 1,
+      "materials": 1,
+      "skins": 1,
+      "clips": [
+        "Idle",
+        "Walk",
+        "Talk"
+      ],
+      "joints": [
+        "Root",
+        "Hips",
+        "Coat.L",
+        "Coat.R",
+        "Spine",
+        "Chest",
+        "Neck",
+        "Head",
+        "UpperArm.L",
+        "Forearm.L",
+        "Hand.L",
+        "UpperArm.R",
+        "Forearm.R",
+        "Hand.R",
+        "Thigh.L",
+        "Shin.L",
+        "Foot.L",
+        "Toe.L",
+        "Thigh.R",
+        "Shin.R",
+        "Foot.R",
+        "Toe.R"
+      ],
+      "measuredHeightMeters": 1.720475624591927,
+      "restBounds": {
+        "min": [
+          -0.4337116777896881,
+          -0.00010723927698563784,
+          -0.48185062408447266
+        ],
+        "max": [
+          0.43371233344078064,
+          1.7203683853149414,
+          0.33372199535369873
+        ]
+      }
+    }
+  },
+  "hospital": {
+    "file": "hospital.glb",
+    "sourceCounts": {
+      "objects": 1054,
+      "vertices": 25018,
+      "polygons": 27375,
+      "triangles": 45486
+    },
+    "geometryAudit": {
+      "exportedTriangles": 45486,
+      "lostTriangles": 0,
+      "duplicatedTriangles": 0
+    },
+    "entranceDoors": [
+      {
+        "name": "EntranceDoorLeft",
+        "pivot": [
+          -1.11,
+          1.3,
+          5.49
+        ],
+        "pivotRotationQuaternion": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "rotationAxis": "+Y",
+        "closedAngleDegrees": 0,
+        "openAngleDegrees": 85,
+        "opensTowardRuntimeZ": "negative (indoors)",
+        "closedBounds": {
+          "min": [
+            -1.1475,
+            0.047687,
+            5.435
+          ],
+          "max": [
+            -0.002647,
+            2.541164,
+            5.6075
+          ]
+        },
+        "openBounds": {
+          "min": [
+            -1.168059,
+            0.047687,
+            4.382067
+          ],
+          "max": [
+            -0.915596,
+            2.541164,
+            5.532151
+          ]
+        },
+        "sourceParts": [
+          "GlassDoor",
+          "Entrance leaf stile",
+          "Entrance leaf stile.001",
+          "Entrance leaf rail",
+          "Entrance leaf rail.001",
+          "Entrance handle"
+        ]
+      },
+      {
+        "name": "EntranceDoorRight",
+        "pivot": [
+          1.11,
+          1.3,
+          5.49
+        ],
+        "pivotRotationQuaternion": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "rotationAxis": "+Y",
+        "closedAngleDegrees": 0,
+        "openAngleDegrees": -85,
+        "opensTowardRuntimeZ": "negative (indoors)",
+        "closedBounds": {
+          "min": [
+            0.020628,
+            0.055498,
+            5.435
+          ],
+          "max": [
+            1.148407,
+            2.534701,
+            5.6075
+          ]
+        },
+        "openBounds": {
+          "min": [
+            0.915596,
+            0.055498,
+            4.399979
+          ],
+          "max": [
+            1.168138,
+            2.534701,
+            5.533054
+          ]
+        },
+        "sourceParts": [
+          "GlassDoor.001",
+          "Entrance leaf stile.002",
+          "Entrance leaf stile.003",
+          "Entrance leaf rail.002",
+          "Entrance leaf rail.003",
+          "Entrance handle.001"
+        ]
+      }
+    ],
+    "landmarks": {
+      "entrance": [
+        0.55,
+        0,
+        5.7
+      ],
+      "welcomeMat": [
+        0,
+        0,
+        6.6
+      ],
+      "welcomeMatBounds": {
+        "min": [
+          -1.6,
+          0,
+          6.04
+        ],
+        "max": [
+          1.6,
+          0.028,
+          7.16
+        ]
+      },
+      "entrancePavementBounds": {
+        "min": [
+          -2.3,
+          0,
+          6
+        ],
+        "max": [
+          2.3,
+          0,
+          7.72
+        ]
+      },
+      "receptionDeskBounds": {
+        "min": [
+          -6.8,
+          0,
+          1.4
+        ],
+        "max": [
+          -2.1,
+          1.4,
+          3.5
+        ]
+      },
+      "receptionInteraction": [
+        -1.5,
+        0,
+        2.6
+      ],
+      "floorBounds": {
+        "min": [
+          -8,
+          0,
+          -6
+        ],
+        "max": [
+          8,
+          0,
+          6
+        ]
+      }
+    },
+    "bytes": 2332764,
+    "sha256": "ad89d77717ee07a4425621d46f5669836878b32c3cfab6acbf15ad1620626bee",
+    "triangles": 45486,
+    "meshes": 41,
+    "drawCalls": 41,
+    "materials": 29,
+    "skins": 0,
+    "clips": [],
+    "joints": []
+  },
+  "limitations": [
+    "Source scan topology is fragmented. Weights use continuous anatomical envelopes and 4 influences, not automatic heat binding.",
+    "Gown hem and long coat use supplementary coat bones with restrained motion; it is not a cloth simulation.",
+    "The original source character surfaces and UV materials were retained through decimation; no replacement humanoid mesh was used.",
+    "Talk is a body gesture clip, without facial blend shapes or lip sync."
+  ]
+}
