@@ -1,0 +1,39 @@
+{
+  "source": "用户提供的图三生化检验报告",
+  "sourceFile": "C:/Users/ADMINI~1/AppData/Local/Temp/codex-clipboard-485ebcf8-e0e7-4081-8cfd-1fb912a80af5.png",
+  "notes": [
+    "结果以字符串存储，保留照片中显示的小数位。",
+    "照片中的正常提示字母 M 已转换为 normal。",
+    "单位按照片转录，未依据医学常用单位进行修改。",
+    "所有行的辅助结果列均为空。"
+  ],
+  "uncertain": [],
+  "rows": [
+    { "name": "肌酸激酶同工酶-MB质量", "code": "CK-MBmass", "value": "6.75", "unit": "ug/L", "flag": "H", "reference": "<5.0" },
+    { "name": "超敏肌钙蛋白I", "code": "hs-TnI", "value": "0.014", "unit": "ng/L", "flag": "normal", "reference": "0–0.100（0.040为99%分位）" },
+    { "name": "肌红蛋白", "code": "MYO", "value": "910.59", "unit": "ng/ml", "flag": "H", "reference": "<110.00" },
+    { "name": "丙氨酸氨基转移酶", "code": "ALT", "method": "干化学", "value": "26", "unit": "U/L", "flag": "normal", "reference": "13–69" },
+    { "name": "天门冬氨酸氨基转移酶", "code": "AST", "method": "干化学", "value": "88", "unit": "U/L", "flag": "H", "reference": "15–46" },
+    { "name": "碱性磷酸酶", "code": "ALP", "method": "干化学", "value": "34", "unit": "U/L", "flag": "L", "reference": "45–132" },
+    { "name": "γ-谷氨酰基转移酶", "code": "γ-GT", "method": "干化学", "value": "43", "unit": "U/L", "flag": "normal", "reference": "12–58" },
+    { "name": "总胆红素", "code": "T-BIL", "method": "干化学", "value": "26.8", "unit": "umol/L", "flag": "H", "reference": "3–22" },
+    { "name": "结合胆红素", "code": "Bc", "method": "干化学", "value": "0.0", "unit": "umol/L", "flag": "normal", "reference": "0–5" },
+    { "name": "非结合胆红素", "code": "Bu", "method": "干化学", "value": "14.0", "unit": "umol/L", "flag": "normal", "reference": "0–19" },
+    { "name": "总蛋白", "code": "TP", "method": "干化学", "value": "59.1", "unit": "g/L", "flag": "L", "reference": "63.0–82.0" },
+    { "name": "白蛋白", "code": "ALB", "method": "干化学", "value": "28.5", "unit": "g/L", "flag": "L", "reference": "35.0–50.0" },
+    { "name": "球蛋白", "code": "Glob", "method": "干化学", "value": "30.6", "unit": "g/L", "flag": "normal", "reference": "20.0–40.0" },
+    { "name": "白球比值", "code": "A/G", "method": "干化学", "value": "0.9", "unit": "", "flag": "L", "reference": "1.2–2.4" },
+    { "name": "葡萄糖", "code": "GLU", "method": "干化学", "value": "9.10", "unit": "mmol/L", "flag": "H", "reference": "3.89–6.11（空腹）" },
+    { "name": "淀粉酶", "code": "AMY", "method": "干化学", "value": "670", "unit": "U/L", "flag": "H", "reference": "30–110" },
+    { "name": "脂肪酶", "code": "Lipase", "method": "干化学", "value": "4278", "unit": "U/L", "flag": "H", "reference": "23–300" },
+    { "name": "尿素", "code": "Urea", "method": "干化学法", "value": "24.09", "unit": "mmol/l", "flag": "H", "reference": "2.90–8.20" },
+    { "name": "肌酐", "code": "CRE", "method": "干化学法", "value": "663", "unit": "umol/L", "flag": "H", "reference": "58–110" },
+    { "name": "尿酸", "code": "UA", "method": "干化学", "value": "466", "unit": "umol/L", "flag": "normal", "reference": "208–506" },
+    { "name": "钾", "code": "K", "method": "干化学", "value": "5.23", "unit": "mmol/L", "flag": "H", "reference": "3.50–5.20" },
+    { "name": "钠", "code": "Na", "method": "干化学", "value": "141", "unit": "mmol/L", "flag": "normal", "reference": "137–145" },
+    { "name": "氯", "code": "CL", "method": "干化学", "value": "117", "unit": "mmol/L", "flag": "H", "reference": "98–107" },
+    { "name": "无机磷", "code": "P", "method": "干化学", "value": "0.51", "unit": "mmol/L", "flag": "L", "reference": "0.81–1.45" },
+    { "name": "钙", "code": "Ca", "method": "干化学", "value": "1.19", "unit": "mmol/L", "flag": "L", "reference": "2.1–2.55" },
+    { "name": "镁", "code": "Mg", "method": "干化学", "value": "0.58", "unit": "mmol/L", "flag": "L", "reference": "0.70–1.00" }
+  ]
+}
