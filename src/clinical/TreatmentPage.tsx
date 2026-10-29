@@ -1,18 +1,21 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Check, ClipboardList, FileCheck2, Pill, Plus, Stethoscope, Trash2 } from 'lucide-react'
 import { PatientPortrait } from '../exam/ExamScene'
-import { clinicalModules, type ClinicalModuleId } from './caseData'
+import { CASE_CHIEF_COMPLAINT, clinicalModules, type ClinicalModuleId } from './caseData'
 import type { MedicationRow, TreatmentPlan, TreatmentRow } from './treatmentPlan'
+import { requestTreatmentEvaluation, type TreatmentEvaluation } from './treatmentEvaluation'
+import './treatmentEvaluation.css'
 
 export interface TreatmentPageProps {
   plan: TreatmentPlan
+  diagnosis?: Record<string, string>
   onPlanChange: (plan: TreatmentPlan) => void
   onBack: () => void
   onFinish: () => void
   onNavigate: (module: ClinicalModuleId) => void
 }
 
-export function TreatmentPage({ plan, onPlanChange, onBack, onFinish, onNavigate }: TreatmentPageProps) {
+export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFinish, onNavigate }: TreatmentPageProps) {
   const treatmentTableRef = useRef<HTMLDivElement>(null)
   const medicationTableRef = useRef<HTMLDivElement>(null)
   const pendingRowRef = useRef<{ kind: 'treatments' | 'medications'; id: string } | null>(null)
@@ -20,6 +23,49 @@ export function TreatmentPage({ plan, onPlanChange, onBack, onFinish, onNavigate
   const completedMedications = plan.medications.filter((row) => row.name.trim() && row.route.trim() && row.dose.trim()).length
   const completed = completedTreatments + completedMedications
   const total = plan.treatments.length + plan.medications.length
+  const signature = JSON.stringify({ plan, diagnosis })
+  const activeSignature = useRef(signature)
+  activeSignature.current = signature
+  const evaluationRequest = useRef<AbortController | null>(null)
+  const evaluationPanel = useRef<HTMLElement>(null)
+  const [evaluation, setEvaluation] = useState<{ signature: string; result: TreatmentEvaluation } | null>(null)
+  const [evaluating, setEvaluating] = useState(false)
+  const [evaluationError, setEvaluationError] = useState('')
+  const currentEvaluation = evaluation?.signature === signature ? evaluation.result : null
+  const canFinish = !!currentEvaluation && currentEvaluation.status !== 'needs_revision' && !currentEvaluation.checks.some((check) => ['missing', 'incorrect'].includes(check.outcome))
+  const hasContent = plan.treatments.some((row) => row.item.trim()) || plan.medications.some((row) => [row.name, row.route, row.dose].some((value) => value.trim()))
+
+  useEffect(() => {
+    if (currentEvaluation) evaluationPanel.current?.scrollIntoView({ block: 'nearest' })
+  }, [currentEvaluation])
+
+  useEffect(() => {
+    evaluationRequest.current?.abort()
+    evaluationRequest.current = null
+    setEvaluating(false)
+    setEvaluationError('')
+    return () => evaluationRequest.current?.abort()
+  }, [signature])
+
+  const submitEvaluation = async () => {
+    if (evaluationRequest.current || !hasContent) return
+    const controller = new AbortController()
+    evaluationRequest.current = controller
+    setEvaluating(true)
+    setEvaluation(null)
+    setEvaluationError('')
+    try {
+      const result = await requestTreatmentEvaluation({ caseId: 'wang-xu', diagnosis, plan }, controller.signal)
+      if (!controller.signal.aborted && activeSignature.current === signature) setEvaluation({ signature, result })
+    } catch (error) {
+      if (!controller.signal.aborted) setEvaluationError(error instanceof Error ? error.message : '处置评价暂时不可用，请重新提交。')
+    } finally {
+      if (evaluationRequest.current === controller) {
+        evaluationRequest.current = null
+        setEvaluating(false)
+      }
+    }
+  }
 
   useEffect(() => {
     for (const table of [treatmentTableRef.current, medicationTableRef.current]) {
@@ -79,14 +125,21 @@ export function TreatmentPage({ plan, onPlanChange, onBack, onFinish, onNavigate
       </div>
     </div>
 
-    <aside className="treatment-summary" aria-label="患者与处置填写状态">
+    <aside className="treatment-summary treatment-evaluation-summary" aria-label="患者与处置填写状态">
       <header className="treatment-summary-heading"><h2>当前患者</h2><span>SP 01</span></header>
       <section className="treatment-patient-card"><div className="treatment-patient-model"><PatientPortrait /></div><div className="treatment-patient-caption"><strong>王旭</strong><span>男 · 48 岁 · 门诊初诊</span><small><i />患者在场</small></div></section>
-      <section className="treatment-summary-section"><h3>主诉</h3><p>油腻饮食后腹痛 2 天，加重伴呼吸困难 3 小时。</p></section>
+      <section className="treatment-summary-section"><h3>主诉</h3><p>{CASE_CHIEF_COMPLAINT}</p></section>
       <section className="treatment-summary-section treatment-completion"><h3><FileCheck2 size={19} />清单填写状态</h3><dl><div><dt>处置项目</dt><dd><strong>{completedTreatments}</strong> / {plan.treatments.length} 行</dd></div><div><dt>用药方案</dt><dd><strong>{completedMedications}</strong> / {plan.medications.length} 行</dd></div></dl><p>一行中的全部内容填写后，计为已填写。</p></section>
       <div className="treatment-tip"><Stethoscope size={20} /><p>结合诊断制定处置与用药方案，可按需要添加行，填写中药方剂时支持多行输入。</p></div>
+      {evaluationError && <p className="treatment-evaluation-error" role="alert">{evaluationError}</p>}
+      {currentEvaluation && <section ref={evaluationPanel} className={`treatment-evaluation ${currentEvaluation.status}`} aria-label="处置评价结果" aria-live="polite">
+        <h3>{currentEvaluation.status === 'passed' ? '处置评价：通过' : currentEvaluation.status === 'needs_revision' ? '处置评价：需要修改' : '处置评价：待教师确认'}</h3>
+        <p>{currentEvaluation.message}</p>
+        <ul>{currentEvaluation.checks.map((check) => <li key={check.id}><strong>{check.label} · {{ met: '符合标准', missing: '需要补充', incorrect: '需要修改', unreviewed: '待确认' }[check.outcome]}</strong>{check.studentText && <blockquote>{check.studentText}</blockquote>}<p>{check.reason}</p><small>依据：{check.reference}</small></li>)}</ul>
+        {currentEvaluation.ai.status === 'available' ? <div><strong>AI 辅助核对引用</strong>{currentEvaluation.ai.notes?.map((note, index) => <div key={`${note.checkId}-${index}`}><p>{currentEvaluation.checks.find((check) => check.id === note.checkId)?.label}</p>{note.studentQuote && <blockquote>学生原文：{note.studentQuote}</blockquote>}<small>对照依据：{note.referenceQuote}</small></div>)}</div> : <small>{currentEvaluation.ai.status === 'awaiting_standard' ? '教师标准未审核，当前不判通过。' : currentEvaluation.ai.status === 'unavailable' ? 'AI 辅助核对暂不可用，以上为教师标准规则检查结果。' : '以上为教师标准规则检查结果，未启用 AI 辅助核对。'}</small>}
+      </section>}
     </aside>
 
-    <footer className="four-footer"><button type="button" className="four-back" onClick={onBack}><ArrowLeft size={21} />返回上一步</button><span>核对处置与用药信息，完成本次病例</span><button type="button" className="four-next" onClick={onFinish}>完成病例<Check size={22} /></button></footer>
+    <footer className="four-footer"><button type="button" className="four-back" onClick={onBack}><ArrowLeft size={21} />返回上一步</button><span>{evaluation && !currentEvaluation ? '方案已修改，请重新提交评价' : '先提交处置评价，再结束本次训练'}</span><div className="treatment-evaluation-actions"><button type="button" className="treatment-evaluation-submit" disabled={!hasContent || evaluating} onClick={() => void submitEvaluation()}>{evaluating ? '正在评价…' : '提交处置评价'}</button><button type="button" className="four-next" disabled={!canFinish || evaluating} onClick={onFinish}>{currentEvaluation?.status === 'pending_review' ? '结束训练（待教师确认）' : '完成病例'}<Check size={22} /></button></div></footer>
   </section>
 }

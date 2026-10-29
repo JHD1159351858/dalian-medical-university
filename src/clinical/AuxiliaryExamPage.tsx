@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Activity, ArrowLeft, ArrowRight, Check, ChevronRight, ClipboardList, FileText, FlaskConical, Maximize2, ScanLine, Stethoscope } from 'lucide-react'
 import { PatientPortrait } from '../exam/ExamScene'
-import { clinicalModules, moduleItems, type ClinicalModuleId } from './caseData'
+import { CASE_CHIEF_COMPLAINT, clinicalModules, moduleItems, type ClinicalModuleId } from './caseData'
 import { auxiliaryReports } from './auxiliaryExamData'
 import { AuxiliaryReportViewer, LaboratoryTable } from './AuxiliaryReportViewer'
 
@@ -54,7 +54,7 @@ export function AuxiliaryExamPage({ records, onRecordChange, onBack, onNext, onN
     <aside className="aux-summary" aria-label="患者与检查记录">
       <header className="aux-summary-heading"><h2>当前患者</h2><span>SP 01</span></header>
       <section className="aux-patient-card"><div className="aux-patient-model"><PatientPortrait /></div><div className="aux-patient-caption"><strong>王旭</strong><span>男 · 48 岁 · 门诊初诊</span><small><i />患者在场</small></div></section>
-      <section className="aux-summary-section"><h3>主诉</h3><p>油腻饮食后腹痛 2 天，加重伴呼吸困难 3 小时。</p></section>
+      <section className="aux-summary-section"><h3>主诉</h3><p>{CASE_CHIEF_COMPLAINT}</p></section>
       <section className="aux-summary-section aux-records-summary"><div><h3>检查记录</h3><span>{recorded.length}/{items.length}</span></div>{recorded.length ? <ul>{recorded.map((item) => <li key={item.id}><Check size={17} /><div><strong>{item.label}</strong><p>{records[item.id]}</p></div></li>)}</ul> : <div className="aux-summary-empty"><ClipboardList size={26} /><p>填写检查记录后，已记录的项目会显示在这里。</p></div>}</section>
       <div className="aux-summary-tip"><Stethoscope size={20} /><p>先查看报告，再记录所见，完成后进入诊断。</p></div>
     </aside>

@@ -1,8 +1,13 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { requestReply } from '../src/diagnosis/chat'
+import { checkChatAvailability, requestReply } from '../src/diagnosis/chat'
 import { PATIENT_OPENING } from '../src/clinical/caseData'
 
 afterEach(() => vi.unstubAllGlobals())
+
+it('allows the documented interview when the external bot is not configured', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ configured: false, interview: true }))))
+  expect(await checkChatAvailability()).toBe(true)
+})
 
 it('sends a streaming request and reports SSE deltas before the completed reply', async () => {
   const encoder = new TextEncoder()

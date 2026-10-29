@@ -414,6 +414,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
             } : undefined}
             treatment={isTreatment ? {
               plan: treatmentPlan,
+              diagnosis: clinicalDiagnosisRecords,
               onPlanChange: setTreatmentPlan,
               onBack: () => sendFlow({ type: 'BACK' }),
               onFinish: () => sendFlow({ type: 'COMPLETE_CASE' }),

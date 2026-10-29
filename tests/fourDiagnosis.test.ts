@@ -2,6 +2,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, it, vi } from 'vitest'
 import { ClinicalModulePage } from '../src/clinical/ClinicalModulePage'
+import { FourExaminationViewer } from '../src/clinical/FourExaminationViewer'
 
 vi.mock('../src/exam/ExamScene', () => ({
   PatientPortrait: () => createElement('canvas', { 'aria-label': '项目卡通患者模型' }),
@@ -51,4 +52,35 @@ it('preserves the existing auxiliary examination page', () => {
   expect(html).toContain('进入诊断')
   expect(html).toContain('腹部 CT')
   expect(html).not.toContain('AI 患者 · 王旭')
+})
+
+it('offers inspection material categories while keeping unconfirmed patient findings explicit', () => {
+  const html = renderToStaticMarkup(createElement(FourExaminationViewer, { kind: 'look', voiceText: '左上腹痛。', muted: true, onStopReading: noop, onClose: noop }))
+  expect(html).toContain('巩膜黄染')
+  expect(html).toContain('面色红')
+  expect(html).toContain('阳黄')
+  expect(html).toContain('阴黄')
+  expect(html).toContain('王旭病例舌象待教师确认')
+  expect(html).toContain('独立舌象学习')
+})
+
+it('replaces the fixed pulse result with a teaching demonstration and pending case result', () => {
+  const html = renderToStaticMarkup(createElement(FourExaminationViewer, { kind: 'feel', voiceText: '左上腹痛。', muted: true, onStopReading: noop, onClose: noop }))
+  expect(html).not.toContain('沉滑数')
+  expect(html).toContain('王旭病例脉象待教师确认')
+})
+
+it('separates patient speech synthesis from the missing standard listening samples', () => {
+  const html = renderToStaticMarkup(createElement(FourExaminationViewer, { kind: 'listen', voiceText: '左上腹痛。', muted: true, onStopReading: noop, onClose: noop }))
+  expect(html).toContain('声音洪亮')
+  expect(html).toContain('声音低沉')
+  expect(html).toContain('口臭')
+  expect(html).toContain('不是教师标准声音样本')
+})
+
+it('offers contextual interview questions without automatically sending them', () => {
+  const html = render()
+  expect(html).toContain('常用追问')
+  expect(html).toContain('点击填入问题，核对后发送')
+  expect(html).toContain('疼痛是什么感觉')
 })

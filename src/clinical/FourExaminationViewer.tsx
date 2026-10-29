@@ -2,14 +2,31 @@ import { useEffect, useRef, useState } from 'react'
 import { Play, Square, X } from 'lucide-react'
 import { playCachedSpeech, preloadSpeech, stopSpeech } from '../diagnosis/speech'
 import { PATIENT_VOICE_PROFILE } from '../diagnosis/voiceProfiles'
+import { TongueTeaching, PulseTeaching } from './ExaminationTeaching'
+import { TongueLearning } from './TongueLearning'
+import './fourDiagnosisTeaching.css'
 
 export type FourExaminationKind = 'look' | 'listen' | 'feel'
 
 export const fourExaminations = {
-  look: { button: '查看舌苔', title: '舌象观察', image: 'tongue-demo.png', alt: '舌体与舌苔教学示意图', hint: '放大观察舌体与舌苔的外观，再在望诊记录中填写所见。' },
-  listen: { button: '听取声音', title: '声音观察', image: 'sound-demo.png', alt: '患者语声与呼吸观察教学示意图', hint: '点击播放患者语音，听取语声表现，再在闻诊记录中填写所见。' },
-  feel: { button: '查看脉象', title: '脉象观察', image: 'pulse-demo.png', alt: '手腕切脉位置教学示意图', hint: '查看脉象检查结果，再在切诊记录中填写检查所见。' },
+  look: { button: '查看舌苔', title: '望诊观察与舌象学习' },
+  listen: { button: '听取声音', title: '闻诊观察' },
+  feel: { button: '查看脉象', title: '脉诊教学与检查' },
 }
+
+const inspectionTopics = [
+  { id: 'tongue', label: '舌象' },
+  { id: 'sclera', label: '巩膜黄染' },
+  { id: 'face-red', label: '面色红' },
+  { id: 'yang-yellow', label: '皮肤黄染 · 阳黄' },
+  { id: 'yin-yellow', label: '皮肤黄染 · 阴黄' },
+]
+
+const listeningTopics = [
+  { id: 'loud', label: '声音洪亮', detail: '声音洪亮的教师标准录音尚未提供，当前患者语音不能替代该样本。' },
+  { id: 'low', label: '声音低沉', detail: '声音低沉的教师标准录音尚未提供，当前患者语音不能替代该样本。' },
+  { id: 'odor', label: '口臭', detail: '口臭需在检查后以文字反馈呈现；王旭病例是否存在口臭，待教师确认。' },
+]
 
 export function FourExaminationViewer({ kind, voiceText, muted, onStopReading, onClose }: {
   kind: FourExaminationKind
@@ -22,6 +39,8 @@ export function FourExaminationViewer({ kind, voiceText, muted, onStopReading, o
   const playbackRun = useRef(0)
   const ownsPlayback = useRef(false)
   const [playback, setPlayback] = useState<'idle' | 'loading' | 'playing' | 'error'>('idle')
+  const [inspectionTopic, setInspectionTopic] = useState('tongue')
+  const [listeningTopic, setListeningTopic] = useState('loud')
   const item = fourExaminations[kind]
 
   useEffect(() => {
@@ -56,13 +75,26 @@ export function FourExaminationViewer({ kind, voiceText, muted, onStopReading, o
     })
   }
 
-  return <dialog ref={dialogRef} className="four-examination-dialog" aria-labelledby="four-examination-title" onCancel={onClose} onClick={(event) => { if (event.target === event.currentTarget) onClose() }}>
-    <header><div><span>{kind === 'feel' ? '教学模拟' : '教学示意'}</span><h2 id="four-examination-title">{item.title}</h2></div><button type="button" aria-label="关闭检查展示" onClick={onClose}><X size={22} /></button></header>
+  return <dialog ref={dialogRef} className="four-examination-dialog four-teaching-dialog" aria-labelledby="four-examination-title" onCancel={onClose} onClick={(event) => { if (event.target === event.currentTarget) onClose() }}>
+    <header><div><span>检查交互 · 教学资料</span><h2 id="four-examination-title">{item.title}</h2></div><button type="button" aria-label="关闭检查展示" onClick={onClose}><X size={22} /></button></header>
     <div className="four-examination-content">
-      <img src={`/four-exam-images/${item.image}`} alt={item.alt} />
-      {kind === 'feel' && <section className="four-pulse-result" aria-label="脉象检查结果"><span>脉象检查结果</span><strong>沉滑数</strong><small>本训练设置的教学模拟结果。</small></section>}
-      <p>{item.hint}</p>
-      {kind === 'listen' ? <div className="four-examination-audio"><div><strong>患者语音 · 合成播放</strong><p>{voiceText}</p></div><button type="button" disabled={muted || playback === 'loading'} onClick={() => void playVoice()}>{playback === 'playing' ? <Square size={18} /> : <Play size={18} />}{playback === 'loading' ? '准备语音…' : playback === 'playing' ? '停止播放' : '播放患者声音'}</button>{muted && <small>当前已静音，请关闭窗口后在顶栏开启语音。</small>}{playback === 'error' && <small role="alert">语音暂不可用，请稍后重试。</small>}</div> : <small>{kind === 'look' ? 'AI 生成的教学示意图，尚未绑定王旭病例的舌象检查结果。' : '图片为 AI 生成的切脉手法示意图。'}</small>}
+      {kind === 'look' && <>
+        <nav className="four-material-topics" aria-label="望诊素材分类">{inspectionTopics.map((topic) => <button key={topic.id} type="button" aria-pressed={inspectionTopic === topic.id} onClick={() => setInspectionTopic(topic.id)}>{topic.label}</button>)}</nav>
+        {inspectionTopic === 'tongue' ? <>
+          <div className="four-case-pending"><strong>王旭病例舌象待教师确认</strong><p>尚未指定本病例舌象照片与标准观察结论。下面的动作和图库供独立学习，不自动填入病例记录。</p></div>
+          <TongueTeaching />
+          <TongueLearning />
+        </> : <div className="four-case-pending" role="status"><strong>{inspectionTopics.find((topic) => topic.id === inspectionTopic)!.label} · 待补充</strong><p>待教师提供对应图片及观察要点；王旭病例是否存在这一表现也尚未确认。</p><small>这是学习素材分类，不代表当前患者有该表现。</small></div>}
+      </>}
+      {kind === 'feel' && <>
+        <div className="four-case-pending"><strong>王旭病例脉象待教师确认</strong><p>当前提供布指手法演示，尚无本病例经教师确认的脉象，不能把教学动作作为病例检查结果。</p></div>
+        <PulseTeaching />
+      </>}
+      {kind === 'listen' && <>
+        <nav className="four-material-topics" aria-label="闻诊素材分类">{listeningTopics.map((topic) => <button key={topic.id} type="button" aria-pressed={listeningTopic === topic.id} onClick={() => setListeningTopic(topic.id)}>{topic.label}</button>)}</nav>
+        <div className="four-case-pending" role="status"><strong>{listeningTopics.find((topic) => topic.id === listeningTopic)!.label} · 待补充</strong><p>{listeningTopics.find((topic) => topic.id === listeningTopic)!.detail}</p></div>
+        <div className="four-examination-audio"><div><strong>患者最近回答 · 合成播放</strong><p>{voiceText}</p><small>用于回听问答，不是教师标准声音样本；不能据此自动认定本病例语声类型。</small></div><button type="button" disabled={muted || playback === 'loading'} onClick={() => void playVoice()}>{playback === 'playing' ? <Square size={18} /> : <Play size={18} />}{playback === 'loading' ? '准备语音…' : playback === 'playing' ? '停止播放' : '播放患者声音'}</button>{muted && <small>当前已静音，请关闭窗口后在顶栏开启语音。</small>}{playback === 'error' && <small role="alert">语音暂不可用，请稍后重试。</small>}</div>
+      </>}
     </div>
     <footer><button type="button" onClick={onClose}>返回检查并记录</button></footer>
   </dialog>

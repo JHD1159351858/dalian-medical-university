@@ -5,6 +5,7 @@ import type { ChatMessage } from '../diagnosis/chat'
 import type { ConversationStatus } from '../diagnosis/DiagnosisPage'
 import { clinicalModules, moduleItems, type ClinicalModuleId } from './caseData'
 import { FourExaminationViewer, fourExaminations, type FourExaminationKind } from './FourExaminationViewer'
+import './fourDiagnosisTeaching.css'
 
 export interface FourDiagnosisPageProps {
   messages: ChatMessage[]
@@ -42,6 +43,14 @@ const statusCopy: Record<ConversationStatus, string> = {
   checking: '正在连接模拟患者…', input: '可以提问', thinking: '患者正在回忆…',
   replying: '患者正在回答…', talking: '患者正在回答',
   unavailable: '模拟患者暂不可用，请联系教师检查服务配置。', error: '可重新发送',
+}
+
+const quickQuestions: Record<string, string[]> = {
+  look: ['疼痛是什么感觉？', '按压后疼痛会加重吗？'],
+  listen: ['呼吸有没有不舒服？', '有没有咳嗽、咳痰？'],
+  ask: ['腹痛持续多久了？', '进食后腹痛有什么变化？', '有没有怕冷、怕热或出汗？', '最近排便和睡眠怎么样？'],
+  feel: ['按压后疼痛会加重吗？', '腹痛会向别的地方放射吗？'],
+  summary: ['最近食欲和口渴情况怎么样？', '有没有发热或畏寒？'],
 }
 
 export function FourDiagnosisPage({ messages, draft, status, error, muted, records, onDraftChange, onRecordChange, onSend, onStopReading, onBack, onNext, onNavigate }: FourDiagnosisPageProps) {
@@ -103,6 +112,7 @@ export function FourDiagnosisPage({ messages, draft, status, error, muted, recor
 
     <aside className="four-chat" aria-label="AI 患者聊天">
       <header className="four-chat-heading"><h2>AI 患者 · 王旭</h2><span>教学模拟</span><div className={`four-chat-status four-status-${status}`}><i />{statusCopy[status]}</div>{status === 'talking' && <button type="button" className="four-stop-reading" onClick={onStopReading}><Square size={13} />停止朗读</button>}</header>
+      <section className="four-suggested-questions" aria-label="常用追问"><strong>常用追问</strong><span>点击填入问题，核对后发送</span><div>{quickQuestions[selected].map((question) => <button key={question} type="button" disabled={inputDisabled} onClick={() => { onDraftChange(question); document.getElementById('four-patient-question')?.focus() }}>{question}</button>)}</div></section>
       <div className="four-chat-messages" ref={logRef} aria-live="polite">
         {messages.length ? messages.map((message, index) => <div key={index} className={`four-message four-message-${message.role}`}><div className="four-message-avatar">{message.role === 'user' ? <UserRound size={19} /> : '王'}</div><div><span>{message.role === 'user' ? '学生' : '王旭'}</span><p>{message.content}</p></div></div>) : <div className="four-chat-empty"><MessageCircle size={34} /><strong>从一句问题开始</strong><p>向王旭提问，采集四诊信息。</p></div>}
         {status === 'thinking' && <p className="four-chat-thinking">患者正在回忆，请稍候…</p>}

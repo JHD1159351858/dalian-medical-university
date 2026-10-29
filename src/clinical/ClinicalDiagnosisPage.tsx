@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, Check, Circle, ClipboardList, FileText, Stethoscope } from 'lucide-react'
 import { PatientPortrait } from '../exam/ExamScene'
-import { clinicalModules, moduleItems, type ClinicalModuleId } from './caseData'
+import { CASE_CHIEF_COMPLAINT, clinicalModules, moduleItems, type ClinicalModuleId } from './caseData'
 
 export interface ClinicalDiagnosisPageProps {
   records: Record<string, string>
@@ -43,7 +43,7 @@ export function ClinicalDiagnosisPage({ records, onRecordChange, onBack, onNext,
     <aside className="clinical-diagnosis-summary" aria-label="患者与诊断填写状态">
       <header className="clinical-diagnosis-summary-heading"><h2>当前患者</h2><span>SP 01</span></header>
       <section className="clinical-diagnosis-patient-card"><div className="clinical-diagnosis-patient-model"><PatientPortrait /></div><div className="clinical-diagnosis-patient-caption"><strong>王旭</strong><span>男 · 48 岁 · 门诊初诊</span><small><i />患者在场</small></div></section>
-      <section className="clinical-diagnosis-summary-section"><h3>主诉</h3><p>油腻饮食后腹痛 2 天，加重伴呼吸困难 3 小时。</p></section>
+      <section className="clinical-diagnosis-summary-section"><h3>主诉</h3><p>{CASE_CHIEF_COMPLAINT}</p></section>
       <section className="clinical-diagnosis-summary-section clinical-diagnosis-completion"><div><h3><FileText size={18} />诊断填写状态</h3><span>{completed}/{items.length}</span></div><ul>{items.map((item) => <li key={item.id} className={records[item.id]?.trim() ? 'is-complete' : ''}>{records[item.id]?.trim() ? <Check size={18} /> : <Circle size={18} />}<strong>{item.label}</strong><span>{records[item.id]?.trim() ? '已填写' : '待填写'}</span></li>)}</ul></section>
       <div className="clinical-diagnosis-tip"><Stethoscope size={20} /><p>结合问诊、四诊与检查结果，填写诊断及依据，完成后进入处置。</p></div>
     </aside>

@@ -1,0 +1,28 @@
+.examination-teaching { margin: 0 0 20px; padding: 16px; color: #214566; background: #f8fbfd; border: 1px solid #d9e9f0; border-radius: 12px; }
+.teaching-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.teaching-heading > strong { color: #173d5c; font-size: 17px; }
+.teaching-heading > span { color: #668599; font-size: 12px; }
+.teaching-diagram { overflow: hidden; background: #eef6fa; border: 1px solid #e0edf3; border-radius: 10px; }
+.teaching-diagram svg { display: block; width: 100%; height: auto; max-height: 310px; }
+.teaching-diagram text { font-family: inherit; font-size: 15px; fill: #416b83; }
+.teaching-diagram .teaching-canvas-caption { font-size: 13px; fill: #6d899b; }
+.teaching-diagram .teaching-direction { font-size: 13px; fill: #7894a4; }
+.teaching-current-step { min-height: 83px; padding: 14px 2px 10px; }
+.teaching-current-step > strong { display: block; color: #086d8b; font-size: 18px; }
+.examination-teaching .teaching-current-step > p { margin: 6px 0 0; color: #44677c; font-size: 14px; line-height: 1.65; }
+.teaching-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.teaching-controls > button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 36px; padding: 7px 10px; color: #236078; background: #fff; border: 1px solid #c9dfe9; border-radius: 7px; font-size: 13px; cursor: pointer; }
+.teaching-controls > button:first-child { color: #fff; background: #087a9b; border-color: #087a9b; }
+.teaching-controls > button:disabled { opacity: .45; cursor: default; }
+.teaching-controls > button:focus-visible { outline: 3px solid #96cfdf; outline-offset: 2px; }
+.examination-teaching .teaching-note { display: block; margin-top: 11px; color: #71899a; font-size: 12px; line-height: 1.6; }
+.teaching-mouth-cavity { transition: ry .7s ease; }
+.teaching-upper-teeth { transition: opacity .4s ease; }
+.teaching-tongue { transform: translateY(-19px) scaleY(.25); transform-box: fill-box; transform-origin: center top; opacity: 0; transition: transform .8s ease, opacity .35s ease; }
+.teaching-tongue.is-extended { transform: translateY(0) scaleY(1); opacity: 1; }
+.teaching-patient-arm { transform: translateX(115px); opacity: .45; transition: transform 1s ease, opacity .7s ease; }
+.teaching-patient-arm.is-extended { transform: translateX(0); opacity: 1; }
+.teaching-doctor-finger { transition: transform .85s ease, opacity .4s ease; }
+.teaching-pulse-labels .is-active { fill: #087a9b; font-weight: 700; }
+.examination-teaching[data-reduced-motion="true"] .teaching-diagram * { transition: none; }
+@media (prefers-reduced-motion: reduce) { .teaching-diagram * { transition: none !important; } }

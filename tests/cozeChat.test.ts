@@ -26,10 +26,10 @@ it('returns the completed answer from the published Coze bot', async () => {
     response.setHeader('content-type', 'text/event-stream')
     response.end([
       'event: conversation.message.delta',
-      'data: {"role":"assistant","type":"answer","content":"我左"}',
+      'data: {"role":"assistant","type":"answer","content":"我在"}',
       '',
       'event: conversation.message.completed',
-      'data: {"role":"assistant","type":"answer","content":"我左上腹疼。"}',
+      'data: {"role":"assistant","type":"answer","content":"我在物流仓库工作。"}',
       '',
       'event: conversation.chat.completed',
       'data: {"status":"completed"}',
@@ -48,16 +48,16 @@ it('returns the completed answer from the published Coze bot', async () => {
   const response = await fetch(`${app}/api/chat`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ messages: [{ role: 'assistant', content: PATIENT_OPENING }, { role: 'user', content: '哪里疼？' }] }),
+    body: JSON.stringify({ messages: [{ role: 'assistant', content: PATIENT_OPENING }, { role: 'user', content: '您平时做什么工作？' }] }),
   })
 
   expect(response.status).toBe(200)
-  expect(await response.json()).toEqual({ reply: '我左上腹疼。' })
+  expect(await response.json()).toEqual({ reply: '我在物流仓库工作。' })
   expect(upstreamBody).toMatchObject({
     bot_id: '7687864464020619300',
     stream: true,
     auto_save_history: false,
-    additional_messages: [{ role: 'assistant', content: PATIENT_OPENING, content_type: 'text' }, { role: 'user', content: '哪里疼？', content_type: 'text' }],
+    additional_messages: [{ role: 'assistant', content: PATIENT_OPENING, content_type: 'text' }, { role: 'user', content: '您平时做什么工作？', content_type: 'text' }],
   })
   expect(JSON.parse(upstreamBody.custom_variables.case_data)).toMatchObject({
     patient: { name: '王旭', age: 48 },
@@ -70,9 +70,9 @@ it('forwards Coze answer fragments before the reply is complete', async () => {
   const upstreamComplete = new Promise<void>((resolve) => { releaseUpstream = resolve })
   const upstream = await listen(createServer(async (_request, response) => {
     response.setHeader('content-type', 'text/event-stream')
-    response.write('event: conversation.message.delta\ndata: {"role":"assistant","type":"answer","content":"我左"}\n\n')
+    response.write('event: conversation.message.delta\ndata: {"role":"assistant","type":"answer","content":"我在"}\n\n')
     await upstreamComplete
-    response.end('event: conversation.message.completed\ndata: {"role":"assistant","type":"answer","content":"我左上腹疼。"}\n\nevent: conversation.chat.completed\ndata: {"status":"completed"}\n\n')
+    response.end('event: conversation.message.completed\ndata: {"role":"assistant","type":"answer","content":"我在物流仓库工作。"}\n\nevent: conversation.chat.completed\ndata: {"status":"completed"}\n\n')
   }))
   const app = await listen(createServer(createApp({ env: {
     OPENAPI_BASE_URL: upstream,
@@ -83,7 +83,7 @@ it('forwards Coze answer fragments before the reply is complete', async () => {
   const firstRead = fetch(`${app}/api/chat`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ stream: true, messages: [{ role: 'user', content: '哪里疼？' }] }),
+    body: JSON.stringify({ stream: true, messages: [{ role: 'user', content: '您平时做什么工作？' }] }),
   }).then(async (response) => {
     const reader = response.body!.getReader()
     const first = await reader.read()
@@ -95,7 +95,7 @@ it('forwards Coze answer fragments before the reply is complete', async () => {
   expect(early).not.toBeNull()
   expect(result.response.headers.get('content-type')).toContain('text/event-stream')
   expect(result.first).toContain('event: delta')
-  expect(result.first).toContain('我左')
+  expect(result.first).toContain('我在')
   let tail = ''
   for (;;) {
     const chunk = await result.reader.read()
@@ -103,5 +103,5 @@ it('forwards Coze answer fragments before the reply is complete', async () => {
     tail += new TextDecoder().decode(chunk.value)
   }
   expect(tail).toContain('event: done')
-  expect(tail).toContain('我左上腹疼。')
+  expect(tail).toContain('我在物流仓库工作。')
 })

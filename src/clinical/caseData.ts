@@ -2,7 +2,8 @@ export type ClinicalModuleId = 'diagnosis' | 'physicalExam' | 'fourDiagnosis' | 
 
 export interface ClinicalItem { id: string; label: string; detail: string; result?: string }
 
-export const PATIENT_OPENING = '医生，我两天前吃了比较油腻的东西后就开始肚子疼，最近三个小时疼得更厉害，还觉得喘不上气。您帮我看看吧。'
+export const CASE_CHIEF_COMPLAINT = '左上腹痛'
+export const PATIENT_OPENING = `医生，我${CASE_CHIEF_COMPLAINT}，您帮我看看。`
 
 export const clinicalModules: Array<{ id: ClinicalModuleId; label: string; short: string }> = [
   { id: 'diagnosis', label: '问诊', short: '01' },
