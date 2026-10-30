@@ -1,7 +1,6 @@
 import { useEffect, useReducer, useRef, useState, type FormEvent } from 'react'
-import { BookOpen, Check, Eye, Maximize2, Pause, Play, RotateCcw, Shuffle, X } from 'lucide-react'
-import { TongueLearning } from './TongueLearning'
-import { isTongueAnswerCorrect, selectTongueQuestion, tongueSamples } from './tongueSamples'
+import { Check, Eye, Maximize2, Pause, Play, RotateCcw, Shuffle, X } from 'lucide-react'
+import { isTongueAnswerCorrect, selectTonguePhoto, tongueSamples } from './tongueSamples'
 import { createTongueSequence, reduceTongueSequence, tongueFrameBlend, TONGUE_DURATION_MS } from './tongueSequence'
 import './tongueInspection.css'
 
@@ -18,10 +17,9 @@ const actionSteps = [
 ]
 
 export function TongueInspectionTrainer() {
-  const [state, dispatch] = useReducer(reduceTongueSequence, undefined, () => createTongueSequence(selectTongueQuestion().id))
+  const [state, dispatch] = useReducer(reduceTongueSequence, undefined, () => createTongueSequence(selectTonguePhoto().id))
   const [reducedMotion, setReducedMotion] = useState(false)
   const [zoomed, setZoomed] = useState(false)
-  const [libraryOpen, setLibraryOpen] = useState(false)
   const [observation, setObservation] = useState('')
   const zoomRef = useRef<HTMLDialogElement>(null)
   const sample = tongueSamples.find((item) => item.id === state.sampleId)!
@@ -62,7 +60,7 @@ export function TongueInspectionTrainer() {
     dispatch({ type: 'submit' })
   }
   const nextPhoto = () => {
-    dispatch({ type: 'next-photo', sampleId: selectTongueQuestion(state.sampleId).id })
+    dispatch({ type: 'next-photo', sampleId: selectTonguePhoto(state.sampleId).id })
     setObservation('')
     setZoomed(false)
   }
@@ -74,9 +72,11 @@ export function TongueInspectionTrainer() {
   return <section className="tongue-inspection-trainer" aria-label="舌诊观察实训" data-photo-id={state.sampleId} data-reduced-motion={reducedMotion}>
     <div className="tongue-inspection-grid">
       <div className="tongue-action-player">
-        <div className="tongue-action-scene" aria-label="患者张口伸舌写实演示">
-          {actionFrames.map((frame, index) => <img key={frame.image} src={frame.image} alt={index === phase ? `患者${frame.title}动作演示` : ''} aria-hidden={index !== phase} draggable={false} style={{ opacity: reducedMotion ? Number(index === phase) : frameBlend[index], transform: reducedMotion ? 'none' : `scale(${1 + state.progress * .012}) translateY(${-state.progress * .15}%)` }} />)}
-          <div className="tongue-scene-caption"><span><Play size={13} />动作演示</span><small>{actionSteps[phase].description}</small></div>
+        <div className="tongue-action-scene" aria-label={state.progress === 1 ? '资料舌象原图观察' : '患者张口伸舌写实演示'}>
+          {state.progress === 1 ? <button className="tongue-observation-photo" type="button" onClick={() => setZoomed(true)} aria-label="放大舌象照片"><img key={sample.id} src={sample.image} alt={state.submitted ? `${sample.label}原文教学照片` : '老师提供的待辨认舌象照片'} /><span><Maximize2 size={14} />点击看大图</span></button> : <>
+            {actionFrames.map((frame, index) => <img key={frame.image} src={frame.image} alt={index === phase ? `患者${frame.title}动作演示` : ''} aria-hidden={index !== phase} draggable={false} style={{ opacity: reducedMotion ? Number(index === phase) : frameBlend[index], transform: reducedMotion ? 'none' : `scale(${1 + state.progress * .012}) translateY(${-state.progress * .15}%)` }} />)}
+            <div className="tongue-scene-caption"><span><Play size={13} />动作演示</span><small>{actionSteps[phase].description}</small></div>
+          </>}
         </div>
         <div className="tongue-action-controls">
           <ol className="tongue-action-steps" aria-label="舌诊动作步骤">{actionSteps.map((step, index) => <li key={step.title}><button type="button" aria-current={phase === index ? 'step' : undefined} onClick={() => dispatch({ type: 'seek', progress: step.progress })}><b>{index + 1}</b>{step.title}</button></li>)}</ol>
@@ -87,7 +87,9 @@ export function TongueInspectionTrainer() {
 
       <aside className="tongue-observation-panel" aria-label="老师原图舌象观察">
         <h3><Eye size={22} />观察老师提供的舌象</h3>
-        {state.photoRevealed ? <button className="tongue-observation-photo" type="button" onClick={() => setZoomed(true)} aria-label="放大舌象照片"><img key={sample.id} src={sample.image} alt={state.submitted ? `${sample.label}原文教学照片` : '老师提供的待辨认舌象照片'} /><span><Maximize2 size={14} />点击看大图</span></button> : <div className="tongue-observation-waiting"><Eye size={32} /><strong>先完成张口伸舌演示</strong><p>动作完成后，自动显示一张老师原图。</p><button type="button" onClick={() => dispatch({ type: 'seek', progress: 1 })}>直接进入舌象观察</button></div>}
+        {!state.photoRevealed && <div className="tongue-observation-waiting"><Eye size={32} /><strong>先完成张口伸舌演示</strong><p>动作完成后，随机显示一张资料原图。</p><button type="button" onClick={() => dispatch({ type: 'seek', progress: 1 })}>直接进入舌象观察</button></div>}
+        <p className="tongue-observe-first">从所提供资料的 12 张原图中随机抽取，每次只展示一张。点击“换一张”重新抽取。</p>
+        {state.photoRevealed && sample.hasEmbeddedLabel && <p className="tongue-observe-first">本张资料原图含文字标注，可用于对照学习。</p>}
         <p className="tongue-observe-first">{state.photoRevealed ? '请先观察，再填写你的判断。' : '也可点击“伸舌”步骤，手动完成演示。'}</p>
         <form className="tongue-observation-form" onSubmit={submit}>
           <label>舌象判断<select aria-label="舌象判断" value={state.answer} disabled={!state.photoRevealed} onChange={(event) => dispatch({ type: 'answer', answer: event.target.value })}><option value="">请选择舌象名称</option>{tongueSamples.map((item) => <option key={item.id} value={item.label}>{item.label}</option>)}</select></label>
@@ -100,7 +102,6 @@ export function TongueInspectionTrainer() {
     </div>
 
     <div className="tongue-inspection-source"><span>动作影像为生成的教学示范；识图照片来自《舌象图片及形态介绍.docx》。</span><span>本次学习不写入王旭病例记录；本病例舌象尚待教师确认。</span></div>
-    {state.submitted ? <details className="tongue-inspection-library" onToggle={(event) => setLibraryOpen(event.currentTarget.open)}><summary><BookOpen size={16} />打开完整舌象图谱（13 条）</summary>{libraryOpen && <TongueLearning />}</details> : <p className="tongue-inspection-library">完整舌象图谱将在提交判断后开放。</p>}
     {zoomed && <dialog ref={zoomRef} className="tongue-photo-zoom" aria-label="舌象原图大图" onCancel={(event) => { event.stopPropagation(); setZoomed(false) }} onClick={(event) => { if (event.target === event.currentTarget) setZoomed(false) }}><header><strong>{state.submitted ? sample.label : '舌象原图观察'}</strong><button type="button" aria-label="关闭舌象大图" onClick={() => setZoomed(false)}><X size={20} /></button></header><img src={sample.image} alt={state.submitted ? `${sample.label}原文照片大图` : '待辨认舌象原图大图'} /><p>来源：{sample.source} · 第 {sample.sourceParagraph} 段起</p></dialog>}
   </section>
 }

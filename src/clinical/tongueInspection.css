@@ -23,8 +23,8 @@
 .tongue-action-controls .tongue-reduced-note { display: block; margin-top: 10px; color: #c4d8e4; font-size: 11px; }
 .tongue-observation-panel { min-width: 0; padding: 18px; border: 1px solid #dce8ef; border-radius: 9px; background: #fcfeff; }
 .tongue-observation-panel > h3 { display: flex; align-items: center; gap: 9px; margin: 0 0 14px; color: #153f60; font-size: 19px; line-height: 1.4; }
-.tongue-observation-photo { position: relative; display: block; width: 100%; padding: 4px; overflow: hidden; border: 1px solid #d7e2e8; border-radius: 6px; background: #f1f6f9; cursor: zoom-in; }
-.tongue-observation-photo > img { display: block; width: 100%; height: clamp(190px, 24vh, 300px); object-fit: contain; background: #eaf1f5; animation: tongue-photo-appear .32s ease-out; }
+.tongue-observation-photo { position: absolute; inset: 0; display: block; width: 100%; height: 100%; padding: 0; overflow: hidden; border: 0; background: #f1f6f9; cursor: zoom-in; }
+.tongue-observation-photo > img { display: block; width: 100%; height: 100%; object-fit: contain; background: #eaf1f5; animation: tongue-photo-appear .32s ease-out; }
 .tongue-observation-photo > span { position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 7px; color: #fff; border-radius: 4px; background: #23485bba; font-size: 11px; }
 .tongue-observation-waiting { display: grid; place-items: center; align-content: center; gap: 10px; min-height: clamp(190px, 24vh, 300px); padding: 20px; color: #6b8b9f; border: 1px dashed #bed4e0; border-radius: 6px; background: #f0f6fa; text-align: center; }
 .tongue-observation-waiting > strong { color: #3b667f; font-size: 15px; }
@@ -53,9 +53,6 @@
 .tongue-observation-guide > summary { cursor: pointer; line-height: 1.7; }
 .tongue-inspection-trainer .tongue-observation-guide > p { margin: 9px 0 0; color: #6a8598; font-size: 12px; line-height: 1.7; }
 .tongue-inspection-source { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px 18px; margin-top: 12px; color: #8b9ca9; font-size: 11px; line-height: 1.7; }
-.tongue-inspection-library { margin-top: 12px; padding: 11px 14px; color: #426b83; border: 1px solid #e0eaf1; border-radius: 6px; background: #f7fafc; font-size: 13px; }
-.tongue-inspection-library > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.tongue-inspection-library > .tongue-learning { margin-top: 15px; }
 .tongue-photo-zoom { max-width: min(920px, calc(100vw - 40px)); max-height: calc(100dvh - 40px); padding: 18px; color: #234c66; border: 1px solid #c9dce7; border-radius: 9px; background: #fff; box-shadow: 0 20px 80px #173d5750; }
 .tongue-photo-zoom::backdrop { background: #102c43ad; }
 .tongue-photo-zoom > header { display: flex; align-items: center; justify-content: space-between; gap: 35px; margin-bottom: 14px; }
@@ -64,6 +61,6 @@
 .tongue-photo-zoom > p { margin: 12px 0 0; color: #6d879a; font-size: 12px; }
 @keyframes tongue-photo-appear { from { opacity: .5; } to { opacity: 1; } }
 @media (max-width: 900px) { .tongue-inspection-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, .9fr); gap: 12px; } .tongue-action-scene { min-height: 330px; } .tongue-observation-panel { padding: 14px; } .tongue-action-controls { padding: 13px; } .tongue-action-steps > li:not(:last-child)::after { width: 20px; margin: 0 10px; } .tongue-playback-row { gap: 6px; } .tongue-playback-row .tongue-main-play > span { display: none; } .tongue-scene-caption > small { display: none; } }
-@media (max-width: 680px) { .tongue-inspection-grid { grid-template-columns: 1fr; } .tongue-action-scene { min-height: 280px; max-height: 55vh; } .tongue-observation-photo > img { height: 260px; } .tongue-observation-panel > h3 { font-size: 17px; } }
+@media (max-width: 680px) { .tongue-inspection-grid { grid-template-columns: 1fr; } .tongue-action-scene { min-height: 280px; max-height: 55vh; } .tongue-observation-panel > h3 { font-size: 17px; } }
 @media (prefers-reduced-motion: reduce) { .tongue-action-scene > img { transition: none; transform: none !important; } .tongue-observation-photo > img { animation: none; } }
 @media (max-height: 800px) and (min-width: 901px) { .tongue-action-scene > img { object-fit: contain; } }

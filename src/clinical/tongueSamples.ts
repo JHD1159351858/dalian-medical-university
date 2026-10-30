@@ -350,6 +350,14 @@ export function selectTongueQuestion(previousId?: string, random: () => number =
   return candidates[Math.min(candidates.length - 1, Math.max(0, Math.floor(random() * candidates.length)))]
 }
 
+export function selectTonguePhoto(previousId?: string, random: () => number = Math.random): TongueSample {
+  const previous = tongueSamples.find((sample) => sample.id === previousId)
+  const candidates = tongueSamples.filter((sample, index, all) =>
+    sample.image !== previous?.image && all.findIndex((other) => other.image === sample.image) === index,
+  )
+  return candidates[Math.min(candidates.length - 1, Math.max(0, Math.floor(random() * candidates.length)))]
+}
+
 export function isTongueAnswerCorrect(sample: TongueSample, answer: string): boolean {
   const normalize = (text: string) => text.trim().replace(/[\s，。、（）()]/g, '')
   return !!answer.trim() && sample.acceptedAnswers.some((accepted) => normalize(accepted) === normalize(answer))
