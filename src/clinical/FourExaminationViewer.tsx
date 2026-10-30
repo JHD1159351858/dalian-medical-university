@@ -3,7 +3,6 @@ import { Play, Square, X } from 'lucide-react'
 import { playCachedSpeech, preloadSpeech, stopSpeech } from '../diagnosis/speech'
 import { PATIENT_VOICE_PROFILE } from '../diagnosis/voiceProfiles'
 import { TongueTeaching, PulseTeaching } from './ExaminationTeaching'
-import { TongueLearning } from './TongueLearning'
 import './fourDiagnosisTeaching.css'
 
 export type FourExaminationKind = 'look' | 'listen' | 'feel'
@@ -75,20 +74,18 @@ export function FourExaminationViewer({ kind, voiceText, muted, onStopReading, o
     })
   }
 
-  return <dialog ref={dialogRef} className="four-examination-dialog four-teaching-dialog" aria-labelledby="four-examination-title" onCancel={onClose} onClick={(event) => { if (event.target === event.currentTarget) onClose() }}>
+  return <dialog ref={dialogRef} className={`four-examination-dialog four-teaching-dialog ${kind === 'look' || kind === 'feel' ? 'four-realistic-dialog' : ''}`} aria-labelledby="four-examination-title" onCancel={onClose} onClick={(event) => { if (event.target === event.currentTarget) onClose() }}>
     <header><div><span>检查交互 · 教学资料</span><h2 id="four-examination-title">{item.title}</h2></div><button type="button" aria-label="关闭检查展示" onClick={onClose}><X size={22} /></button></header>
     <div className="four-examination-content">
       {kind === 'look' && <>
         <nav className="four-material-topics" aria-label="望诊素材分类">{inspectionTopics.map((topic) => <button key={topic.id} type="button" aria-pressed={inspectionTopic === topic.id} onClick={() => setInspectionTopic(topic.id)}>{topic.label}</button>)}</nav>
         {inspectionTopic === 'tongue' ? <>
-          <div className="four-case-pending"><strong>王旭病例舌象待教师确认</strong><p>尚未指定本病例舌象照片与标准观察结论。下面的动作和图库供独立学习，不自动填入病例记录。</p></div>
           <TongueTeaching />
-          <TongueLearning />
         </> : <div className="four-case-pending" role="status"><strong>{inspectionTopics.find((topic) => topic.id === inspectionTopic)!.label} · 待补充</strong><p>待教师提供对应图片及观察要点；王旭病例是否存在这一表现也尚未确认。</p><small>这是学习素材分类，不代表当前患者有该表现。</small></div>}
       </>}
       {kind === 'feel' && <>
-        <div className="four-case-pending"><strong>王旭病例脉象待教师确认</strong><p>当前提供布指手法演示，尚无本病例经教师确认的脉象，不能把教学动作作为病例检查结果。</p></div>
         <PulseTeaching />
+        <p className="four-realistic-case-note">王旭病例脉象待教师确认，当前练习用于学习布指手法，不提供病例脉象结论。</p>
       </>}
       {kind === 'listen' && <>
         <nav className="four-material-topics" aria-label="闻诊素材分类">{listeningTopics.map((topic) => <button key={topic.id} type="button" aria-pressed={listeningTopic === topic.id} onClick={() => setListeningTopic(topic.id)}>{topic.label}</button>)}</nav>

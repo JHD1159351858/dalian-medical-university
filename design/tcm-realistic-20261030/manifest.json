@@ -1,0 +1,118 @@
+{
+  "date": "2026-10-30",
+  "branch": "feature/tcm-course-upgrade",
+  "teacherPhotoSource": "舌象图片及形态介绍.docx",
+  "teacherPhotoCount": 12,
+  "practicePhotoCount": 10,
+  "generatedImagesAreNotCaseFindings": true,
+  "assets": [
+    {
+      "path": "design/tcm-realistic-20261030/pulse-workspace-design.png",
+      "source": "builtin-imagegen",
+      "generatedSource": "exec-0e9eec26-5c8d-4a8f-9f8b-f92d1aa105a4.png",
+      "width": 1586,
+      "height": 992,
+      "mode": "RGB",
+      "alphaRange": null,
+      "sha256": "f09a0bef781de978a5c218fabf40561a59087f974c4692f9676b3d864ea4d954",
+      "purpose": "design-reference"
+    },
+    {
+      "path": "design/tcm-realistic-20261030/tongue-workspace-design.png",
+      "source": "builtin-imagegen",
+      "generatedSource": "exec-cb0cb66c-dd14-4921-bd6e-73f15f8d143d.png",
+      "width": 1586,
+      "height": 992,
+      "mode": "RGB",
+      "alphaRange": null,
+      "sha256": "34c71ebbfcd324cd0cebccaaa75418d022ed5a77d268c42f34b10063a21bf344",
+      "purpose": "design-reference"
+    },
+    {
+      "path": "public/four-exam-images/realistic/pulse-arm.png",
+      "source": "builtin-imagegen",
+      "generatedSource": "exec-6ed353e2-0bc7-451f-99e7-9b9c4d708607.png",
+      "width": 1536,
+      "height": 1024,
+      "mode": "RGB",
+      "alphaRange": null,
+      "sha256": "bd36efd56835a29153d0bbf98b1c572dc19f23b0a79284c1e5eaadcec0f5714a",
+      "purpose": "generated-teaching-visual"
+    },
+    {
+      "path": "public/four-exam-images/realistic/doctor-hand-1.png",
+      "source": "builtin-imagegen",
+      "generatedSource": "exec-57463a3b-f7c4-4d67-b87e-39f057e26ee6.png",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "sha256": "08c767ee686a537319d2a87af2bc6486eb3ced860e06f79b7e4ec925ce6eeeb8",
+      "purpose": "generated-teaching-visual"
+    },
+    {
+      "path": "public/four-exam-images/realistic/doctor-hand-2.png",
+      "source": "builtin-imagegen",
+      "generatedSource": "exec-50d32e66-59d5-4c17-8442-e263d10073d5.png",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "sha256": "b34d70759354e9024afb6dc8b206b38db4842ebc55ad142ab7a1a2c7ce37c297",
+      "purpose": "generated-teaching-visual"
+    },
+    {
+      "path": "public/four-exam-images/realistic/doctor-hand-3.png",
+      "source": "builtin-imagegen",
+      "generatedSource": "exec-b9d9d8e2-5e95-450f-93a9-09d88acc6d91.png",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGBA",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "sha256": "5b1ed000f27f748bf69f76a19fb1df6f55ae5b00fe0c94bf808eb06500d73cc5",
+      "purpose": "generated-teaching-visual"
+    },
+    {
+      "path": "public/four-exam-images/realistic/tongue-ready.png",
+      "source": "builtin-imagegen",
+      "generatedSource": "exec-e9241a6b-fe78-40fc-804a-06633623700a.png",
+      "width": 1122,
+      "height": 1402,
+      "mode": "RGB",
+      "alphaRange": null,
+      "sha256": "91ed84b4e61d2e4308eaa4f0e6ed788640c0aaf1b2eaa5fd049a674e405e41f0",
+      "purpose": "generated-teaching-visual"
+    },
+    {
+      "path": "public/four-exam-images/realistic/tongue-open.png",
+      "source": "builtin-imagegen",
+      "generatedSource": "exec-a7eb4a40-a563-455b-accc-65b76f50ec92.png",
+      "width": 1122,
+      "height": 1402,
+      "mode": "RGB",
+      "alphaRange": null,
+      "sha256": "9d649da2a022913a903f160567105001ee1a892d7d901de777a0cc227a5410a4",
+      "purpose": "generated-teaching-visual"
+    },
+    {
+      "path": "public/four-exam-images/realistic/tongue-extended.png",
+      "source": "builtin-imagegen",
+      "generatedSource": "exec-b9c18003-8719-4137-80e4-72d5132261ef.png",
+      "width": 1122,
+      "height": 1402,
+      "mode": "RGB",
+      "alphaRange": null,
+      "sha256": "b49e94866f125087d35de79fcff4dd0c94e2bdcd6d23ca3a8d9b33334541febf",
+      "purpose": "generated-teaching-visual"
+    }
+  ]
+}

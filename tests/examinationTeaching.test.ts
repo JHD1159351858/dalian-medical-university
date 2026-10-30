@@ -40,20 +40,19 @@ it('places the middle finger before index and ring fingers and includes tongue e
   expect(TONGUE_STEPS.map((step) => step.title)).toEqual(['准备观察', '患者张口', '患者伸舌', '保持观察'])
 })
 
-it('renders diagrams and controls as teaching demonstrations without invented case findings', () => {
+it('renders realistic photographic workspaces and interactive controls without invented case findings', () => {
   const tongue = renderToStaticMarkup(createElement(TongueTeaching))
   const pulse = renderToStaticMarkup(createElement(PulseTeaching))
-  expect(tongue).toContain('aria-label="患者张口伸舌教学示意"')
-  expect(pulse).toContain('aria-label="患者伸手与寸关尺布指教学示意"')
-  for (const html of [tongue, pulse]) {
-    expect(html).toContain('播放演示')
-    expect(html).toContain('上一步')
-    expect(html).toContain('下一步')
-    expect(html).toContain('重播')
-    expect(html).toContain('教学示意')
-    expect(html).not.toContain('沉滑数')
-  }
-  expect(pulse).toContain('中指 · 关')
-  expect(pulse).toContain('食指 · 寸')
-  expect(pulse).toContain('无名指 · 尺')
+  expect(tongue).toContain('aria-label="舌诊观察实训"')
+  for (const frame of ['ready', 'open', 'extended']) expect(tongue).toContain(`/four-exam-images/realistic/tongue-${frame}.png`)
+  expect(tongue).toContain('先完成张口伸舌演示')
+  expect(pulse).toContain('aria-label="脉诊操作实训"')
+  expect(pulse).toContain('/four-exam-images/realistic/pulse-arm.png')
+  for (const count of [1, 2, 3]) expect(pulse).toContain(`/four-exam-images/realistic/doctor-hand-${count}.png`)
+  expect(pulse).toContain('拖动练习')
+  expect(pulse).toContain('学习提示')
+  expect(pulse).toContain('中指定关')
+  expect(pulse).not.toContain('沉滑数')
+  expect(pulse).not.toContain('teaching-doctor-finger')
+  expect(tongue).not.toContain('teaching-mouth-cavity')
 })

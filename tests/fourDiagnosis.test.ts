@@ -60,8 +60,9 @@ it('offers inspection material categories while keeping unconfirmed patient find
   expect(html).toContain('面色红')
   expect(html).toContain('阳黄')
   expect(html).toContain('阴黄')
-  expect(html).toContain('王旭病例舌象待教师确认')
-  expect(html).toContain('独立舌象学习')
+  expect(html).toContain('本病例舌象尚待教师确认')
+  expect(html).toContain('舌诊观察实训')
+  expect(html).toContain('完整舌象图谱')
 })
 
 it('replaces the fixed pulse result with a teaching demonstration and pending case result', () => {

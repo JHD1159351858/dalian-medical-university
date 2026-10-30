@@ -1,4 +1,9 @@
 .four-examination-dialog.four-teaching-dialog { width: min(1080px, calc(100vw - 48px)); }
+.four-examination-dialog.four-realistic-dialog { width: min(1440px, calc(100vw - 32px)); max-height: calc(100dvh - 24px); }
+.four-realistic-dialog > header { padding: 14px 20px; }
+.four-realistic-dialog > footer { padding: 12px 20px; }
+.four-realistic-dialog > .four-examination-content { padding: 18px 22px; }
+.four-examination-content .four-realistic-case-note { margin: 12px 0 0; color: #708695; font-size: 12px; }
 .four-examination-dialog.four-teaching-dialog[open] { display: flex; flex-direction: column; }
 .four-teaching-dialog > header, .four-teaching-dialog > footer { flex-shrink: 0; }
 .four-teaching-dialog > .four-examination-content { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
