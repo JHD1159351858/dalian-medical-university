@@ -4,7 +4,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, it } from 'vitest'
 import { TongueLearning } from '../src/clinical/TongueLearning'
-import { isTongueAnswerCorrect, practiceTongueSamples, selectTonguePhoto, selectTongueQuestion, tongueSamples } from '../src/clinical/tongueSamples'
+import { isTongueAnswerCorrect, practiceTongueSamples, selectTongueQuestion, tongueSamples } from '../src/clinical/tongueSamples'
 
 it('keeps the supplied 13 entries and 12 original photos with document provenance', () => {
   expect(tongueSamples).toHaveLength(13)
@@ -40,15 +40,6 @@ it('selects the next question without immediately repeating the same photo', () 
   const next = selectTongueQuestion(first.id, () => 0)
   expect(next.image).not.toBe(first.image)
   expect(selectTongueQuestion(undefined, () => 0.9999).hasEmbeddedLabel).toBe(false)
-})
-
-it('randomly displays all 12 distinct supplied photos without immediately repeating a photo', () => {
-  const photos = Array.from({ length: 12 }, (_, index) => selectTonguePhoto(undefined, () => index / 12))
-  expect(new Set(photos.map((sample) => sample.image))).toEqual(new Set(tongueSamples.map((sample) => sample.image)))
-  for (const photo of photos) {
-    expect(selectTonguePhoto(photo.id, () => 0).image).not.toBe(photo.image)
-    expect(selectTonguePhoto(photo.id, () => .9999).image).not.toBe(photo.image)
-  }
 })
 
 it('clearly separates the study library from the current patient record', () => {

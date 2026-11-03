@@ -25,7 +25,7 @@ async function enterConsultation(page: Page) {
   await expect(page.getByLabel('问诊训练台')).toBeVisible()
 }
 
-test('automatically reveals one tongue photo and keeps it for the open dialog', async ({ page }) => {
+test('automatically reveals the same case tongue photo after reopening', async ({ page }) => {
   await enterConsultation(page)
   await page.getByRole('button', { name: '开始体格检查' }).click()
   await page.getByRole('button', { name: '完成检查', exact: true }).click()
@@ -53,6 +53,10 @@ test('automatically reveals one tongue photo and keeps it for the open dialog', 
   await expect(photo).toBeVisible()
   await expect(photo).toHaveAttribute('src', src!)
   await expect(tongue.getByLabel('舌象判断', { exact: true })).toHaveValue(sample.label)
+  await dialog.getByRole('button', { name: '关闭检查展示' }).click()
+  await page.getByRole('button', { name: '查看舌苔', exact: true }).click()
+  await expect(photo).toHaveAttribute('src', '/four-exam-images/tongue-library/image9.jpeg')
+  await expect(photo).toHaveAttribute('src', src!)
   await page.screenshot({ path: 'verification/single-tongue-photo.png' })
 })
 
@@ -75,7 +79,7 @@ test('case disclosure, independent tongue learning, pulse teaching and honest tr
   await expect(page.getByLabel('中医四诊训练台')).toBeVisible()
   await page.getByRole('button', { name: '查看舌苔', exact: true }).click()
   const dialog = page.getByRole('dialog')
-  await expect(dialog).toContainText('本病例舌象尚待教师确认')
+  await expect(dialog).toContainText('病例原始照片待教师提供')
   await dialog.getByRole('button', { name: '巩膜黄染', exact: true }).click()
   await expect(dialog.getByRole('status')).toContainText('待补充')
   await dialog.getByRole('button', { name: '舌象', exact: true }).click()

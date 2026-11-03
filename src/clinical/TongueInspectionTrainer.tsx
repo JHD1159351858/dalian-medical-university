@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useRef, useState, type FormEvent } from 'react'
 import { Check, Eye, Maximize2, Play, X } from 'lucide-react'
-import { isTongueAnswerCorrect, selectTonguePhoto, tongueSamples } from './tongueSamples'
+import { CASE_TONGUE_SAMPLE_ID } from './caseData'
+import { isTongueAnswerCorrect, tongueSamples } from './tongueSamples'
 import { createTongueSequence, reduceTongueSequence, tongueFrameBlend } from './tongueSequence'
 import './tongueInspection.css'
 
@@ -26,7 +27,7 @@ function PatientTongueMotion({ phase, open, tongue }: { phase: number; open: num
 }
 
 export function TongueInspectionTrainer() {
-  const [state, dispatch] = useReducer(reduceTongueSequence, undefined, () => createTongueSequence(selectTonguePhoto().id))
+  const [state, dispatch] = useReducer(reduceTongueSequence, CASE_TONGUE_SAMPLE_ID, createTongueSequence)
   const [reducedMotion, setReducedMotion] = useState(false)
   const [zoomed, setZoomed] = useState(false)
   const [observation, setObservation] = useState('')
@@ -81,8 +82,8 @@ export function TongueInspectionTrainer() {
 
       <aside className="tongue-observation-panel" aria-label="老师原图舌象观察">
         <h3><Eye size={22} />观察老师提供的舌象</h3>
-        {!state.photoRevealed && <div className="tongue-observation-waiting"><Eye size={32} /><strong>正在演示张口伸舌</strong><p>动作完成后，自动显示本次抽到的资料原图。</p></div>}
-        <p className="tongue-observe-first">每次打开检查窗口，从 12 张资料原图中随机抽取一张，本次观察始终使用这张照片。</p>
+        {!state.photoRevealed && <div className="tongue-observation-waiting"><Eye size={32} /><strong>正在演示张口伸舌</strong><p>动作完成后，自动显示当前病例的舌象教学配图。</p></div>}
+        <p className="tongue-observe-first">当前病例固定使用一张舌象教学配图，重复查看时显示同一张。</p>
         {state.photoRevealed && sample.hasEmbeddedLabel && <p className="tongue-observe-first">本张资料原图含文字标注，可用于对照学习。</p>}
         {state.photoRevealed && <p className="tongue-observe-first">请先观察，再填写你的判断。</p>}
         <form className="tongue-observation-form" onSubmit={submit}>
@@ -95,7 +96,7 @@ export function TongueInspectionTrainer() {
       </aside>
     </div>
 
-    <div className="tongue-inspection-source"><span>动作示范沿用本实训的虚拟患者。识图照片来自《舌象图片及形态介绍.docx》。</span><span>本次学习不写入王旭病例记录；本病例舌象尚待教师确认。</span></div>
+    <div className="tongue-inspection-source"><span>动作示范沿用本实训的虚拟患者。病例教学配图来自《舌象图片及形态介绍.docx》。</span><span>教学配图按原病例描述选用，病例原始照片待教师提供。</span></div>
     {zoomed && <dialog ref={zoomRef} className="tongue-photo-zoom" aria-label="舌象原图大图" onCancel={(event) => { event.stopPropagation(); setZoomed(false) }} onClick={(event) => { if (event.target === event.currentTarget) setZoomed(false) }}><header><strong>{state.submitted ? sample.label : '舌象原图观察'}</strong><button type="button" aria-label="关闭舌象大图" onClick={() => setZoomed(false)}><X size={20} /></button></header><img src={sample.image} alt={state.submitted ? `${sample.label}原文照片大图` : '待辨认舌象原图大图'} /><p>来源：{sample.source} · 第 {sample.sourceParagraph} 段起</p></dialog>}
   </section>
 }
