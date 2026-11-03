@@ -40,12 +40,15 @@ it('places the middle finger before index and ring fingers and includes tongue e
   expect(TONGUE_STEPS.map((step) => step.title)).toEqual(['准备观察', '患者张口', '患者伸舌', '保持观察'])
 })
 
-it('renders realistic photographic workspaces and interactive controls without invented case findings', () => {
+it('renders the training patient and photographic pulse workspace without invented case findings', () => {
   const tongue = renderToStaticMarkup(createElement(TongueTeaching))
   const pulse = renderToStaticMarkup(createElement(PulseTeaching))
   expect(tongue).toContain('aria-label="舌诊观察实训"')
-  for (const frame of ['ready', 'open', 'extended']) expect(tongue).toContain(`/four-exam-images/realistic/tongue-${frame}.png`)
-  expect(tongue).toContain('先完成张口伸舌演示')
+  expect(tongue).toContain('/four-exam-images/tongue-patient-portrait.png')
+  expect(tongue).toContain('正在演示张口伸舌')
+  expect(tongue).not.toContain('播放舌诊演示')
+  expect(tongue).not.toContain('舌诊动作进度')
+  expect(tongue).not.toContain('换一张')
   expect(pulse).toContain('aria-label="脉诊操作实训"')
   expect(pulse).toContain('/four-exam-images/realistic/pulse-arm.png')
   for (const count of [1, 2, 3]) expect(pulse).toContain(`/four-exam-images/realistic/doctor-hand-${count}.png`)

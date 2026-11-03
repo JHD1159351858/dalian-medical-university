@@ -9,6 +9,10 @@
 .pulse-hint-toggle { display: inline-flex; align-items: center; gap: 7px; color: #365f77; font-size: 13px; cursor: pointer; }
 .pulse-hint-toggle input { width: 15px; height: 15px; accent-color: #087f9b; }
 .pulse-hint-toggle i { display: none; }
+.pulse-drag-guide { display: flex; align-items: center; gap: 12px; padding: 11px 20px; color: #075c72; background: #e1f4f8; border-bottom: 1px solid #bddfe9; }
+.pulse-drag-guide > svg { flex: 0 0 auto; }
+.pulse-drag-guide strong { font-size: 16px; }
+.pulse-trainer .pulse-drag-guide p { margin: 3px 0 0; color: #315f73; font-size: 13px; line-height: 1.5; }
 .pulse-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, .31fr); align-items: start; }
 .pulse-photo-canvas { position: relative; width: 100%; max-width: min(100%, calc((100dvh - 460px) * 1.5)); aspect-ratio: 3 / 2; justify-self: center; overflow: hidden; isolation: isolate; background: #dce8ed; }
 .pulse-photo-canvas .pulse-patient-photo { display: block; width: 100%; height: auto; max-height: none; border: 0; border-radius: 0; transition: transform 1s ease, opacity 1s ease; user-select: none; pointer-events: none; }
@@ -46,6 +50,10 @@
 .pulse-contact-buttons { display: flex; gap: 6px; margin-top: 12px; }
 .pulse-contact-buttons button { display: flex; flex: 1; align-items: center; justify-content: center; gap: 4px; min-height: 33px; padding: 6px 4px; color: #285f76; background: #fff; border: 1px solid #c6dfe9; border-radius: 5px; font-size: 12px; cursor: pointer; }
 .pulse-contact-buttons button[aria-pressed='true'] { color: #fff; border-color: #087f9b; background: #087f9b; }
+.pulse-case-result { grid-column: 1 / -1; display: grid; gap: 4px; margin-top: 12px; padding: 12px 14px; color: #174d44; background: #e5f6ef; border: 1px solid #a7d3c5; border-radius: 8px; }
+.pulse-case-result > span { font-size: 13px; font-weight: 600; }
+.pulse-case-result > strong { font-size: 25px; }
+.pulse-trainer .pulse-case-result p { margin: 0; color: #385f57; font-size: 12px; line-height: 1.55; }
 .pulse-trainer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px; padding: 18px 20px; border-top: 1px solid #d9e8ef; background: #f5faff; }
 .pulse-hand-picker h4 { margin-bottom: 12px; }
 .pulse-hand-picker h4 small { padding-left: 7px; color: #7b95a7; font-size: 11px; font-weight: 400; }

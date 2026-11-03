@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
-import { Check, ChevronLeft, ChevronRight, Hand, Pause, Play, RotateCcw } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Hand, Move, Pause, Play, RotateCcw } from 'lucide-react'
 import { PULSE_STEPS, reduceTeachingPlayback, type TeachingPlayback, type TeachingPlaybackAction } from './teachingSteps'
 import { PULSE_FINGER_LABELS, PULSE_FINGER_ORDER, PULSE_GEOMETRY, createPulsePlacement, handHeight, idealHandPosition, imagePointFromClient, pulsePlacementReducer, type FingerCount, type ImagePoint, type PulsePlacementState } from './pulsePlacement'
 import './pulsePalpation.css'
@@ -112,6 +112,14 @@ export function PulsePalpationTrainer() {
       <label className="pulse-hint-toggle"><input type="checkbox" checked={showHints} onChange={(event) => setShowHints(event.target.checked)} /><span>学习提示</span><i aria-hidden="true" /></label>
     </header>
 
+    <div className="pulse-drag-guide">
+      <Move size={22} aria-hidden="true" />
+      <div>
+        <strong>按住医生手部拖到患者手腕</strong>
+        <p>进入拖动练习并选择三指。对准寸、关、尺后检查位置，再按中指 → 食指 → 无名指依次确认。</p>
+      </div>
+    </div>
+
     <div className="pulse-workspace">
       <div className={`pulse-photo-canvas ${mode === 'demo' ? `pulse-demo-step-${demo.step}` : 'pulse-practice-canvas'}`} ref={canvasRef} aria-label="脉诊照片操作画布">
         <img className="pulse-patient-photo" src="/four-exam-images/realistic/pulse-arm.png" alt="掌心向上的患者右手腕，手掌在左侧，前臂在右侧，置于脉枕上" width={1536} height={1024} draggable={false} />
@@ -130,6 +138,13 @@ export function PulsePalpationTrainer() {
         <h4>操作反馈</h4>
         <div className={`pulse-feedback pulse-feedback-${feedback.kind}`} role="status" aria-live="polite"><Hand size={27} /><p>{feedback.message}</p></div>
         {mode === 'practice' && <div className="pulse-contact-buttons" aria-label="依次确认下指">{PULSE_FINGER_ORDER.map((finger) => <button key={finger} type="button" onClick={() => dispatch({ type: 'confirm', finger })} aria-label={`确认${PULSE_FINGER_LABELS[finger].finger}${PULSE_FINGER_LABELS[finger].position}位`} aria-pressed={practice.confirmed.includes(finger)}>{practice.confirmed.includes(finger) && <Check size={14} />}{PULSE_FINGER_LABELS[finger].finger} · {PULSE_FINGER_LABELS[finger].position}</button>)}</div>}
+        {mode === 'practice' && practice.feedback.code === 'complete' && (
+          <section className="pulse-case-result" aria-label="病例脉象结果">
+            <span>病例脉象结果</span>
+            <strong>沉滑数</strong>
+            <p>来自王旭原始病例记录。布指练习用于验证位置和下指顺序。</p>
+          </section>
+        )}
       </aside>
     </div>
 

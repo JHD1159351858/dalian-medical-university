@@ -134,5 +134,6 @@ it('renders the photographic workspace with mode choices and three hand-image op
   for (const count of [1, 2, 3]) expect(html).toContain(`/four-exam-images/realistic/doctor-hand-${count}.png`)
   expect(html).toContain('操作要点')
   expect(html).toContain('操作反馈')
+  expect(html).toContain('按住医生手部拖到患者手腕')
   expect(html).not.toContain('沉滑数')
 })

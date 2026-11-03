@@ -125,6 +125,6 @@ export function FourDiagnosisPage({ messages, draft, status, error, muted, recor
     </aside>
 
     <footer className="four-footer"><button type="button" className="four-back" onClick={onBack}><ArrowLeft size={21} />返回上一步</button><span>完成当前项目后，继续下一模块</span><button type="button" className="four-next" onClick={onNext}>进入辅助检查<ArrowRight size={22} /></button></footer>
-    {examination && <FourExaminationViewer kind={examination} voiceText={[...messages].reverse().find((message) => message.role === 'assistant' && message.content.trim())?.content || '医生我身体不舒服'} muted={muted} onStopReading={onStopReading} onClose={() => setExamination(null)} />}
+    {examination && <FourExaminationViewer kind={examination} muted={muted} onStopReading={onStopReading} onClose={() => setExamination(null)} />}
   </section>
 }

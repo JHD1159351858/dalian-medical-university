@@ -93,7 +93,7 @@ describe('document-confirmed patient interview', () => {
     expect(ask('你有口臭吗？')).toContain('待教师确认')
     expect(ask('小便情况怎样？')).toContain('待教师确认')
     expect(ask('现在体温多少？')).not.toContain('37.5')
-    expect(ask('脉诊结果如何？')).toContain('待教师确认')
+    expect(ask('脉诊结果如何？')).toBe('请完成脉诊操作后查看病例脉象记录。')
     expect(ask('呼吸怎么样？')).toContain('待教师确认')
     expect(ask('眼白黄不黄？')).toContain('待教师确认')
   })

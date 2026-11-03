@@ -30,7 +30,7 @@ const unconfirmedTopics = [
   ['voice', /声音.*?(?:洪亮|低沉)|语声/], ['breathing', /呼吸|喘|气短/],
 ];
 
-function durationFromContext(messages, caseData) {
+function durationFromContext(messages, caseData, examinationReplies) {
   const previous = messages.slice(0, -1);
   const context = (previous.findLast((message) => message.role === 'user') ?? previous.at(-1))?.content ?? '';
   const matched = [...topics, ...unconfirmedTopics].filter(([, pattern]) => pattern.test(context)).map(([topic]) => topic);
@@ -38,7 +38,7 @@ function durationFromContext(messages, caseData) {
   if (matched.length === 1) {
     const topic = matched[0];
     if (['bowel', 'appetite', 'foodTrigger'].includes(topic)) return caseData.interviewFacts[topic];
-    if (caseData.pendingTeacherConfirmation[topic]) return caseData.pendingTeacherConfirmation[topic];
+    if (examinationReplies[topic]) return examinationReplies[topic];
   }
   if (!matched.length && /疼|痛|病程|起病|发病/.test(context)) return caseData.interviewFacts.duration;
   return clarifyTime;
@@ -52,6 +52,10 @@ export function patientInterviewReply(messages, caseData) {
 
   const replies = [];
   const facts = caseData.interviewFacts;
+  const examinationReplies = {
+    ...caseData.pendingTeacherConfirmation,
+    pulse: caseData.pulseExamGuidance ?? caseData.pendingTeacherConfirmation.pulse,
+  };
   let hasUnmatchedPart = false;
   const clauses = question.split(/[，,、；;。？！?!]|(?:还有|另外|以及|并且|或者|还是|和|及|或)/).filter(Boolean);
   for (const clause of clauses) {
@@ -62,10 +66,10 @@ export function patientInterviewReply(messages, caseData) {
       const hasPainSubject = /疼|痛|病程|起病|发病/.test(clause);
       const onlyPainTopics = matchingFacts.every(([topic]) => painTopics.includes(topic)) && !matchingPending.length;
       if (hasPainSubject && (onlyPainTopics || /腹痛|腹疼|肚子|左上腹/.test(clause))) replies.push(facts.duration);
-      else if (!matchingFacts.length && !matchingPending.length) replies.push(durationFromContext(messages, caseData));
+      else if (!matchingFacts.length && !matchingPending.length) replies.push(durationFromContext(messages, caseData, examinationReplies));
     }
     for (const [topic] of matchingFacts) replies.push(facts[topic]);
-    for (const [topic] of matchingPending) replies.push(caseData.pendingTeacherConfirmation[topic]);
+    for (const [topic] of matchingPending) replies.push(examinationReplies[topic]);
     if (replies.length === before && !/^(?:医生|您好?|你好|请问|谢谢|麻烦您?|我想问(?:一下)?|请告诉我|请您说说)$/.test(clause)) hasUnmatchedPart = true;
   }
   if (!replies.length && /什么不舒服|哪里不舒服|怎么不舒服|什么症状/.test(question)) replies.push(facts.location);
