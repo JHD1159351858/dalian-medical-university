@@ -25,7 +25,7 @@ async function enterConsultation(page: Page) {
   await expect(page.getByLabel('问诊训练台')).toBeVisible()
 }
 
-test('automatically reveals the same case tongue photo after reopening', async ({ page }) => {
+test('retains the fixed tongue photo and shares four-diagnosis interview history and notes', async ({ page }) => {
   await enterConsultation(page)
   await page.getByRole('button', { name: '开始体格检查' }).click()
   await page.getByRole('button', { name: '完成检查', exact: true }).click()
@@ -53,11 +53,31 @@ test('automatically reveals the same case tongue photo after reopening', async (
   await expect(photo).toBeVisible()
   await expect(photo).toHaveAttribute('src', src!)
   await expect(tongue.getByLabel('舌象判断', { exact: true })).toHaveValue(sample.label)
+  await dialog.getByRole('textbox', { name: '望诊观察记录' }).fill('舌色与舌苔观察记录')
   await dialog.getByRole('button', { name: '关闭检查展示' }).click()
+  await expect(page.getByRole('textbox', { name: '检查记录', exact: true })).toHaveValue('舌色与舌苔观察记录')
   await page.getByRole('button', { name: '查看舌苔', exact: true }).click()
   await expect(photo).toHaveAttribute('src', '/four-exam-images/tongue-library/image9.jpeg')
   await expect(photo).toHaveAttribute('src', src!)
   await page.screenshot({ path: 'verification/single-tongue-photo.png' })
+  await expect(dialog.getByRole('textbox', { name: '望诊观察记录' })).toHaveValue('舌色与舌苔观察记录')
+  await dialog.getByRole('button', { name: '关闭检查展示' }).click()
+
+  await page.getByRole('tab', { name: /^问诊/ }).click()
+  await page.getByRole('button', { name: '打开问诊对话', exact: true }).click()
+  const interview = page.getByRole('dialog', { name: '四诊问诊' })
+  await expect(interview.locator('.four-message-assistant').first()).toContainText('左上腹痛')
+  await expect(page.locator('#four-patient-question')).toHaveCount(1)
+  const assistantCount = await interview.locator('.four-message-assistant').count()
+  await interview.getByRole('button', { name: '最近有没有出汗？', exact: true }).click()
+  await expect(interview.getByRole('textbox', { name: '向患者提问' })).toHaveValue('最近有没有出汗？')
+  await expect(interview.locator('.four-message-assistant')).toHaveCount(assistantCount)
+  await interview.getByRole('button', { name: '发送问题', exact: true }).click()
+  await expect(interview.locator('.four-message-assistant').last()).toContainText('容易出汗')
+  await interview.getByRole('textbox', { name: '问诊要点记录' }).fill('患者自述比较容易出汗')
+  await interview.getByRole('button', { name: '关闭检查展示' }).click()
+  await expect(page.locator('.four-chat .four-message-assistant').last()).toContainText('容易出汗')
+  await expect(page.getByRole('textbox', { name: '检查记录', exact: true })).toHaveValue('患者自述比较容易出汗')
 })
 
 test('case disclosure, independent tongue learning, pulse teaching and honest treatment feedback', async ({ page }) => {

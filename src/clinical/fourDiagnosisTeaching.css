@@ -51,6 +51,12 @@
 .four-suggested-questions > div { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .four-suggested-questions button { padding: 5px 8px; color: #4a7289; border: 1px solid #d7e5ed; border-radius: 4px; background: #f0f7fb; font-size: 12px; line-height: 1.5; text-align: left; cursor: pointer; }
 .four-suggested-questions button:disabled { opacity: .45; cursor: default; }
+.four-dialog-chat .four-chat-messages { height: clamp(140px, 28dvh, 260px); padding: 14px 0; }
+.four-dialog-chat .four-chat-composer textarea { height: 66px; }
+.four-dialog-record { display: grid; gap: 8px; margin-top: 18px; padding: 15px 17px; border: 1px solid #dcecf6; border-radius: 8px; background: #f7fbfd; }
+.four-dialog-record label { color: #163d5e; font-size: 15px; font-weight: 600; }
+.four-examination-content .four-dialog-record p { margin: 0; color: #55768c; font-size: 14px; }
+.four-dialog-record textarea { width: 100%; min-height: 74px; padding: 9px 12px; resize: vertical; border: 1px solid #cfe5f3; border-radius: 6px; background: #fff; color: #2b526e; font: inherit; }
 @media (max-width: 700px) {
   .four-examination-dialog.four-teaching-dialog { width: calc(100vw - 20px); max-height: calc(100dvh - 24px); }
   .four-teaching-dialog > .four-examination-content { padding: 15px; }

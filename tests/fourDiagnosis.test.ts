@@ -10,6 +10,7 @@ vi.mock('../src/exam/ExamScene', () => ({
 }))
 
 const noop = () => {}
+const examinationProps = { muted: true, record: '', onRecordChange: noop, onStopReading: noop, onClose: noop }
 const fourDiagnosis = {
   messages: [], draft: '', status: 'input' as const, error: '', muted: true, records: {},
   onDraftChange: noop, onSend: noop, onStopReading: noop, onBack: noop,
@@ -56,7 +57,7 @@ it('preserves the existing auxiliary examination page', () => {
 })
 
 it('offers inspection material categories while keeping unconfirmed patient findings explicit', () => {
-  const html = renderToStaticMarkup(createElement(FourExaminationViewer, { kind: 'look', muted: true, onStopReading: noop, onClose: noop }))
+  const html = renderToStaticMarkup(createElement(FourExaminationViewer, { ...examinationProps, kind: 'look' }))
   expect(html).toContain('巩膜黄染')
   expect(html).toContain('面色红')
   expect(html).toContain('阳黄')
@@ -69,13 +70,13 @@ it('offers inspection material categories while keeping unconfirmed patient find
 })
 
 it('keeps the recorded pulse result hidden until the practice is completed', () => {
-  const html = renderToStaticMarkup(createElement(FourExaminationViewer, { kind: 'feel', muted: true, onStopReading: noop, onClose: noop }))
+  const html = renderToStaticMarkup(createElement(FourExaminationViewer, { ...examinationProps, kind: 'feel' }))
   expect(html).not.toContain('沉滑数')
   expect(html).toContain('正确完成布指练习后，可查看王旭原病例记录的脉象')
 })
 
 it('lets students listen before judging without exposing listening categories or the latest reply', () => {
-  const html = renderToStaticMarkup(createElement(FourExaminationViewer, { kind: 'listen', muted: true, onStopReading: noop, onClose: noop }))
+  const html = renderToStaticMarkup(createElement(FourExaminationViewer, { ...examinationProps, kind: 'listen' }))
   expect(html).toContain('播放患者声音')
   expect(html).toContain('合成练习语音')
   expect(html).not.toContain('声音洪亮')
@@ -94,9 +95,18 @@ it('varies listening phrases and speeds without adjacent repeats across a full c
   }
 })
 
-it('offers contextual interview questions without automatically sending them', () => {
-  const html = render()
-  expect(html).toContain('常用追问')
-  expect(html).toContain('点击填入问题，核对后发送')
-  expect(html).toContain('疼痛是什么感觉')
+it.each([
+  ['look', '望诊观察记录', '你看到了哪些舌色、舌形和舌苔特征'],
+  ['listen', '闻诊观察记录', '你听到的音量、语速和语调有什么特点'],
+  ['feel', '切诊观察记录', '你如何定位寸、关、尺'],
+  ['ask', '问诊要点记录', '患者对你的追问作出了哪些回答'],
+] as const)('offers a mode-specific prompt and the current record in the %s dialog', (kind, label, prompt) => {
+  const html = renderToStaticMarkup(createElement(FourExaminationViewer, { ...examinationProps, kind, record: '已填写的记录' }))
+  expect(html).toContain(label)
+  expect(html).toContain(prompt)
+  expect(html).toContain('已填写的记录')
+})
+
+it('keeps symptom interview suggestions out of the default observation view', () => {
+  expect(render()).not.toContain('常用追问')
 })
