@@ -20,3 +20,12 @@ it('rejects failed, incomplete or contradictory evaluation output', async () => 
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: '请补充处置' }), { status: 400 })))
   await expect(requestTreatmentEvaluation(submission)).rejects.toThrow('请补充处置')
 })
+
+it('accepts a passing case-reference result without claiming teacher approval', async () => {
+  const passed = {
+    ...pending, basis: 'case_reference', status: 'passed',
+    checks: [{ ...pending.checks[0], outcome: 'met' }], ai: { status: 'not_configured' },
+  }
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify(passed))))
+  expect(await requestTreatmentEvaluation(submission)).toEqual(passed)
+})

@@ -4,6 +4,7 @@ export interface TreatmentSubmission { caseId: string; diagnosis: Record<string,
 export interface EvaluationCheck { id: string; label: string; outcome: 'met' | 'missing' | 'incorrect' | 'unreviewed'; studentText: string; reason: string; reference: string }
 export interface TreatmentEvaluation {
   source: 'rules'
+  basis?: 'case_reference'
   teacherApproved: boolean
   rubricVersion: string
   status: 'pending_review' | 'passed' | 'needs_revision'
@@ -17,7 +18,8 @@ function validResult(value: unknown): value is TreatmentEvaluation {
   const result = value as TreatmentEvaluation
   if (result.source !== 'rules' || typeof result.teacherApproved !== 'boolean' || typeof result.rubricVersion !== 'string' || typeof result.message !== 'string' || !['pending_review', 'passed', 'needs_revision'].includes(result.status) || !Array.isArray(result.checks) || !result.checks.length) return false
   if (!result.checks.every((check) => check && ['id', 'label', 'studentText', 'reason', 'reference'].every((key) => typeof check[key as keyof EvaluationCheck] === 'string') && ['met', 'missing', 'incorrect', 'unreviewed'].includes(check.outcome))) return false
-  if (result.status === 'passed' && (!result.teacherApproved || result.checks.some((check) => check.outcome !== 'met'))) return false
+  if (result.basis !== undefined && (result.basis !== 'case_reference' || result.teacherApproved)) return false
+  if (result.status === 'passed' && (!(result.teacherApproved || result.basis === 'case_reference') || result.checks.some((check) => check.outcome !== 'met'))) return false
   if (!result.ai || !['awaiting_standard', 'not_configured', 'available', 'unavailable'].includes(result.ai.status)) return false
   if (result.ai.status === 'available' && (!Array.isArray(result.ai.notes) || !result.ai.notes.length || !result.ai.notes.every((note) => {
     if (!note || typeof note.studentQuote !== 'string' || typeof note.referenceQuote !== 'string' || !note.referenceQuote.trim()) return false

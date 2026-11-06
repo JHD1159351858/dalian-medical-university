@@ -35,7 +35,7 @@ describe('document-confirmed patient interview', () => {
 
   it('answers every quick question offered by the four-diagnosis page locally', () => {
     const source = readFileSync(new URL('../src/clinical/FourDiagnosisPage.tsx', import.meta.url), 'utf8')
-    const quickQuestions = source.split('const quickQuestions:')[1].split('\n}\n')[0]
+    const quickQuestions = source.split('const interviewQuestions = [')[1]?.split(']')[0] ?? ''
     const questions = [...quickQuestions.matchAll(/'([^']*？)'/g)].map((match) => match[1])
     expect(questions.length).toBeGreaterThan(0)
     for (const question of questions) expect(ask(question), question).toBeTypeOf('string')

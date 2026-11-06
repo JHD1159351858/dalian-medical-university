@@ -191,7 +191,7 @@ export function createApp({ env = process.env, fetchImpl = globalThis.fetch, tim
   app.post('/api/treatment-evaluation', async (request, response) => {
     if (!validTreatmentSubmission(request.body)) return response.status(400).json({ error: '请填写处置内容，并检查每行格式与长度。' });
     const result = evaluateTreatment(request.body, treatmentRubric);
-    result.ai = { status: result.teacherApproved ? 'not_configured' : 'awaiting_standard' };
+    result.ai = { status: result.teacherApproved || result.basis === 'case_reference' ? 'not_configured' : 'awaiting_standard' };
     if (result.teacherApproved && env.EVALUATION_BOT_ID?.trim() && env.OPENAPI_TOKEN?.trim()) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), Math.min(timeoutMs, 15_000));

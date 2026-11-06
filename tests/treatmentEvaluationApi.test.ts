@@ -1,6 +1,7 @@
 import { createServer, type Server } from 'node:http'
 import { afterEach, expect, it, vi } from 'vitest'
 import { createApp } from '../server/index.mjs'
+import caseRubric from '../server/treatment-rubric.json'
 
 const servers: Server[] = []
 async function start(options = {}) {
@@ -15,7 +16,7 @@ const approvedRubric = { caseId: 'wang-xu', version: 'fixture', approved: true, 
 
 it('returns an honest pending result without a teacher-approved standard or AI configuration', async () => {
   const upstream = vi.fn()
-  const response = await post(await start({ env: { EVALUATION_BOT_ID: 'evaluator', OPENAPI_TOKEN: 'secret' }, fetchImpl: upstream }), body)
+  const response = await post(await start({ treatmentRubric: { approved: false }, env: { EVALUATION_BOT_ID: 'evaluator', OPENAPI_TOKEN: 'secret' }, fetchImpl: upstream }), body)
   expect(response.status).toBe(200)
   expect(await response.json()).toMatchObject({ status: 'pending_review', teacherApproved: false, source: 'rules', ai: { status: 'awaiting_standard' } })
   expect(upstream).not.toHaveBeenCalled()
@@ -23,7 +24,18 @@ it('returns an honest pending result without a teacher-approved standard or AI c
 it('rejects invalid and empty submissions and ignores client-supplied approval', async () => {
   const url = await start()
   for (const bad of [{}, { ...body, caseId: 'other' }, { ...body, plan: { treatments: [], medications: [] } }, { ...body, plan: { treatments: [{ id: 't', category: 'a', item: 'x'.repeat(4001) }], medications: [] } }]) expect((await post(url, bad)).status).toBe(400)
-  expect(await (await post(url, { ...body, approved: true, status: 'passed' })).json()).toMatchObject({ status: 'pending_review' })
+  expect(await (await post(url, { ...body, approved: true, status: 'passed' })).json()).toMatchObject({ basis: 'case_reference', status: 'needs_revision', teacherApproved: false })
+})
+
+it('passes the checked-in case answer through the default API without an evaluation bot', async () => {
+  const url = await start()
+  const plan = {
+    treatments: caseRubric.treatments.map(({ id, category, item }) => ({ id, category, item })),
+    medications: caseRubric.medications.map(({ id, name, route, dose, frequency }) => ({ id, name, route, dose: [dose, frequency].filter(Boolean).join(' ') })),
+  }
+  expect(await (await post(url, { ...body, plan })).json()).toMatchObject({
+    basis: 'case_reference', status: 'passed', teacherApproved: false, ai: { status: 'not_configured' },
+  })
 })
 it('uses the server-owned rubric for passing and specific error feedback', async () => {
   const url = await start({ treatmentRubric: approvedRubric })

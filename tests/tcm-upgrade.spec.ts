@@ -1,6 +1,10 @@
 import { expect, test, type Page } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 import { tongueSamples } from '../src/clinical/tongueSamples'
 import { idealHandPosition, PULSE_GEOMETRY } from '../src/clinical/pulsePlacement'
+
+const caseRubric = JSON.parse(readFileSync(new URL('../server/treatment-rubric.json', import.meta.url), 'utf8')) as typeof import('../server/treatment-rubric.json')
+const treatmentPresets = JSON.parse(readFileSync(new URL('../shared/treatment-presets.json', import.meta.url), 'utf8')) as typeof import('../shared/treatment-presets.json')
 
 async function enterConsultation(page: Page) {
   await page.goto('/')
@@ -153,10 +157,12 @@ test('case disclosure, independent tongue learning, pulse teaching and honest tr
   await expect(page.getByLabel('处置评价结果')).toContainText('处置类别')
   await expect(page.getByLabel('处置评价结果')).toContainText('用药途径')
   await expect(page.getByRole('button', { name: '完成病例', exact: true })).toBeDisabled()
-  await page.getByRole('textbox', { name: '第1行处置类别', exact: true }).fill('护理')
+  await page.getByRole('textbox', { name: '第1行处置类别', exact: true }).fill('饮食及营养')
+  await treatment.fill(caseRubric.treatments[0].item)
   await page.getByRole('textbox', { name: '第1行药物名称', exact: true }).fill('')
   await page.getByRole('button', { name: '提交处置评价', exact: true }).click()
-  await expect(page.getByLabel('处置评价结果')).toContainText('待教师确认')
+  await expect(page.getByLabel('处置评价结果')).toContainText('处置第1行')
+  await expect(page.getByLabel('处置评价结果')).toContainText('类别')
   await expect(page.getByLabel('处置评价结果')).not.toContainText('处置评价：通过')
   await page.getByLabel('处置评价结果').scrollIntoViewIfNeeded()
   await page.screenshot({ path: 'verification/tcm-treatment-feedback.png' })
@@ -178,8 +184,21 @@ test('case disclosure, independent tongue learning, pulse teaching and honest tr
   await expect(page.getByRole('alert')).toContainText('测试：评价服务暂不可用')
   await expect(page.getByRole('button', { name: '完成病例', exact: true })).toBeDisabled()
   await page.unroute('**/api/treatment-evaluation')
+
+  for (const [index, preset] of treatmentPresets.entries()) {
+    await page.getByRole('textbox', { name: `第${index + 1}行处置类别`, exact: true }).fill(preset.category)
+    const items = caseRubric.treatments.filter((rule) => rule.category === preset.category).map((rule) => rule.item)
+    await page.getByRole('textbox', { name: `第${index + 1}行处置项目`, exact: true }).fill(items.join('；'))
+  }
+  for (const [index, rule] of caseRubric.medications.entries()) {
+    if (index > 0) await page.getByRole('button', { name: '添加用药行' }).click()
+    await page.getByRole('textbox', { name: `第${index + 1}行药物名称`, exact: true }).fill(rule.name)
+    await page.getByRole('textbox', { name: `第${index + 1}行用药途径`, exact: true }).fill(rule.route)
+    await page.getByRole('textbox', { name: `第${index + 1}行用药剂量`, exact: true }).fill([rule.dose, rule.frequency].filter(Boolean).join(' '))
+  }
   await page.getByRole('button', { name: '提交处置评价', exact: true }).click()
-  await page.getByRole('button', { name: '结束训练（待教师确认）', exact: true }).click()
+  await expect(page.getByLabel('处置评价结果')).toContainText('处置评价：通过')
+  await page.getByRole('button', { name: '完成病例', exact: true }).click()
   await expect(page.getByLabel('处置训练台')).toHaveCount(0)
   expect(errors).toEqual([])
 })
