@@ -85,10 +85,11 @@ it('lets students listen before judging without exposing listening categories or
   expect(html).not.toContain('左上腹痛。')
 })
 
-it('varies listening phrases and speeds without adjacent repeats across a full cycle', () => {
+it('varies listening phrases at conversational speeds without adjacent repeats', () => {
   let previous: ReturnType<typeof nextListeningSample> | undefined
   const samples = Array.from({ length: 7 }, () => previous = nextListeningSample(previous))
   expect(new Set(samples.map((sample) => sample.text)).size).toBeGreaterThan(1)
+  expect(samples.every(({ speed }) => speed >= 0.92 && speed <= 1.04)).toBe(true)
   for (let index = 1; index < samples.length; index += 1) {
     expect(samples[index].text).not.toBe(samples[index - 1].text)
     expect(samples[index].speed).not.toBe(samples[index - 1].speed)

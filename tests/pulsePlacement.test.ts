@@ -24,7 +24,7 @@ describe('pulse photograph geometry', () => {
     }
   })
 
-  it('anchors every demonstration image by its middle fingertip at guan', () => {
+  it('uses each hand image’s middle fingertip to anchor placement at guan', () => {
     for (const count of [1, 2, 3] as const) {
       const middle = handFingertips(count, idealHandPosition(count)).middle!
       expect(middle.x).toBeCloseTo(PULSE_GEOMETRY.targets.middle.x)
@@ -125,9 +125,9 @@ describe('adult three-finger placement practice', () => {
   })
 })
 
-it('renders the photographic workspace with mode choices and three hand-image options', () => {
+it('opens directly in the photographic drag workspace with three hand-image options', () => {
   const html = renderToStaticMarkup(createElement(PulsePalpationTrainer))
-  expect(html).toContain('操作演示')
+  expect(html).not.toContain('操作演示')
   expect(html).toContain('拖动练习')
   expect(html).toContain('学习提示')
   expect(html).toContain('/four-exam-images/realistic/pulse-arm.png')
@@ -135,5 +135,7 @@ it('renders the photographic workspace with mode choices and three hand-image op
   expect(html).toContain('操作要点')
   expect(html).toContain('操作反馈')
   expect(html).toContain('按住医生手部拖到患者手腕')
+  expect(html).toContain('aria-label="拖动医生手部"')
+  expect(html).toContain('检查位置')
   expect(html).not.toContain('沉滑数')
 })

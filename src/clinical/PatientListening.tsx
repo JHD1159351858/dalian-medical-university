@@ -4,9 +4,9 @@ import { playCachedSpeech, preloadSpeech, stopSpeech } from '../diagnosis/speech
 import { PATIENT_VOICE_PROFILE } from '../diagnosis/voiceProfiles'
 
 const samples = [
-  { text: '好的，医生，我听着。', speed: 0.95 },
-  { text: '嗯，我知道了。', speed: 0.82 },
-  { text: '好，您说吧。', speed: 1.08 },
+  { text: '医生，我这儿疼。就是肚子左上边，您帮我看看吧。', speed: 0.94 },
+  { text: '嗯，您问吧。我听着呢，知道的我就跟您说。', speed: 0.98 },
+  { text: '好，我听明白了。您接着问，我跟您说。', speed: 1.01 },
 ]
 type ListeningSample = (typeof samples)[number]
 let lastPlayedSample: ListeningSample | undefined
@@ -93,7 +93,7 @@ export function PatientListening({ muted, onStopReading }: { muted: boolean; onS
     <div>
       <strong>患者语声观察</strong>
       <p>请听患者说话，留意声音大小、语速和语调，听完后返回记录。</p>
-      <small>合成练习语音会轮换语句和语速，用于练习描述听到的特征。教师录音和本病例闻诊结论待补充。</small>
+      <small>合成练习语音会轮换门诊口语片段，用于练习描述听到的特征。教师录音和本病例闻诊结论待补充。</small>
     </div>
     <button type="button" disabled={muted} onClick={() => void playVoice()}>
       {active ? <Square size={18} /> : <Play size={18} />}
