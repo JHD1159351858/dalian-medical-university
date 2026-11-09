@@ -142,7 +142,7 @@ describe('hospital patient API', () => {
     expect(fixedCase.chiefComplaint).toBe('左上腹痛。');
     expect(fixedCase.presentIllness).toContain('以胀痛为主');
     expect(fixedCase.presentIllness).toContain('急性胰腺炎');
-    expect(fixedCase.interviewPolicy).toContain('仅回答医生当前询问的主题');
+    expect(fixedCase.interviewPolicy).toContain('只回答医生当前询问的内容');
     expect(upstreamBody.custom_variables.case_data).not.toContain('ARDS');
     expect(upstreamBody.custom_variables.case_data).not.toContain('肾衰竭');
   });
