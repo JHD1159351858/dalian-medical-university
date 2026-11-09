@@ -7,9 +7,9 @@ const patientCase = JSON.parse(readFileSync(new URL('../server/case.json', impor
 const ask = (content: string, history: Array<{ role: string; content: string }> = []) => patientInterviewReply([...history, { role: 'user', content }], patientCase)
 
 describe('document-confirmed patient interview', () => {
-  it('opens with location only and uses the same concise chief complaint', () => {
+  it('opens with the patient greeting and keeps the documented chief complaint', () => {
     expect(CASE_CHIEF_COMPLAINT).toBe('左上腹痛')
-    expect(PATIENT_OPENING).toContain(CASE_CHIEF_COMPLAINT)
+    expect(PATIENT_OPENING).toBe('医生，我身体不舒服。您帮我看看吧。')
     expect(PATIENT_OPENING).not.toMatch(/天|小时|油腻|饮食|胀痛|呼吸/)
     expect(patientCase.chiefComplaint.replace(/[。.]$/, '')).toBe(CASE_CHIEF_COMPLAINT)
   })
@@ -25,9 +25,12 @@ describe('document-confirmed patient interview', () => {
     expect(ask('再说一下病程。', [{ role: 'assistant', content: '疼了两三天了。' }])).toBe('疼了两三天了。')
   })
 
-  it('answers food and pressure triggers separately', () => {
+  it('answers specific triggers separately and gives both when asked generally', () => {
     expect(ask('吃油腻食物后怎么样？')).toBe('进食后腹痛会加重，吃油腻的食物后更明显。')
+    expect(ask('吃什么东西会让腹痛加重？')).toBe('进食后腹痛会加重，吃油腻的食物后更明显。')
     expect(ask('按压会加重吗？')).toBe('按压后腹痛会加重。')
+    expect(ask('什么会加重？')).toBe(patientCase.interviewFacts.foodTrigger + patientCase.interviewFacts.pressureTrigger)
+    expect(ask('什么情况下会加重？')).toBe(patientCase.interviewFacts.foodTrigger + patientCase.interviewFacts.pressureTrigger)
     expect(ask('和吃饭有关系吗？')).toContain('油腻')
     expect(ask('和饮食有关吗？')).toBe('进食后腹痛会加重，吃油腻的食物后更明显。')
     expect(ask('什么时候开始疼？')).toBe('疼了两三天了。')

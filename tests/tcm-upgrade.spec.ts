@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
+import { PATIENT_OPENING } from '../src/clinical/caseData'
 import { tongueSamples } from '../src/clinical/tongueSamples'
 import { idealHandPosition, PULSE_GEOMETRY } from '../src/clinical/pulsePlacement'
 
@@ -36,6 +37,7 @@ test('retains the fixed tongue photo and shares four-diagnosis interview history
   await page.getByRole('button', { name: '进入中医四诊' }).click()
   await page.getByRole('button', { name: '查看舌苔', exact: true }).click()
   const tongue = page.getByLabel('舌诊观察实训')
+  await expect(tongue.getByRole('img', { name: '训练患者伸舌动作' })).toBeVisible()
   const photo = tongue.locator('.tongue-observation-photo img')
   await expect(photo).toBeVisible({ timeout: 5_000 })
   await expect(tongue.locator('img')).toHaveCount(1)
@@ -70,7 +72,7 @@ test('retains the fixed tongue photo and shares four-diagnosis interview history
   await page.getByRole('tab', { name: /^问诊/ }).click()
   await page.getByRole('button', { name: '打开问诊对话', exact: true }).click()
   const interview = page.getByRole('dialog', { name: '四诊问诊' })
-  await expect(interview.locator('.four-message-assistant').first()).toContainText('左上腹痛')
+  await expect(interview.locator('.four-message-assistant').first()).toContainText(PATIENT_OPENING)
   await expect(page.locator('#four-patient-question')).toHaveCount(1)
   const assistantCount = await interview.locator('.four-message-assistant').count()
   await interview.getByRole('button', { name: '最近有没有出汗？', exact: true }).click()
@@ -87,7 +89,7 @@ test('retains the fixed tongue photo and shares four-diagnosis interview history
 test('case disclosure, independent tongue learning, pulse teaching and honest treatment feedback', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', (error) => errors.push(error.message))
   await enterConsultation(page)
-  await expect(page.locator('.message-assistant').first()).toContainText('左上腹痛')
+  await expect(page.locator('.message-assistant').first()).toContainText(PATIENT_OPENING)
   await expect(page.locator('.message-assistant').first()).not.toContainText(/油腻|两天|两三天|小时/)
   const input = page.getByRole('textbox', { name: '向患者提问' })
   await input.fill('疼了多久？'); await input.press('Enter')

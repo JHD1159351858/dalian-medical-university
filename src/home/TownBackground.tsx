@@ -14,7 +14,7 @@ export function TownBackground({ onReady, onError, transitioning = false, onDive
   useEffect(() => {
     const container = host.current!;
     let renderer: THREE.WebGLRenderer;
-    try { renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: 'high-performance' }); }
+    try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' }); }
     catch { onError(); return; }
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -88,13 +88,20 @@ export function TownBackground({ onReady, onError, transitioning = false, onDive
           scene.add(root); track(root); people.push({ root, left: legs[0], right: legs[1] });
         }
       });
-      // Two opposing lanes on the surveyed outer road; gentle rounded corners.
+      // Follow the open lane around parked cars, with room for the full car at each turn.
       const road = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-29, -0.48, 30), new THREE.Vector3(29, -0.48, 30),
-        new THREE.Vector3(34, -0.48, 25), new THREE.Vector3(34, -0.48, -25),
-        new THREE.Vector3(29, -0.48, -30), new THREE.Vector3(-29, -0.48, -30),
-        new THREE.Vector3(-34, -0.48, -25), new THREE.Vector3(-34, -0.48, 25),
-      ], true, 'catmullrom', 0.05);
+        new THREE.Vector3(-30, -0.48, 29.6), new THREE.Vector3(-18, -0.48, 29.6),
+        new THREE.Vector3(-7, -0.48, 29.6), new THREE.Vector3(11, -0.48, 32.4),
+        new THREE.Vector3(29, -0.48, 32.4), new THREE.Vector3(33.8, -0.48, 31.2),
+        new THREE.Vector3(35.65, -0.48, 28.65), new THREE.Vector3(36.35, -0.48, 25),
+        new THREE.Vector3(36.35, -0.48, 17), new THREE.Vector3(33.65, -0.48, 1),
+        new THREE.Vector3(33.65, -0.48, -16), new THREE.Vector3(34.9, -0.48, -26),
+        new THREE.Vector3(34.6, -0.48, -29.6), new THREE.Vector3(31, -0.48, -31),
+        new THREE.Vector3(-31, -0.48, -31), new THREE.Vector3(-34.2, -0.48, -30.5),
+        new THREE.Vector3(-35, -0.48, -27), new THREE.Vector3(-33.65, -0.48, -5),
+        new THREE.Vector3(-33.65, -0.48, 12), new THREE.Vector3(-34, -0.48, 25),
+        new THREE.Vector3(-33.5, -0.48, 28.8),
+      ], true, 'catmullrom', 0.16);
       const point = new THREE.Vector3(), tangent = new THREE.Vector3();
       const animate = (now: number) => {
         frame = requestAnimationFrame(animate);

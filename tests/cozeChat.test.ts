@@ -62,6 +62,8 @@ it('returns the completed answer from the published Coze bot', async () => {
   expect(JSON.parse(upstreamBody.custom_variables.case_data)).toMatchObject({
     patient: { name: '王旭', age: 48 },
     chiefComplaint: expect.stringContaining('腹痛'),
+    presentIllness: expect.stringMatching(/左上腹痛2—3天.*油腻食物后加重/),
+    interviewPolicy: expect.stringContaining('只回答医生当前询问的内容'),
   })
 })
 

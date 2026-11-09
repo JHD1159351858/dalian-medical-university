@@ -7,7 +7,7 @@ const painTopics = ['location', 'character', 'pressureTrigger', 'radiation'];
 const topics = [
   ['location', /哪(?:里|儿|个部位|一部位).*?(?:疼|痛|不舒服)|(?:疼|痛).*?哪(?:里|儿)|部位|什么地方/],
   ['character', /性质|什么样.*?(?:疼|痛)|(?:疼|痛).*?(?:什么样|什么感觉|怎样的感觉)|胀痛|刺痛|隐痛|绞痛|钝痛|灼痛|怎么(?:疼|痛)/],
-  ['foodTrigger', /油腻|饭[前后]|(?:进食|吃饭|吃东西|吃食物).*?(?:加重|疼|痛|关系|影响|有关|相关)|(?:疼|痛).*?(?:进食|吃饭|饮食)|饮食.*?(?:关系|影响|加重|有关|相关)/],
+  ['foodTrigger', /油腻|饭[前后]|(?:进食|吃饭|吃(?:什么)?(?:东西|食物)).*?(?:加重|疼|痛|关系|影响|有关|相关)|(?:疼|痛).*?(?:进食|吃饭|饮食)|饮食.*?(?:关系|影响|加重|有关|相关)/],
   ['pressureTrigger', /按压|按(?:着|住|下|上去|一下|肚子|腹部)|触碰|碰.*?(?:疼|痛)/],
   ['coldHeat', /怕冷|怕热|畏寒|恶寒|寒热|发热|发烧|冷热|冷不冷|热不热|烧吗/],
   ['sweating', /汗/],
@@ -62,6 +62,9 @@ export function patientInterviewReply(messages, caseData) {
     const matchingFacts = topics.filter(([, pattern]) => pattern.test(clause));
     const matchingPending = unconfirmedTopics.filter(([, pattern]) => pattern.test(clause));
     const before = replies.length;
+    if (/^(?:请问)?(?:腹痛|疼痛)?什么(?:情况下)?会(?:让(?:腹痛|疼痛))?加重[吗呢]?$/.test(clause)) {
+      replies.push(facts.foodTrigger, facts.pressureTrigger);
+    }
     if (durationPattern.test(clause)) {
       const hasPainSubject = /疼|痛|病程|起病|发病/.test(clause);
       const onlyPainTopics = matchingFacts.every(([topic]) => painTopics.includes(topic)) && !matchingPending.length;
