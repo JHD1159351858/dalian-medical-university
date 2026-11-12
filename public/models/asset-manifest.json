@@ -25,8 +25,7 @@
       "bytes": 649895,
       "sha256": "9f6697622863bc986277d6558806651160f61afa0cc9b584a951252c2e851ed1",
       "format": "Blender project",
-      "version": null,
-      "savedVersion": "5.2.44"
+      "version": null
     }
   },
   "characters": {
@@ -34,11 +33,16 @@
       "file": "patient.glb",
       "heightMeters": 1.65,
       "sourceTriangles": 1499400,
+      "surfaceCleanup": {
+        "weldDistanceMeters": 1e-05,
+        "verticesBeforeWeld": 876782,
+        "verticesAfterWeld": 749690
+      },
       "textureMaxDimension": 2048,
       "binding": {
         "method": "continuous spatial anatomical envelopes on original-derived mesh",
         "maxInfluences": 4,
-        "weightedVertices": 105606,
+        "weightedVertices": 49990,
         "unweightedVertices": 0
       },
       "walk": {
@@ -59,10 +63,11 @@
           "durationSeconds": 2.4
         }
       },
-      "bytes": 7186380,
-      "sha256": "94ff1b3f77ae5e03a3dbd9618221411cf09b90a3e2f178598ae4417f90f7b7a7",
+      "bytes": 6162496,
+      "sha256": "1f5752ada73db94a4a3502068c28d073e7f21592211ce6168a2dbf85be9b29af",
       "triangles": 100000,
       "meshes": 1,
+      "drawCalls": 1,
       "materials": 1,
       "skins": 1,
       "clips": [
@@ -94,17 +99,17 @@
         "Foot.R",
         "Toe.R"
       ],
-      "measuredHeightMeters": 1.6508028432981519,
+      "measuredHeightMeters": 1.6502348971084757,
       "restBounds": {
         "min": [
-          -0.44579192996025085,
-          3.362444476806559e-05,
-          -0.4444284439086914
+          -0.44580820202827454,
+          -5.681486527464585e-06,
+          -0.44448474049568176
         ],
         "max": [
-          0.4453948736190796,
-          1.65083646774292,
-          0.34645378589630127
+          0.44572094082832336,
+          1.6502292156219482,
+          0.34640610218048096
         ]
       }
     },
@@ -112,11 +117,16 @@
       "file": "doctor.glb",
       "heightMeters": 1.72,
       "sourceTriangles": 1499876,
+      "surfaceCleanup": {
+        "weldDistanceMeters": 1e-05,
+        "verticesBeforeWeld": 889872,
+        "verticesAfterWeld": 749930
+      },
       "textureMaxDimension": 2048,
       "binding": {
         "method": "continuous spatial anatomical envelopes on original-derived mesh",
         "maxInfluences": 4,
-        "weightedVertices": 109380,
+        "weightedVertices": 49992,
         "unweightedVertices": 0
       },
       "walk": {
@@ -137,10 +147,11 @@
           "durationSeconds": 2.4
         }
       },
-      "bytes": 7493528,
-      "sha256": "1e00888654b8158953ab7387d22db93adab0acd6c5d2f3d02cfbc306d432eb95",
+      "bytes": 6465740,
+      "sha256": "01eb903508b2a1e9c0637a20346f96437ca92f781b8a036c8e4866fff540aa15",
       "triangles": 100000,
       "meshes": 1,
+      "drawCalls": 1,
       "materials": 1,
       "skins": 1,
       "clips": [
@@ -172,17 +183,17 @@
         "Foot.R",
         "Toe.R"
       ],
-      "measuredHeightMeters": 1.720475624591927,
+      "measuredHeightMeters": 1.7199770868628548,
       "restBounds": {
         "min": [
-          -0.4337116777896881,
-          -0.00010723927698563784,
-          -0.48185062408447266
+          -0.43361011147499084,
+          -2.4861177735147066e-05,
+          -0.480878084897995
         ],
         "max": [
-          0.43371233344078064,
-          1.7203683853149414,
-          0.33372199535369873
+          0.43380752205848694,
+          1.7199522256851196,
+          0.3334589898586273
         ]
       }
     }

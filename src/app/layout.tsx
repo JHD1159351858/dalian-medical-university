@@ -4,6 +4,7 @@ import Script from 'next/script';
 import { IframeSdkProvider } from '@/components/iframe-sdk-provider';
 
 import './globals.css';
+import '../styles.css';
 
 export const metadata: Metadata = {
   title: {

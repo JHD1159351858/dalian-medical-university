@@ -1,0 +1,49 @@
+.tongue-inspection-trainer { color: #234762; }
+.tongue-inspection-grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(300px, 1fr); gap: 18px; align-items: start; }
+.tongue-action-player { min-width: 0; overflow: hidden; border: 1px solid #cadce5; border-radius: 9px; background: #263e4c; }
+.tongue-action-scene { position: relative; width: 100%; aspect-ratio: 4 / 3; max-height: min(54vh, calc(100dvh - 450px)); min-height: 280px; overflow: hidden; background: #b7c9d0; }
+.tongue-patient-motion { position: absolute; inset: 0; display: block; width: 100%; height: 100%; background: #cedde5; }
+.tongue-scene-caption { position: absolute; top: 16px; right: 16px; left: 16px; display: flex; align-items: start; justify-content: space-between; gap: 20px; color: #fff; text-shadow: 0 1px 4px #132d3e80; pointer-events: none; }
+.tongue-scene-caption > span { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; padding: 7px 10px; border: 1px solid #ffffff60; border-radius: 4px; background: #173d5580; font-size: 12px; }
+.tongue-scene-caption > small { max-width: 260px; padding: 7px 10px; color: #fff; border-radius: 4px; background: #173d5570; font-size: 12px; line-height: 1.6; }
+.tongue-observation-panel { min-width: 0; padding: 18px; border: 1px solid #dce8ef; border-radius: 9px; background: #fcfeff; }
+.tongue-observation-panel > h3 { display: flex; align-items: center; gap: 9px; margin: 0 0 14px; color: #153f60; font-size: 19px; line-height: 1.4; }
+.tongue-observation-photo { position: absolute; inset: 0; display: block; width: 100%; height: 100%; padding: 0; overflow: hidden; border: 0; background: #f1f6f9; cursor: zoom-in; }
+.tongue-observation-photo > img { display: block; width: 100%; height: 100%; object-fit: contain; background: #eaf1f5; animation: tongue-photo-appear .32s ease-out; }
+.tongue-observation-photo > span { position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 7px; color: #fff; border-radius: 4px; background: #23485bba; font-size: 11px; }
+.tongue-observation-waiting { display: grid; place-items: center; align-content: center; gap: 10px; min-height: clamp(190px, 24vh, 300px); padding: 20px; color: #6b8b9f; border: 1px dashed #bed4e0; border-radius: 6px; background: #f0f6fa; text-align: center; }
+.tongue-observation-waiting > strong { color: #3b667f; font-size: 15px; }
+.tongue-inspection-trainer .tongue-observation-waiting > p { margin: 0; color: #7991a2; font-size: 12px; line-height: 1.6; }
+.tongue-inspection-trainer .tongue-observe-first { margin: 11px 0 14px; color: #52748c; font-size: 13px; line-height: 1.5; }
+.tongue-observation-form { display: grid; gap: 13px; }
+.tongue-observation-form > label { display: grid; gap: 7px; color: #2d526f; font-size: 14px; font-weight: 600; }
+.tongue-observation-form select { width: 100%; min-height: 38px; padding: 8px 10px; color: #2c536f; border: 1px solid #c5d9e5; border-radius: 5px; background: #fff; font: inherit; font-weight: 400; }
+.tongue-observation-form .tongue-observation-notes { position: relative; display: block; }
+.tongue-observation-notes > small { float: right; color: #8a9cab; font-size: 11px; font-weight: 400; }
+.tongue-observation-notes > textarea { display: block; width: 100%; height: 82px; min-height: 65px; margin-top: 7px; padding: 10px 12px 20px; resize: vertical; color: #315b74; border: 1px solid #c5d9e5; border-radius: 5px; background: #fff; font: inherit; font-size: 13px; font-weight: 400; line-height: 1.7; }
+.tongue-observation-notes > span { position: absolute; right: 9px; bottom: 5px; color: #96a6b2; font-size: 10px; font-weight: 400; }
+.tongue-observation-actions { display: flex; gap: 10px; }
+.tongue-observation-actions > button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: 1; min-height: 41px; padding: 9px; color: #087a9b; border: 1px solid #087a9b; border-radius: 5px; background: #fff; font-size: 14px; cursor: pointer; }
+.tongue-observation-actions > .tongue-submit-observation { flex: 1.35; color: #fff; background: #087a9b; }
+.tongue-observation-actions > button:disabled, .tongue-observation-form select:disabled, .tongue-observation-notes > textarea:disabled { opacity: .48; cursor: default; }
+.tongue-observation-feedback { margin-top: 16px; padding: 13px; border: 1px solid #e1d6c2; border-radius: 5px; background: #faf7f1; }
+.tongue-observation-feedback.is-correct { border-color: #b4d7cf; background: #f2f9f6; }
+.tongue-observation-feedback > strong { color: #7c603b; font-size: 15px; }
+.tongue-observation-feedback.is-correct > strong { color: #25725f; }
+.tongue-inspection-trainer .tongue-observation-feedback p, .tongue-inspection-trainer .tongue-observation-feedback li { margin: 7px 0 0; color: #4a6b7e; font-size: 12px; line-height: 1.8; }
+.tongue-observation-feedback h4 { margin: 13px 0 5px; color: #2b5973; font-size: 13px; }
+.tongue-observation-feedback ul { margin: 0; padding-left: 16px; }
+.tongue-observation-guide { margin-top: 18px; padding-top: 14px; border-top: 1px solid #dfeaf1; color: #335f7b; font-size: 12px; }
+.tongue-observation-guide > summary { cursor: pointer; line-height: 1.7; }
+.tongue-inspection-trainer .tongue-observation-guide > p { margin: 9px 0 0; color: #6a8598; font-size: 12px; line-height: 1.7; }
+.tongue-inspection-source { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px 18px; margin-top: 12px; color: #8b9ca9; font-size: 11px; line-height: 1.7; }
+.tongue-photo-zoom { max-width: min(920px, calc(100vw - 40px)); max-height: calc(100dvh - 40px); padding: 18px; color: #234c66; border: 1px solid #c9dce7; border-radius: 9px; background: #fff; box-shadow: 0 20px 80px #173d5750; }
+.tongue-photo-zoom::backdrop { background: #102c43ad; }
+.tongue-photo-zoom > header { display: flex; align-items: center; justify-content: space-between; gap: 35px; margin-bottom: 14px; }
+.tongue-photo-zoom > header > button { display: grid; place-items: center; padding: 5px; color: #47728b; border: 0; background: #edf5fa; border-radius: 4px; cursor: pointer; }
+.tongue-photo-zoom > img { display: block; max-width: 100%; width: auto; max-height: calc(100dvh - 190px); margin: 0 auto; object-fit: contain; }
+.tongue-photo-zoom > p { margin: 12px 0 0; color: #6d879a; font-size: 12px; }
+@keyframes tongue-photo-appear { from { opacity: .5; } to { opacity: 1; } }
+@media (max-width: 900px) { .tongue-inspection-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, .9fr); gap: 12px; } .tongue-action-scene { min-height: 330px; } .tongue-observation-panel { padding: 14px; } .tongue-scene-caption > small { display: none; } }
+@media (max-width: 680px) { .tongue-inspection-grid { grid-template-columns: 1fr; } .tongue-action-scene { min-height: 280px; max-height: 55vh; } .tongue-observation-panel > h3 { font-size: 17px; } }
+@media (prefers-reduced-motion: reduce) { .tongue-observation-photo > img { animation: none; } }

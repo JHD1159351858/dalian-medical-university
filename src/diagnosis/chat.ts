@@ -7,8 +7,8 @@ export async function checkChatAvailability(signal?: AbortSignal): Promise<boole
   try {
     const response = await fetch('/api/health', { signal })
     if (!response.ok) return false
-    const data = (await response.json()) as { configured?: boolean }
-    return data.configured === true
+    const data = (await response.json()) as { configured?: boolean; interview?: boolean }
+    return data.configured === true || data.interview === true
   } catch {
     return false
   }

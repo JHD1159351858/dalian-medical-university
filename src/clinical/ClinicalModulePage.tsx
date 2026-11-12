@@ -1,151 +1,84 @@
-'use client';
-
-import { ArrowLeft, RotateCcw, Stethoscope } from 'lucide-react';
-import { caseData, type ClinicalModuleId } from './caseData';
-import { createInitialTreatmentPlan, type TreatmentPlan } from './treatmentPlan';
+import { useMemo, useState } from 'react'
+import { ArrowLeft, Check, ClipboardList, FileText, RotateCcw, Stethoscope } from 'lucide-react'
+import { PatientPortrait } from '../exam/ExamScene'
+import { clinicalModules, moduleItems, type ClinicalItem, type ClinicalModuleId } from './caseData'
+import { FourDiagnosisPage, type FourDiagnosisPageProps } from './FourDiagnosisPage'
+import { AuxiliaryExamPage, type AuxiliaryExamPageProps } from './AuxiliaryExamPage'
+import { ClinicalDiagnosisPage, type ClinicalDiagnosisPageProps } from './ClinicalDiagnosisPage'
+import { TreatmentPage, type TreatmentPageProps } from './TreatmentPage'
 
 interface ClinicalModulePageProps {
-  module: 'physicalExam' | 'fourDiagnosis' | 'auxiliaryExam' | 'clinicalDiagnosis' | 'treatment';
-  onBack: () => void;
-  onNext: () => void;
-  onReset: () => void;
-  records?: Record<string, string>;
-  onRecordChange?: (id: string, value: string) => void;
-  plan?: TreatmentPlan;
-  onPlanChange?: (plan: TreatmentPlan) => void;
+  module: Exclude<ClinicalModuleId, 'diagnosis' | 'physicalExam'>
+  onBack: () => void
+  onNext: () => void
+  onReset: () => void
+  onNavigate?: (module: ClinicalModuleId) => void
+  fourDiagnosis?: FourDiagnosisPageProps
+  auxiliaryExam?: AuxiliaryExamPageProps
+  clinicalDiagnosis?: ClinicalDiagnosisPageProps
+  treatment?: TreatmentPageProps
 }
 
-const moduleConfig: Record<ClinicalModulePageProps['module'], { title: string; subtitle: string; fields: { id: string; label: string; placeholder: string }[] }> = {
-  physicalExam: {
-    title: '体格检查',
-    subtitle: '视、触、叩、听，记录阳性体征与关键阴性体征。',
-    fields: [
-      { id: 'general', label: '一般情况', placeholder: '精神状态、体位、步态…' },
-      { id: 'vitals', label: '生命体征', placeholder: '体温、脉搏、呼吸、血压…' },
-      { id: 'abdominal', label: '腹部检查', placeholder: '视诊、触诊、叩诊、听诊…' },
-      { id: 'respiratory', label: '呼吸系统', placeholder: '胸廓、呼吸音、叩诊…' },
-    ],
-  },
-  fourDiagnosis: {
-    title: '中医四诊',
-    subtitle: '望、闻、问、切，收集辨证资料。',
-    fields: [
-      { id: 'inspection', label: '望诊', placeholder: '神色、形态、舌象…' },
-      { id: 'auscultation', label: '闻诊', placeholder: '声音、气味…' },
-      { id: 'inquiry', label: '问诊', placeholder: '寒热、汗出、饮食、二便…' },
-      { id: 'palpation', label: '切诊', placeholder: '脉象、按诊…' },
-    ],
-  },
-  auxiliaryExam: {
-    title: '辅助检查',
-    subtitle: '根据病情需要，选择并记录辅助检查。',
-    fields: [
-      { id: 'lab', label: '实验室检查', placeholder: '血常规、生化、淀粉酶…' },
-      { id: 'imaging', label: '影像学检查', placeholder: '超声、CT、MRI…' },
-      { id: 'ecg', label: '心电图', placeholder: '心率、心律、ST-T 改变…' },
-      { id: 'others', label: '其他检查', placeholder: '其他特殊检查…' },
-    ],
-  },
-  clinicalDiagnosis: {
-    title: '临床诊断',
-    subtitle: '根据病史、查体与辅助检查，形成诊断思路。',
-    fields: [
-      { id: 'primary', label: '主要诊断', placeholder: '首要考虑的诊断…' },
-      { id: 'differential', label: '鉴别诊断', placeholder: '需要鉴别的疾病…' },
-      { id: 'basis', label: '诊断依据', placeholder: '支持诊断的关键点…' },
-      { id: 'plan', label: '进一步处理', placeholder: '下一步检查或处理…' },
-    ],
-  },
-  treatment: {
-    title: '处置方案',
-    subtitle: '制定治疗与护理计划。',
-    fields: [
-      { id: 'nursing', label: '护理', placeholder: '护理级别与要点…' },
-      { id: 'diet', label: '饮食及营养', placeholder: '禁食、流质、营养支持…' },
-      { id: 'monitoring', label: '监测及支持', placeholder: '生命体征监测、补液…' },
-      { id: 'medication', label: '药物治疗', placeholder: '药物名称、剂量、用法…' },
-    ],
-  },
-};
+const nextLabel: Record<ClinicalModulePageProps['module'], string> = {
+  fourDiagnosis: '进入辅助检查',
+  auxiliaryExam: '进入诊断',
+  clinicalDiagnosis: '进入处置',
+  treatment: '完成病例',
+}
 
-export default function ClinicalModulePage({
-  module,
-  onBack,
-  onNext,
-  onReset,
-  records = {},
-  onRecordChange,
-  plan,
-  onPlanChange,
-}: ClinicalModulePageProps) {
-  const config = moduleConfig[module];
+export function ClinicalModulePage({ module, onBack, onNext, onReset, onNavigate, fourDiagnosis, auxiliaryExam, clinicalDiagnosis, treatment }: ClinicalModulePageProps) {
+  const [selected, setSelected] = useState(moduleItems[module][0]?.id ?? '')
+  const [checked, setChecked] = useState<string[]>([])
+  const items = moduleItems[module]
+  const activeItem = useMemo(() => items.find((item) => item.id === selected) ?? items[0], [items, selected])
+  const toggle = (item: ClinicalItem) => {
+    setSelected(item.id)
+    setChecked((current) => current.includes(item.id) ? current : [...current, item.id])
+  }
+  const moduleIndex = clinicalModules.findIndex((entry) => entry.id === module)
 
-  return (
-    <section className="clinical-module-page flex min-h-screen flex-col bg-[#e9f1f2] text-[#173d49]">
-      <header className="clinical-header flex items-center justify-between border-b border-[#d4e4e6] bg-white px-6 py-4">
-        <button className="text-button inline-flex items-center gap-2 text-sm text-[#19758a] hover:text-[#0d4d66]" type="button" onClick={onBack}>
-          <ArrowLeft aria-hidden="true" size={17} /> 返回
-        </button>
-        <div className="clinical-title text-center">
-          <span className="block text-xs tracking-widest text-[#70878f]">CASE 01 · {module.toUpperCase()}</span>
-          <strong className="block text-lg">{config.title}</strong>
+  if (module === 'fourDiagnosis' && fourDiagnosis) return <FourDiagnosisPage {...fourDiagnosis} />
+  if (module === 'auxiliaryExam' && auxiliaryExam) return <AuxiliaryExamPage {...auxiliaryExam} />
+  if (module === 'clinicalDiagnosis' && clinicalDiagnosis) return <ClinicalDiagnosisPage {...clinicalDiagnosis} />
+  if (module === 'treatment' && treatment) return <TreatmentPage {...treatment} />
+
+  return <section className="clinical-workspace" aria-label={`${clinicalModules[moduleIndex].label}训练台`}>
+    <header className="clinical-topbar">
+      <div className="clinical-brand"><span className="clinical-brand-mark"><Stethoscope size={19} /></span><div><strong>大连医科大学</strong><span>临床问诊实训</span></div></div>
+      <div className="clinical-case-title"><span>OUTPATIENT · CASE 01</span><strong>{clinicalModules[moduleIndex].label}</strong><small>王旭 · 48 岁 · 门诊初诊</small></div>
+      <div className="clinical-top-actions"><span className="clinical-online"><i /> 教学模拟环境</span><button type="button" className="clinical-reset" onClick={onReset}><RotateCcw size={14} /> 重置训练</button></div>
+    </header>
+    <div className="clinical-body">
+      <aside className="clinical-rail">
+        <div className="clinical-rail-caption">接诊流程 <span>CASE 01</span></div>
+        <nav aria-label="病例模块">
+          {clinicalModules.map((entry, index) => <button key={entry.id} type="button" className={`${entry.id === module ? 'is-active' : ''} ${index < moduleIndex ? 'is-done' : ''}`} onClick={() => onNavigate?.(entry.id)} disabled={!onNavigate}><b>{entry.short}</b><span>{entry.label}</span>{index < moduleIndex && <Check size={14} />}</button>)}
+        </nav>
+        <div className="clinical-rail-note"><ClipboardList size={16} /><span>已完成项目<strong>{checked.length} 项</strong></span></div>
+      </aside>
+      <main className="clinical-main">
+        <div className="clinical-main-heading"><div><span>当前模块 · {String(moduleIndex + 1).padStart(2, '0')}</span><h1>{clinicalModules[moduleIndex].label}</h1></div><div className="clinical-progress"><i style={{ width: `${((moduleIndex + 1) / clinicalModules.length) * 100}%` }} /></div></div>
+        <div className="clinical-content-grid">
+          <section className="clinical-patient-stage">
+            <div className="patient-stage-copy"><span>标准化病人</span><strong>王旭</strong><small>请根据病例完成本模块评估</small></div>
+            <div className="clinical-patient-canvas"><PatientPortrait /></div>
+            <div className="patient-stage-footer"><span>男 · 48 岁</span><span>意识清楚</span><span className="stage-live"><i />患者在场</span></div>
+          </section>
+          <section className="clinical-detail-panel">
+            <div className="clinical-panel-kicker"><span>检查项目</span><b>{checked.length}/{items.length} 已记录</b></div>
+            <div className="clinical-item-list">{items.map((item) => <button key={item.id} type="button" className={`clinical-item ${selected === item.id ? 'is-selected' : ''} ${checked.includes(item.id) ? 'is-checked' : ''}`} onClick={() => toggle(item)}><span className="clinical-item-index">{checked.includes(item.id) ? <Check size={15} /> : item.id === selected ? '●' : '○'}</span><span><strong>{item.label}</strong><small>{item.detail}</small></span><FileText size={15} /></button>)}</div>
+            <div className="clinical-selected-result"><span>当前记录</span><strong>{activeItem?.label}</strong><p>{activeItem?.detail}</p><textarea aria-label="检查记录" placeholder="补充你的检查所见或判断…" /></div>
+          </section>
         </div>
-        <div className="clinical-actions flex items-center gap-3">
-          <button className="text-button danger-button inline-flex items-center gap-1.5 text-sm text-[#a64747] hover:text-[#7a3535]" type="button" onClick={onReset}>
-            <RotateCcw aria-hidden="true" size={16} /> 重置训练
-          </button>
-        </div>
-      </header>
-
-      <div className="clinical-workspace mx-auto grid w-full max-w-6xl flex-1 gap-6 p-6 lg:grid-cols-[300px_1fr]">
-        <aside className="patient-summary rounded-xl border border-[#d4e4e6] bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-[#dceff1] text-sm font-bold text-[#19758a]">SP</span>
-            <div>
-              <strong className="block">{caseData.patient.name}，{caseData.patient.age} 岁</strong>
-              <span className="text-xs text-[#70878f]">{caseData.patient.sex} · {caseData.patient.occupation}</span>
-            </div>
-          </div>
-          <div className="space-y-3 text-sm">
-            <div>
-              <span className="text-xs text-[#70878f]">主诉</span>
-              <p className="mt-0.5">{caseData.chiefComplaint}</p>
-            </div>
-            <div>
-              <span className="text-xs text-[#70878f]">现病史</span>
-              <p className="mt-0.5 line-clamp-6 text-[#70878f]">{caseData.presentIllness}</p>
-            </div>
-          </div>
-        </aside>
-
-        <main className="clinical-form rounded-xl border border-[#d4e4e6] bg-white p-6 shadow-sm">
-          <h1 className="font-serif text-2xl font-semibold text-[#0d4d66]">{config.title}</h1>
-          <p className="mt-1 text-sm text-[#70878f]">{config.subtitle}</p>
-
-          <div className="mt-6 grid gap-5">
-            {config.fields.map((field) => (
-              <div key={field.id}>
-                <label htmlFor={field.id} className="mb-1.5 block text-sm font-semibold text-[#234865]">{field.label}</label>
-                <textarea
-                  id={field.id}
-                  rows={3}
-                  value={records[field.id] ?? ''}
-                  onChange={(event) => onRecordChange?.(field.id, event.target.value)}
-                  placeholder={field.placeholder}
-                  className="w-full resize-none rounded-lg border border-[#cfe5f3] bg-white px-3 py-2 text-sm text-[#2b526e] placeholder:text-[#94a7bb] focus:border-[#19758a] focus:outline-none"
-                />
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 flex justify-end gap-3 border-t border-[#d4e4e6] pt-5">
-            <button type="button" onClick={onBack} className="rounded-lg border border-[#d4e4e6] bg-white px-5 py-2 text-sm text-[#70878f] hover:bg-[#eef6f6]">返回</button>
-            <button type="button" onClick={onNext} className="inline-flex items-center gap-2 rounded-lg bg-[#0d4d66] px-5 py-2 text-sm text-white hover:bg-[#19758a]">
-              <Stethoscope aria-hidden="true" size={15} /> 下一步
-            </button>
-          </div>
-        </main>
-      </div>
-    </section>
-  );
+        <footer className="clinical-footer"><button type="button" className="clinical-back" onClick={onBack}><ArrowLeft size={16} /> 返回上一步</button><div><span>完成当前项目后继续下一模块</span><button type="button" className="clinical-next" onClick={onNext}>{nextLabel[module]} <ArrowLeft size={16} /></button></div></footer>
+      </main>
+      <aside className="clinical-summary">
+        <div className="summary-heading"><span>患者信息</span><b>SP 01</b></div>
+        <div className="summary-patient"><div className="summary-avatar"><span>王</span></div><div><strong>王旭</strong><span>48 岁 · 男</span><small>门诊初诊</small></div></div>
+        <div className="summary-section"><span>病例摘要</span><p>医生我身体不舒服</p></div>
+        <div className="summary-section"><span>模块记录</span>{checked.length ? checked.slice(-4).map((id) => <p className="summary-check" key={id}><Check size={13} />{items.find((item) => item.id === id)?.label}</p>) : <p className="summary-empty">完成项目后会显示在这里</p>}</div>
+        <div className="summary-tip"><Stethoscope size={16} /><span>操作提示<strong>请选择左侧项目开始记录</strong></span></div>
+      </aside>
+    </div>
+  </section>
 }

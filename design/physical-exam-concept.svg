@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eaf4f3"/>
+      <stop offset="1" stop-color="#dcebea"/>
+    </linearGradient>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fdfefe"/>
+      <stop offset="1" stop-color="#f1f8f6"/>
+    </linearGradient>
+    <linearGradient id="abdomen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6d4c4"/>
+      <stop offset="1" stop-color="#e8b8a7"/>
+    </linearGradient>
+    <linearGradient id="active" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ef826f"/>
+      <stop offset="1" stop-color="#d85b51"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#23484c" flood-opacity=".12"/>
+    </filter>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <clipPath id="torsoClip"><path d="M625 318 C614 350 614 395 626 440 L647 654 C650 708 683 736 730 742 L820 742 C867 736 900 708 903 654 L924 440 C936 395 936 350 925 318 C878 286 672 286 625 318Z"/></clipPath>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <circle cx="1420" cy="80" r="220" fill="#c7e7e1" opacity=".55" filter="url(#soft)"/>
+  <circle cx="120" cy="920" r="240" fill="#d2e8e5" opacity=".7" filter="url(#soft)"/>
+
+  <g font-family="Noto Sans SC, Microsoft YaHei, sans-serif" fill="#173d49">
+    <text x="74" y="66" font-size="15" letter-spacing="4" fill="#6b8588">CLINICAL SKILLS LAB  /  02</text>
+    <text x="74" y="110" font-size="34" font-weight="700">体格检查</text>
+    <text x="74" y="143" font-size="16" fill="#6f8586">腹部触诊 · 用手感知患者的反应</text>
+    <g transform="translate(1270 58)">
+      <rect width="250" height="48" rx="24" fill="#f8fcfb" stroke="#cfe3df"/>
+      <circle cx="29" cy="24" r="7" fill="#46a88d"/>
+      <text x="50" y="30" font-size="14">训练进行中</text>
+      <text x="203" y="30" font-size="14" fill="#7a9293">03:18</text>
+    </g>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="56" y="188" width="320" height="642" rx="32" fill="#f8fcfb"/>
+    <rect x="406" y="188" width="760" height="642" rx="40" fill="url(#hero)"/>
+    <rect x="1196" y="188" width="348" height="642" rx="32" fill="#f8fcfb"/>
+  </g>
+
+  <!-- patient rail -->
+  <g font-family="Noto Sans SC, Microsoft YaHei, sans-serif" fill="#173d49">
+    <text x="88" y="236" font-size="13" letter-spacing="2" fill="#7b9292">STANDARDIZED PATIENT</text>
+    <circle cx="138" cy="324" r="70" fill="#d7eee9"/>
+    <circle cx="138" cy="306" r="31" fill="#f2c6b6"/>
+    <path d="M102 300 Q138 258 174 300 Q169 272 138 266 Q107 272 102 300" fill="#5a3d36"/>
+    <path d="M91 385 Q138 346 185 385 L206 470 L70 470Z" fill="#234f59"/>
+    <path d="M116 299 L127 303 M149 303 L160 299" stroke="#65443d" stroke-width="3" stroke-linecap="round"/>
+    <path d="M116 289 L128 294 M148 294 L160 289" stroke="#65443d" stroke-width="3" stroke-linecap="round"/>
+    <path d="M126 324 Q138 312 150 324" fill="none" stroke="#a66559" stroke-width="3" stroke-linecap="round"/>
+    <text x="88" y="534" font-size="26" font-weight="700">王旭</text>
+    <text x="88" y="565" font-size="15" fill="#6f8586">48 岁 · 男 · 门诊初诊</text>
+    <line x1="88" y1="600" x2="344" y2="600" stroke="#d7e8e5"/>
+    <text x="88" y="638" font-size="12" fill="#7b9292">当前患者状态</text>
+    <rect x="88" y="658" width="256" height="52" rx="18" fill="#e9f5f1"/>
+    <circle cx="113" cy="684" r="7" fill="#e27e6b"/>
+    <text x="132" y="690" font-size="15" font-weight="600">腹部轻度紧张</text>
+    <text x="88" y="757" font-size="12" fill="#7b9292">主诉</text>
+    <text x="88" y="783" font-size="16" font-weight="600">进食油腻后腹痛 2 天</text>
+  </g>
+
+  <!-- central exam area -->
+  <g font-family="Noto Sans SC, Microsoft YaHei, sans-serif" fill="#173d49">
+    <text x="446" y="235" font-size="13" letter-spacing="2" fill="#7b9292">PALPATION MAP</text>
+    <text x="446" y="276" font-size="28" font-weight="700">腹部九区</text>
+    <text x="446" y="305" font-size="14" fill="#6f8586">单击按压 · 按住后松开模拟反跳痛</text>
+    <g transform="translate(448 338)">
+      <rect width="680" height="438" rx="30" fill="#e8f3f0"/>
+      <ellipse cx="340" cy="221" rx="207" ry="181" fill="#d2e9e3" opacity=".85"/>
+      <path d="M263 49 C235 59 216 91 218 127 L230 336 C232 377 274 400 313 407 L367 407 C406 400 448 377 450 336 L462 127 C464 91 445 59 417 49 C397 69 283 69 263 49Z" fill="url(#abdomen)" stroke="#d59b8b" stroke-width="2"/>
+      <path d="M260 86 Q299 116 340 100 Q381 116 420 86 M251 348 Q293 358 324 389 M429 348 Q387 358 356 389" fill="none" stroke="#d59b8b" stroke-width="2" opacity=".65"/>
+      <path d="M378 102 Q417 93 449 113 L447 183 L378 183Z" fill="url(#active)" opacity=".8"/>
+      <path d="M301 101 L301 358 M378 101 L378 358 M225 183 L455 183 M227 274 L453 274" fill="none" stroke="#fff8f2" stroke-width="2" stroke-dasharray="5 5"/>
+      <ellipse cx="340" cy="220" rx="5" ry="8" fill="#c99382"/>
+      <path d="M337 218 Q344 218 340 224" stroke="#a66f62" fill="none"/>
+      <text x="88" y="36" font-size="14" fill="#597876">患者右侧 R</text>
+      <text x="506" y="36" font-size="14" fill="#597876">L 患者左侧</text>
+      <g font-size="13" fill="#71524c" text-anchor="middle">
+        <text x="263" y="159">右季肋区</text><text x="340" y="159">腹上区</text><text x="415" y="159" fill="#ffffff" font-weight="700">左季肋区</text>
+        <text x="263" y="247">右腰区</text><text x="340" y="247">脐区</text><text x="415" y="247">左腰区</text>
+        <text x="263" y="322">右髂区</text><text x="340" y="322">腹下区</text><text x="415" y="322">左髂区</text>
+      </g>
+      <circle cx="414" cy="123" r="20" fill="none" stroke="#fff8f2" opacity=".55"/>
+      <circle cx="414" cy="123" r="11" fill="none" stroke="#fff8f2" stroke-width="2"/>
+      <path d="M414 116 L414 126 M418 123 L418 130 M422 126 L422 137 Q418 145 409 137 L403 130 Q403 126 407 128 L410 130 L410 117 Q411 113 414 116Z" fill="#ffffff" stroke="#a45d53" stroke-width="1.3"/>
+      <path d="M443 134 L485 134 L501 119" fill="none" stroke="#b46d5f"/>
+      <text x="506" y="117" font-size="14" fill="#a25149">正在按压</text>
+      <text x="506" y="140" font-size="12" fill="#779190">左上腹 · 0.4 秒</text>
+    </g>
+    <g transform="translate(448 792)">
+      <rect width="190" height="28" rx="14" fill="#fdebe7"/>
+      <circle cx="15" cy="14" r="5" fill="#e27e6b"/>
+      <text x="29" y="19" font-size="12" fill="#a25149">当前：左季肋区</text>
+      <text x="225" y="19" font-size="12" fill="#6f8586">按住 ≥ 1 秒后松开，可测试反跳痛</text>
+    </g>
+  </g>
+
+  <!-- right feedback rail -->
+  <g font-family="Noto Sans SC, Microsoft YaHei, sans-serif" fill="#173d49">
+    <text x="1228" y="236" font-size="13" letter-spacing="2" fill="#7b9292">LIVE RESPONSE</text>
+    <text x="1228" y="274" font-size="25" font-weight="700">患者反馈</text>
+    <rect x="1228" y="306" width="284" height="122" rx="24" fill="#fff3ef"/>
+    <circle cx="1270" cy="348" r="25" fill="#f5c8bb"/>
+    <path d="M1259 358 Q1270 346 1281 358" fill="none" stroke="#c35b52" stroke-width="3" stroke-linecap="round"/>
+    <path d="M1257 342 L1264 345 M1276 345 L1283 342" stroke="#c35b52" stroke-width="2" stroke-linecap="round"/>
+    <path d="M1257 333 L1264 329 M1283 333 L1276 329" stroke="#c35b52" stroke-width="3" stroke-linecap="round"/>
+    <text x="1310" y="343" font-size="16" font-weight="700">“疼，这里很疼。”</text>
+    <text x="1310" y="372" font-size="12" fill="#8a7774">按压反馈 · 左季肋区</text>
+    <text x="1310" y="400" font-size="12" fill="#a75a51">面部表情：痛苦</text>
+    <line x1="1228" y1="466" x2="1512" y2="466" stroke="#d7e8e5"/>
+    <text x="1228" y="507" font-size="12" fill="#7b9292">检查记录</text>
+    <text x="1228" y="540" font-size="17" font-weight="700">左季肋区 · 压痛明显</text>
+    <text x="1228" y="568" font-size="14" fill="#6f8586">反跳痛尚未检查</text>
+    <rect x="1228" y="608" width="284" height="54" rx="18" fill="#eaf5f1"/>
+    <text x="1250" y="641" font-size="14" fill="#347d70">✓ 结果已记录，可继续检查</text>
+    <text x="1228" y="706" font-size="12" fill="#7b9292">独立教学演示 · 不计入本病例</text>
+    <rect x="1228" y="729" width="284" height="45" rx="22" fill="#173d49"/>
+    <text x="1300" y="757" font-size="14" fill="#ffffff">查看阳性反跳痛示例  →</text>
+  </g>
+
+  <!-- footer controls -->
+  <g font-family="Noto Sans SC, Microsoft YaHei, sans-serif">
+    <rect x="56" y="868" width="1488" height="78" rx="28" fill="#173d49"/>
+    <text x="88" y="901" font-size="12" letter-spacing="2" fill="#8fb5b3">01 问诊记录  ──  02 体格检查</text>
+    <text x="88" y="928" font-size="16" fill="#ffffff">逐区触诊，观察患者反应并记录体征</text>
+    <rect x="1196" y="887" width="142" height="40" rx="20" fill="none" stroke="#78a9a3"/>
+    <text x="1230" y="913" font-size="14" fill="#d3efea">返回问诊</text>
+    <rect x="1350" y="887" width="166" height="40" rx="20" fill="#f28a76"/>
+    <text x="1381" y="913" font-size="14" fill="#ffffff" font-weight="700">完成检查  →</text>
+  </g>
+</svg>

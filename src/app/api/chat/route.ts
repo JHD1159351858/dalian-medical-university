@@ -1,153 +1,84 @@
-import caseData from '../case.json';
+import caseData from '../../../../server/case.json';
+import { patientInterviewReply } from '../../../../server/patientInterview.mjs';
+import { chatConfigured, requestCozeChatReply, validMessages } from '../../../../server/patientServices.mjs';
 
+// 每次问诊都需读取本次请求的消息和服务状态。
 export const dynamic = 'force-dynamic';
 
-const MAX_MESSAGES = 100;
-const MAX_MESSAGE_CHARS = 4_000;
-const MAX_TOTAL_CHARS = 100_000;
 const timeoutMs = 45_000;
+const eventHeaders = { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-cache, no-transform' };
 
-function chatConfigured() {
-  const env = process.env;
-  return ['PATIENT_BOT_ID', 'OPENAPI_TOKEN'].every((key) => typeof env[key] === 'string' && env[key]?.trim());
-}
-
-function cozeBase() {
-  return (process.env.OPENAPI_BASE_URL || 'https://api.coze.cn').replace(/\/+$/, '');
-}
-
-function cozeHeaders() {
-  return { 'content-type': 'application/json', authorization: `Bearer ${process.env.OPENAPI_TOKEN}` };
-}
-
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
-
-function validMessages(messages: unknown): messages is ChatMessage[] {
-  if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) return false;
-  let total = 0;
-  for (const message of messages) {
-    if (!message || !['user', 'assistant'].includes(message.role) || typeof message.content !== 'string') return false;
-    const content = message.content.trim();
-    if (!content || content.length > MAX_MESSAGE_CHARS) return false;
-    total += content.length;
+function failure(error: unknown, signal: AbortSignal) {
+  if (signal.aborted && signal.reason instanceof Error && signal.reason.message === 'timeout') {
+    return { status: 504, error: '聊天服务响应超时。' };
   }
-  return total <= MAX_TOTAL_CHARS;
-}
-
-async function requestCozeChatReply(messages: ChatMessage[], signal: AbortSignal, onDelta: (text: string) => void) {
-  const base = cozeBase();
-  const headers = cozeHeaders();
-
-  const createResponse = await fetch(`${base}/v3/chat`, {
-    method: 'POST',
-    headers,
-    signal,
-    body: JSON.stringify({
-      bot_id: process.env.PATIENT_BOT_ID?.trim(),
-      user_id: 'hospital-agent-student',
-      stream: true,
-      auto_save_history: false,
-      custom_variables: { case_data: JSON.stringify(caseData) },
-      additional_messages: messages.map(({ role, content }) => ({ role, content: content.trim(), content_type: 'text' })),
-    }),
-  });
-  if (!createResponse.ok) {
-    const error = new Error(`coze chat create failed: http ${createResponse.status}`) as Error & { status?: number };
-    error.status = createResponse.status;
-    throw error;
-  }
-
-  let answer = '';
-  let completed = false;
-  const handleEvent = (block: string) => {
-    const event = /^event:\s*(.+)$/m.exec(block)?.[1];
-    const data = /^data:\s*(.+)$/m.exec(block)?.[1];
-    if (!event || !data || event === 'done') return;
-    const payload = JSON.parse(data) as Record<string, unknown>;
-    if (event === 'conversation.chat.failed' || event === 'error') throw new Error('coze chat failed');
-    if (event === 'conversation.chat.completed') completed = true;
-    if (event === 'conversation.message.delta' && payload?.role === 'assistant' && payload?.type === 'answer' && typeof payload.content === 'string') {
-      onDelta(payload.content);
-    }
-    if (event === 'conversation.message.completed' && payload?.role === 'assistant' && payload?.type === 'answer' && typeof payload.content === 'string') {
-      answer = payload.content.trim();
-    }
-  };
-  const decoder = new TextDecoder();
-  let pending = '';
-  const body = createResponse.body;
-  if (!body) throw new Error('empty body');
-  for await (const chunk of body as unknown as AsyncIterable<Uint8Array>) {
-    pending += decoder.decode(chunk, { stream: true });
-    let separator;
-    while ((separator = /\r?\n\r?\n/.exec(pending))) {
-      handleEvent(pending.slice(0, separator.index));
-      pending = pending.slice(separator.index + separator[0].length);
-    }
-  }
-  pending += decoder.decode();
-  if (pending.trim()) handleEvent(pending);
-  if (!completed || !answer) throw new Error('coze chat empty answer');
-  return answer;
+  const status = error && typeof error === 'object' && 'status' in error ? error.status : undefined;
+  if (status === 401 || status === 403) return { status: 502, error: '聊天服务认证失败。' };
+  if (status === 429) return { status: 429, error: '聊天服务繁忙，请稍后重试。' };
+  return { status: 502, error: '聊天服务暂时不可用。' };
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as { messages?: unknown; stream?: boolean };
-  const messages = body.messages;
-  const stream = body.stream === true;
-
-  if (!validMessages(messages)) {
-    return new Response(JSON.stringify({ error: '消息格式无效。' }), { status: 400, headers: { 'content-type': 'application/json' } });
+  const body: unknown = await request.json().catch(() => null);
+  const payload = body && typeof body === 'object' && !Array.isArray(body) ? body as Record<string, unknown> : {};
+  const messages = payload.messages;
+  if (!validMessages(messages) || messages.at(-1)?.role !== 'user') {
+    return Response.json({ error: '消息格式无效。' }, { status: 400 });
   }
-  if (!chatConfigured()) {
-    return new Response(JSON.stringify({ error: '聊天服务尚未配置。' }), { status: 503, headers: { 'content-type': 'application/json' } });
+  const streaming = payload.stream === true;
+  const knownReply = patientInterviewReply(messages, caseData);
+  if (knownReply !== null) {
+    const result = { reply: knownReply, source: 'case_rules' };
+    if (!streaming) return Response.json(result);
+    return new Response(`event: delta\ndata: ${JSON.stringify({ text: knownReply })}\n\nevent: done\ndata: ${JSON.stringify(result)}\n\n`, { headers: eventHeaders });
   }
+  if (!chatConfigured(process.env)) return Response.json({ error: '聊天服务尚未配置。' }, { status: 503 });
 
   const controller = new AbortController();
+  const abort = () => controller.abort(request.signal.reason ?? new Error('client disconnected'));
+  request.signal.addEventListener('abort', abort, { once: true });
+  if (request.signal.aborted) abort();
   const timer = setTimeout(() => controller.abort(new Error('timeout')), timeoutMs);
+  const cleanup = () => {
+    clearTimeout(timer);
+    request.signal.removeEventListener('abort', abort);
+  };
+  const reply = (onDelta: (text: string) => void) => requestCozeChatReply(
+    process.env, messages, controller.signal, onDelta, fetch,
+    { customVariables: { case_data: JSON.stringify(caseData) } },
+  );
+
+  if (streaming) {
+    let cancelled = false;
+    const readable = new ReadableStream<Uint8Array>({
+      start(output) {
+        const emit = (event: string, data: object) => {
+          if (!cancelled && !request.signal.aborted) output.enqueue(new TextEncoder().encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+        };
+        void reply((text) => emit('delta', { text })).then((answer) => {
+          emit('done', { reply: answer });
+        }).catch((error: unknown) => {
+          emit('error', { error: failure(error, controller.signal).error });
+        }).finally(() => {
+          cleanup();
+          if (!cancelled) output.close();
+        });
+      },
+      cancel() {
+        cancelled = true;
+        controller.abort(new Error('client disconnected'));
+        cleanup();
+      },
+    });
+    return new Response(readable, { headers: eventHeaders });
+  }
 
   try {
-    if (stream) {
-      const readable = new ReadableStream({
-        async start(streamController) {
-          try {
-            const reply = await requestCozeChatReply(messages, controller.signal, (text) => {
-              streamController.enqueue(new TextEncoder().encode(`event: delta\ndata: ${JSON.stringify({ text })}\n\n`));
-            });
-            streamController.enqueue(new TextEncoder().encode(`event: done\ndata: ${JSON.stringify({ reply })}\n\n`));
-            streamController.close();
-          } catch (error) {
-            const message = error instanceof Error && error.message === 'timeout' ? '聊天服务响应超时。' : '聊天服务暂时不可用。';
-            streamController.enqueue(new TextEncoder().encode(`event: error\ndata: ${JSON.stringify({ error: message })}\n\n`));
-            streamController.close();
-          }
-        },
-        cancel() {
-          controller.abort();
-        },
-      });
-      return new Response(readable, {
-        headers: {
-          'content-type': 'text/event-stream; charset=utf-8',
-          'cache-control': 'no-cache, no-transform',
-        },
-      });
-    }
-
-    const reply = await requestCozeChatReply(messages, controller.signal, () => undefined);
-    return Response.json({ reply });
+    return Response.json({ reply: await reply(() => undefined) });
   } catch (error) {
-    let message = '聊天服务暂时不可用。';
-    if (controller.signal.aborted && controller.signal.reason instanceof Error && controller.signal.reason.message === 'timeout') {
-      message = '聊天服务响应超时。';
-    } else if (error && typeof error === 'object' && 'status' in error && (error.status === 401 || error.status === 403)) {
-      message = '聊天服务认证失败。';
-    }
-    return Response.json({ error: message }, { status: 502 });
+    const result = failure(error, controller.signal);
+    return Response.json({ error: result.error }, { status: result.status });
   } finally {
-    clearTimeout(timer);
+    cleanup();
   }
 }

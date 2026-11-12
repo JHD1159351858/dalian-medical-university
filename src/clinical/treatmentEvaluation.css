@@ -1,0 +1,18 @@
+.treatment-evaluation { margin: 0; padding: 15px; border: 1px solid #c9dce6; border-radius: 12px; background: #f5fafd; color: #243d4d; }
+.treatment-evaluation h3 { margin: 0 0 8px; font-size: 16px; }
+.treatment-evaluation p { margin: 6px 0 10px; font-size: 13px; line-height: 1.6; }
+.treatment-evaluation ul { list-style: none; padding: 0; margin: 0; }
+.treatment-evaluation li { border-top: 1px solid #d9e6ed; padding: 10px 0; font-size: 13px; }
+.treatment-evaluation li strong { display: block; margin-bottom: 4px; }
+.treatment-evaluation blockquote { margin: 5px 0; padding-left: 8px; border-left: 2px solid #a9c4d3; white-space: pre-wrap; overflow-wrap: anywhere; }
+.treatment-evaluation small { display: block; color: #607787; line-height: 1.5; overflow-wrap: anywhere; }
+.treatment-evaluation.passed { border-color: #90c7b0; }
+.treatment-evaluation.needs_revision { border-color: #d9b08a; }
+.treatment-evaluation-error { color: #a33b2f; padding: 0 18px; font-size: 14px; }
+.treatment-evaluation-actions { display: flex; align-items: center; gap: 10px; }
+.treatment-evaluation-submit { padding: 12px 18px; border: 1px solid #11728e; color: #116983; background: #f1fafd; border-radius: 8px; font: inherit; cursor: pointer; }
+.treatment-evaluation-submit:disabled, .treatment-evaluation-actions button:disabled { opacity: .5; cursor: not-allowed; }
+.treatment-evaluation-summary { overflow-y: auto; }
+.treatment-evaluation-summary > * { flex-shrink: 0; }
+.treatment-evaluation-summary .treatment-completion { flex: none; }
+@media (max-width: 900px) { .treatment-evaluation-actions { flex-wrap: wrap; } .treatment-evaluation-actions button { padding: 10px; } }

@@ -32,7 +32,7 @@ echo "Building the Next.js project..."
 env ${BUILD_ENV} pnpm next build
 
 echo "Bundling server with tsup..."
-env ${BUILD_ENV} pnpm tsup src/server.ts --format cjs --platform node --target node24 --outDir dist --no-splitting --no-minify
+env ${BUILD_ENV} pnpm tsup src/server.ts --format cjs --platform node --target node22 --outDir dist --no-splitting --no-minify
 echo "Build duration: $(( SECONDS - BUILD_START ))s"
 
 du -sh .next dist 2>/dev/null || true

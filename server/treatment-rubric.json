@@ -1,0 +1,151 @@
+{
+  "caseId": "wang-xu",
+  "version": "2026-11-06-case-reference-v1",
+  "basis": "case_reference",
+  "approved": false,
+  "approvedBy": "",
+  "reference": "王旭原病例处置与用药表（摘录第 261–320 行）",
+  "exhaustive": false,
+  "treatments": [
+    {
+      "id": "nursing-level-one",
+      "category": "护理",
+      "item": "一级护理",
+      "reference": "王旭原病例处置与用药表（摘录第 267–270 行）"
+    },
+    {
+      "id": "nutrition-fasting",
+      "category": "饮食及营养",
+      "item": "禁食水",
+      "reference": "王旭原病例处置与用药表（摘录第 271–274 行）"
+    },
+    {
+      "id": "monitoring-intensive-care",
+      "category": "监测及支持",
+      "item": "重症监护",
+      "reference": "王旭原病例处置与用药表（摘录第 275–278 行）"
+    },
+    {
+      "id": "monitoring-enteral-nutrition",
+      "category": "监测及支持",
+      "item": "三腔喂养管肠内营养支持",
+      "reference": "王旭原病例处置与用药表（摘录第 275–278 行）"
+    },
+    {
+      "id": "intervention-crrt",
+      "category": "介入及手术",
+      "item": "持续床旁血液净化（CRRT）",
+      "reference": "王旭原病例处置与用药表（摘录第 279–282 行）"
+    },
+    {
+      "id": "intervention-mechanical-ventilation",
+      "category": "介入及手术",
+      "item": "呼吸机机械通气",
+      "reference": "王旭原病例处置与用药表（摘录第 279–282 行）"
+    },
+    {
+      "id": "tcm-external-application",
+      "category": "中医治疗",
+      "item": "芒硝外敷",
+      "reference": "王旭原病例处置与用药表（摘录第 283–286 行）"
+    },
+    {
+      "id": "tcm-decoction-oral",
+      "category": "中医治疗",
+      "item": "中药汤药口服",
+      "reference": "王旭原病例处置与用药表（摘录第 283–286 行）"
+    },
+    {
+      "id": "medication-pancreatic-secretion",
+      "category": "药物治疗",
+      "item": "抑制胰酶分泌",
+      "reference": "王旭原病例处置与用药表（摘录第 287–290 行）"
+    },
+    {
+      "id": "medication-gastric-acid",
+      "category": "药物治疗",
+      "item": "抑制胃酸分泌",
+      "reference": "王旭原病例处置与用药表（摘录第 287–290 行）"
+    },
+    {
+      "id": "medication-fluid-support",
+      "category": "药物治疗",
+      "item": "补液支持",
+      "reference": "王旭原病例处置与用药表（摘录第 287–290 行）"
+    },
+    {
+      "id": "medication-anti-infection",
+      "category": "药物治疗",
+      "item": "抗感染",
+      "reference": "王旭原病例处置与用药表（摘录第 287–290 行）"
+    }
+  ],
+  "medications": [
+    {
+      "id": "medication-omeprazole",
+      "name": "奥美拉唑",
+      "route": "静脉滴注",
+      "dose": "40mg",
+      "frequency": "bid",
+      "reference": "王旭原病例处置与用药表（摘录第 296–300 行）"
+    },
+    {
+      "id": "medication-somatostatin",
+      "name": "生长抑素",
+      "route": "静脉滴注",
+      "dose": "6mg",
+      "frequency": "qd",
+      "reference": "王旭原病例处置与用药表（摘录第 301–305 行）"
+    },
+    {
+      "id": "medication-imipenem",
+      "name": "亚胺培南",
+      "route": "静脉滴注",
+      "dose": "1g",
+      "frequency": "bid",
+      "reference": "王旭原病例处置与用药表（摘录第 306–309 行）"
+    },
+    {
+      "id": "medication-mirabilite",
+      "name": "芒硝",
+      "route": "外敷腹部",
+      "dose": "500g",
+      "frequency": "qd",
+      "reference": "王旭原病例处置与用药表（摘录第 310–314 行）"
+    },
+    {
+      "id": "medication-tcm-decoction",
+      "name": "中药",
+      "route": "口服",
+      "dose": "柴胡10  黄芩15 枳实15 厚朴15\n姜半夏15 党参15 麦冬25 大黄（后）10 炒白芍25 木香5 大腹皮15 栀子10 金银花（后下）25 连翘10 浙贝母10 天花粉25 桃仁10 丹参15 冬瓜子25 蒲公英25 茵陈25 茯苓25",
+      "reference": "王旭原病例处置与用药表（摘录第 315–320 行）",
+      "ingredients": [
+        { "name": "柴胡", "amount": "10" },
+        { "name": "黄芩", "amount": "15" },
+        { "name": "枳实", "amount": "15" },
+        { "name": "厚朴", "amount": "15" },
+        { "name": "姜半夏", "amount": "15" },
+        { "name": "党参", "amount": "15" },
+        { "name": "麦冬", "amount": "25" },
+        { "name": "大黄（后）", "amount": "10" },
+        { "name": "炒白芍", "amount": "25" },
+        { "name": "木香", "amount": "5" },
+        { "name": "大腹皮", "amount": "15" },
+        { "name": "栀子", "amount": "10" },
+        { "name": "金银花（后下）", "amount": "25" },
+        { "name": "连翘", "amount": "10" },
+        { "name": "浙贝母", "amount": "10" },
+        { "name": "天花粉", "amount": "25" },
+        { "name": "桃仁", "amount": "10" },
+        { "name": "丹参", "amount": "15" },
+        { "name": "冬瓜子", "amount": "25" },
+        { "name": "蒲公英", "amount": "25" },
+        { "name": "茵陈", "amount": "25" },
+        { "name": "茯苓", "amount": "25" }
+      ]
+    }
+  ],
+  "required": [],
+  "forbidden": [],
+  "allowed": []
+}

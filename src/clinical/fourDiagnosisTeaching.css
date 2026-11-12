@@ -1,0 +1,61 @@
+.four-examination-dialog.four-teaching-dialog { width: min(1080px, calc(100vw - 48px)); }
+.four-examination-dialog.four-realistic-dialog { width: min(1440px, calc(100vw - 32px)); max-height: calc(100dvh - 24px); }
+.four-realistic-dialog > header { padding: 14px 20px; }
+.four-realistic-dialog > footer { padding: 12px 20px; }
+.four-realistic-dialog > .four-examination-content { padding: 18px 22px; }
+.four-examination-content .four-realistic-case-note { margin: 12px 0 0; color: #708695; font-size: 12px; }
+.four-examination-dialog.four-teaching-dialog[open] { display: flex; flex-direction: column; }
+.four-teaching-dialog > header, .four-teaching-dialog > footer { flex-shrink: 0; }
+.four-teaching-dialog > .four-examination-content { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.tongue-mode-switch button { padding: 9px 13px; color: #426c86; border: 1px solid #cfe0e9; border-radius: 6px; background: #f5fafd; cursor: pointer; }
+.tongue-mode-switch button[aria-pressed="true"] { color: #fff; background: #087a9b; border-color: #087a9b; }
+.tongue-learning { margin-top: 24px; padding-top: 22px; border-top: 1px solid #dce8ef; }
+.tongue-learning-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+.tongue-learning h3 { margin: 0; color: #173d5c; font-size: 19px; }
+.four-examination-content .tongue-learning-heading p { margin: 7px 0 0; color: #698698; font-size: 13px; }
+.tongue-mode-switch { display: flex; gap: 6px; flex-shrink: 0; }
+.tongue-entry-select { display: grid; gap: 8px; color: #355d76; font-size: 14px; font-weight: 600; }
+.tongue-entry-select select { width: 100%; min-height: 41px; padding: 8px 10px; color: #244c67; background: #fff; border: 1px solid #bdd5e2; border-radius: 5px; font: inherit; font-weight: 400; }
+.tongue-study > .tongue-entry-select { max-width: 350px; margin-bottom: 18px; }
+.tongue-study-content, .tongue-practice-content { display: grid; grid-template-columns: minmax(200px, 320px) minmax(0, 1fr); gap: 24px; align-items: start; }
+.tongue-learning figure { min-width: 0; margin: 0; padding: 10px; border: 1px solid #dbe7ee; border-radius: 8px; background: #f4f8fa; }
+.tongue-learning figure img { display: block; width: 100%; height: 300px; object-fit: contain; background: #edf3f6; }
+.tongue-learning figcaption { padding: 10px 0 2px; color: #315b73; font-size: 14px; text-align: center; }
+.tongue-learning figcaption span { display: block; margin-top: 6px; color: #8a6530; font-size: 12px; }
+.tongue-explanation { min-width: 0; }
+.tongue-explanation h4 { margin: 0 0 9px; color: #2c5c77; font-size: 15px; }
+.tongue-explanation h4:not(:first-child) { margin-top: 18px; }
+.tongue-explanation ul { margin: 0 0 12px; padding-left: 20px; color: #4d6d80; font-size: 14px; line-height: 1.8; }
+.four-examination-content .tongue-explanation p { margin: 0 0 12px; color: #4d6d80; font-size: 14px; }
+.tongue-explanation details { margin-bottom: 14px; color: #527489; font-size: 14px; }
+.tongue-explanation summary { margin-bottom: 10px; cursor: pointer; }
+.four-examination-content .tongue-material-note { padding: 10px 12px; margin: 18px 0 0; color: #6e8090; background: #f6f9fb; border-radius: 5px; font-size: 12px; }
+.four-examination-content .tongue-practice > p { margin: 0 0 16px; color: #55778d; font-size: 14px; }
+.tongue-practice-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+.tongue-practice-actions button { display: inline-flex; align-items: center; gap: 7px; padding: 10px 14px; color: #fff; border: 1px solid #087a9b; border-radius: 6px; background: #087a9b; cursor: pointer; }
+.tongue-practice-actions button + button { color: #087a9b; background: #f1f9fc; }
+.tongue-practice-actions button:disabled { cursor: default; opacity: .45; }
+.tongue-practice-result { margin-top: 20px; padding: 14px; border: 1px solid #e0d1b3; border-radius: 6px; background: #fcf9f2; }
+.tongue-practice-result.is-correct { border-color: #b5d8cf; background: #f1f9f6; }
+.tongue-practice-result > strong { color: #7c5e32; }
+.tongue-practice-result.is-correct > strong { color: #257360; }
+.four-examination-content .tongue-practice-result > p { margin: 9px 0 16px; font-size: 14px; }
+.four-suggested-questions { flex-shrink: 0; padding: 13px 0; border-bottom: 1px solid #e1edf3; }
+.four-suggested-questions > strong { color: #355f7a; font-size: 13px; }
+.four-suggested-questions > span { display: block; margin-top: 3px; color: #7893a4; font-size: 11px; }
+.four-suggested-questions > div { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.four-suggested-questions button { padding: 5px 8px; color: #4a7289; border: 1px solid #d7e5ed; border-radius: 4px; background: #f0f7fb; font-size: 12px; line-height: 1.5; text-align: left; cursor: pointer; }
+.four-suggested-questions button:disabled { opacity: .45; cursor: default; }
+.four-dialog-chat .four-chat-messages { height: clamp(140px, 28dvh, 260px); padding: 14px 0; }
+.four-dialog-chat .four-chat-composer textarea { height: 66px; }
+.four-dialog-record { display: grid; gap: 8px; margin-top: 18px; padding: 15px 17px; border: 1px solid #dcecf6; border-radius: 8px; background: #f7fbfd; }
+.four-dialog-record label { color: #163d5e; font-size: 15px; font-weight: 600; }
+.four-examination-content .four-dialog-record p { margin: 0; color: #55768c; font-size: 14px; }
+.four-dialog-record textarea { width: 100%; min-height: 74px; padding: 9px 12px; resize: vertical; border: 1px solid #cfe5f3; border-radius: 6px; background: #fff; color: #2b526e; font: inherit; }
+@media (max-width: 700px) {
+  .four-examination-dialog.four-teaching-dialog { width: calc(100vw - 20px); max-height: calc(100dvh - 24px); }
+  .four-teaching-dialog > .four-examination-content { padding: 15px; }
+  .tongue-learning-heading { flex-direction: column; }
+  .tongue-study-content, .tongue-practice-content { grid-template-columns: 1fr; gap: 18px; }
+  .tongue-learning figure img { height: 250px; }
+}

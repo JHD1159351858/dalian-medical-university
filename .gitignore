@@ -101,3 +101,9 @@ Desktop.ini
 .codegraph/
 .coderproj/reduction
 .preview
+
+# Local training verification
+test-results/
+playwright-report/
+__pycache__/
+*.blend1

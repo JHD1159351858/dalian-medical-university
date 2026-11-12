@@ -3,6 +3,8 @@ import type { PatientVoiceProfile } from './voiceProfiles'
 export type SpeechEmotion = 'happy' | 'sad' | 'angry' | 'surprised' | 'fear' | 'neutral'
 
 let activeAudio: HTMLAudioElement | null = null
+const activeAudioCompletion: (() => void) | null = null
+let activeBrowserCompletion: (() => void) | null = null
 let activeUrl = ''
 let activeRequest: AbortController | null = null
 let speechRun = 0
@@ -10,7 +12,7 @@ let activeStreamCleanup: (() => void) | null = null
 const audioCache = new Map<string, Blob>()
 const pendingPreloads = new Map<string, Promise<boolean>>()
 
-export type SpeechOptions = Pick<PatientVoiceProfile, 'patientId' | 'voiceId' | 'speed'> & { emotion?: SpeechEmotion }
+export type SpeechOptions = PatientVoiceProfile & { emotion?: SpeechEmotion }
 
 export interface SpeechStreamController {
   push(text: string): void
@@ -23,6 +25,7 @@ function optionsWithDefaults(options: Partial<SpeechOptions> = {}): SpeechOption
     patientId: options.patientId ?? 'default-patient',
     voiceId: options.voiceId ?? '',
     speed: options.speed ?? 0.95,
+    contextText: options.contextText,
     emotion: options.emotion ?? 'neutral',
   }
 }
@@ -36,13 +39,7 @@ async function requestAudio(text: string, options: Partial<SpeechOptions>, signa
   const response = await fetch('/api/tts', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      text,
-      emotion: request.emotion,
-      patientId: request.patientId,
-      voiceId: request.voiceId || undefined,
-      speed: request.speed,
-    }),
+    body: JSON.stringify({ text, emotion: request.emotion, patientId: request.patientId, voiceId: request.voiceId || undefined, speed: request.speed, contextText: request.contextText }),
     signal,
   })
   if (!response.ok) throw new Error('tts unavailable')
@@ -58,14 +55,20 @@ export function stopSpeech(): void {
     activeAudio.pause()
     activeAudio.src = ''
   }
+  activeAudioCompletion?.()
   activeAudio = null
   if (activeUrl) {
     URL.revokeObjectURL(activeUrl)
     activeUrl = ''
   }
-  if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel()
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel()
+  activeBrowserCompletion?.()
 }
 
+/**
+ * Sends incoming answer text to Coze's bidirectional TTS connection and
+ * schedules the returned PCM fragments in order, independently of the log.
+ */
 export function startSpeechStream(
   options: Partial<SpeechOptions> = {},
   onStart?: () => void,
@@ -170,6 +173,7 @@ export function startSpeechStream(
 
   const flushInput = () => {
     if (!ready || !socket || sessionFinishing || closed) return
+    // The API's 1024-byte limit is conservatively applied per connection.
     let length = 0
     let bytes = 0
     for (const character of pendingText) {
@@ -207,23 +211,18 @@ export function startSpeechStream(
     socket = connection
     connection.onopen = () => {
       if (closed || socket !== connection) return
-      connection.send(JSON.stringify({
-        type: 'start',
-        voiceId: voiceOptions.voiceId || undefined,
-        speed: voiceOptions.speed,
-        emotion: voiceOptions.emotion,
-      }))
+      connection.send(JSON.stringify({ type: 'start', voiceId: voiceOptions.voiceId || undefined, speed: voiceOptions.speed, emotion: voiceOptions.emotion, contextText: voiceOptions.contextText }))
     }
     connection.onmessage = (event) => {
       if (closed || socket !== connection || run !== speechRun) return
       try {
-        const message = JSON.parse(event.data) as { type: string; sampleRate?: number; data?: string }
+        const message = JSON.parse(event.data)
         if (message.type === 'ready') {
-          sampleRate = message.sampleRate ?? sampleRate
+          sampleRate = message.sampleRate
           ready = true
           flushInput()
         } else if (message.type === 'audio') {
-          playPcm(message.data ?? '')
+          playPcm(message.data)
         } else if (message.type === 'done') {
           socket = null
           connection.close()
@@ -264,7 +263,7 @@ export function startSpeechStream(
 }
 
 export function emotionForSpeech(text: string): SpeechEmotion {
-  if (/剧烈|很疼|明显疼|痛苦|难受/.test(text)) return 'sad'
+  if (/不(?:太|怎么|大)?舒服|剧烈|很疼|明显疼|痛苦|难受/.test(text)) return 'sad'
   if (/害怕|喘不上气|呼吸困难/.test(text)) return 'fear'
   if (/谢谢|好多了|舒服/.test(text)) return 'happy'
   if (/怎么会|真的吗|没想到/.test(text)) return 'surprised'
@@ -309,7 +308,7 @@ export function playCachedSpeech(text: string, options: Partial<SpeechOptions> =
 }
 
 function speakWithBrowser(text: string, onEnd?: () => void): boolean {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return false
+  if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return false
   const utterance = new SpeechSynthesisUtterance(text)
   utterance.lang = 'zh-CN'
   utterance.rate = 0.94
@@ -321,12 +320,14 @@ function speakWithBrowser(text: string, onEnd?: () => void): boolean {
     const finish = () => {
       if (finished) return
       finished = true
+      if (activeBrowserCompletion === finish) activeBrowserCompletion = null
       window.clearTimeout(fallbackTimer)
       onEnd()
     }
     utterance.onend = finish
     utterance.onerror = finish
     fallbackTimer = window.setTimeout(finish, Math.max(2500, Math.min(12000, text.length * 320)))
+    activeBrowserCompletion = finish
   }
   try {
     window.speechSynthesis.speak(utterance)
@@ -356,7 +357,7 @@ export function speakChinese(text: string, onEnd?: () => void, emotion = emotion
     speakWithBrowser(text, finish)
   }
 
-  if (typeof window.fetch === 'undefined' || typeof Audio === 'undefined') return speakWithBrowser(text, onEnd)
+  if (!window.fetch || typeof Audio === 'undefined') return speakWithBrowser(text, onEnd)
   const controller = new AbortController()
   activeRequest = controller
   requestAudio(text, voiceOptions, controller.signal).then((blob) => {
