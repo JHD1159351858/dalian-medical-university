@@ -77,7 +77,7 @@ export type PulsePlacementAction =
   | { type: 'confirm'; finger: PulseFinger }
   | { type: 'check' | 'reset' }
 
-const idleFeedback: PracticeFeedback = { kind: 'idle', code: 'initial', message: '拖动医生手部到手腕，完成三指定位。' }
+const idleFeedback: PracticeFeedback = { kind: 'idle', code: 'initial', message: '本练习考核成人三指布指。请拖动医生手部到手腕，完成寸、关、尺定位。' }
 
 export function createPulsePlacement(count: FingerCount = 3): PulsePlacementState {
   return { count, position: clampHandPosition({ x: 74, y: 12 }, count), hasPositioned: false, positionChecked: false, confirmed: [], feedback: { ...idleFeedback } }
@@ -99,7 +99,7 @@ export function pulsePlacementReducer(state: PulsePlacementState, action: PulseP
     }
     case 'cancel': return { ...action.previous, positionChecked: false, confirmed: [], feedback: { kind: 'info', code: 'cancelled', message: '已取消本次拖动，未确认落点。请重新检查位置。' } }
     case 'check': {
-      if (state.count !== 3) return { ...state, positionChecked: false, confirmed: [], feedback: { kind: 'error', code: 'finger-count', message: `当前选择${state.count === 1 ? '一' : '二'}指。本任务为成人三指布指练习，请选择三指；一指或二指不作为本任务的完成条件。` } }
+      if (state.count !== 3) return { ...state, positionChecked: false, confirmed: [], feedback: { kind: 'error', code: 'finger-count', message: `当前选择${state.count === 1 ? '一' : '二'}指。本练习考核成人三指布指，请选择三指。临床另有单按等指法，需按诊察目的选用。` } }
       if (!state.hasPositioned) return { ...state, positionChecked: false, confirmed: [], feedback: { kind: 'error', code: 'not-positioned', message: '请先拖动医生手部，或用方向键调整位置，再检查。' } }
       const tips = handFingertips(3, state.position)
       const misplaced = PULSE_FINGER_ORDER.filter((finger) => {
@@ -118,7 +118,7 @@ export function pulsePlacementReducer(state: PulsePlacementState, action: PulseP
       if (action.finger !== expected) return { ...state, confirmed: [], feedback: { kind: 'error', code: 'order', message: `此步应由${PULSE_FINGER_LABELS[expected].finger}定位${PULSE_FINGER_LABELS[expected].position}位，您点击了${PULSE_FINGER_LABELS[action.finger].finger}。本轮下指确认已重置，请从中指定关重新开始。` } }
       const confirmed = [...state.confirmed, action.finger]
       return { ...state, confirmed, feedback: confirmed.length === 3
-        ? { kind: 'success', code: 'complete', message: '布指完成：中指定关、食指定位寸、无名指定位尺，位置与下指顺序均正确。' }
+        ? { kind: 'success', code: 'complete', message: '成人三指布指练习完成：中指定关、食指定位寸、无名指定位尺，位置与下指顺序均正确。' }
         : { kind: 'info', code: 'confirmed', message: `${PULSE_FINGER_LABELS[action.finger].finger}${PULSE_FINGER_LABELS[action.finger].position}位已确认。下一步请用${PULSE_FINGER_LABELS[PULSE_FINGER_ORDER[confirmed.length]].finger}定位${PULSE_FINGER_LABELS[PULSE_FINGER_ORDER[confirmed.length]].position}位。` } }
     }
   }

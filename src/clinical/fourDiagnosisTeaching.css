@@ -7,13 +7,8 @@
 .four-examination-dialog.four-teaching-dialog[open] { display: flex; flex-direction: column; }
 .four-teaching-dialog > header, .four-teaching-dialog > footer { flex-shrink: 0; }
 .four-teaching-dialog > .four-examination-content { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
-.four-material-topics { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-.four-material-topics button, .tongue-mode-switch button { padding: 9px 13px; color: #426c86; border: 1px solid #cfe0e9; border-radius: 6px; background: #f5fafd; cursor: pointer; }
-.four-material-topics button[aria-pressed="true"], .tongue-mode-switch button[aria-pressed="true"] { color: #fff; background: #087a9b; border-color: #087a9b; }
-.four-case-pending { margin-bottom: 18px; padding: 15px 18px; border-left: 3px solid #b99451; border-radius: 5px; background: #fbf8ef; }
-.four-case-pending > strong { color: #795c2a; font-size: 16px; }
-.four-examination-content .four-case-pending p { margin: 7px 0 0; font-size: 14px; }
-.four-examination-content .four-case-pending small { margin-top: 6px; }
+.tongue-mode-switch button { padding: 9px 13px; color: #426c86; border: 1px solid #cfe0e9; border-radius: 6px; background: #f5fafd; cursor: pointer; }
+.tongue-mode-switch button[aria-pressed="true"] { color: #fff; background: #087a9b; border-color: #087a9b; }
 .tongue-learning { margin-top: 24px; padding-top: 22px; border-top: 1px solid #dce8ef; }
 .tongue-learning-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
 .tongue-learning h3 { margin: 0; color: #173d5c; font-size: 19px; }

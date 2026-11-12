@@ -127,6 +127,6 @@ export function PulsePalpationTrainer() {
       </div>
     </div>
     <p className="pulse-drag-help" id="pulse-drag-help">拖动手部后先检查位置，再点击照片指尖的确认点，按中指 → 食指 → 无名指依次下指。也可聚焦手部，用方向键微调、Enter 检查，并使用右侧按钮确认。</p>
-    <small className="pulse-practice-note">布指顺序参考 GB/T 40665.4—2021，供教师结合教材审核。练习检查图片定位与下指顺序。</small>
+    <small className="pulse-practice-note">参考 GB/T 40665.4—2021，供教师结合教材审核。本练习仅检查成人三指布指的位置与下指顺序。完整诊脉还需结合轻取、中取、重取及单按、总按等方法体察脉象。</small>
   </section>
 }

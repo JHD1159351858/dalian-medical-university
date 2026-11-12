@@ -5,8 +5,8 @@ import { PATIENT_VOICE_PROFILE } from '../diagnosis/voiceProfiles'
 
 const samples = [
   { text: '医生，我这儿疼。就是肚子左上边，您帮我看看吧。', speed: 0.94 },
-  { text: '嗯，您问吧。我听着呢，知道的我就跟您说。', speed: 0.98 },
-  { text: '好，我听明白了。您接着问，我跟您说。', speed: 1.01 },
+  { text: '嗯，您问吧。我听着呢，知道的我就跟您说。', speed: 0.96 },
+  { text: '好，我听明白了。您接着问，我跟您说。', speed: 0.98 },
 ]
 type ListeningSample = (typeof samples)[number]
 let lastPlayedSample: ListeningSample | undefined

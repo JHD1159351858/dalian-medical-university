@@ -62,10 +62,12 @@ export function attachSpeechStream(server, { env = process.env, timeoutMs = 45_0
         const voiceId = message.voiceId ?? env.PATIENT_VOICE_ID;
         const speed = message.speed ?? 0.95;
         const emotion = message.emotion;
+        const contextText = message.contextText;
         if (typeof env.OPENAPI_TOKEN !== 'string' || !env.OPENAPI_TOKEN.trim()) return fail('语音服务尚未配置。');
         if (typeof voiceId !== 'string' || !voiceId.trim() || voiceId.length > 128 ||
           typeof speed !== 'number' || !Number.isFinite(speed) || speed < 0.5 || speed > 2 ||
-          (emotion !== undefined && !EMOTIONS.includes(emotion))) return fail('语音配置无效。');
+          (emotion !== undefined && !EMOTIONS.includes(emotion)) ||
+          (contextText !== undefined && (typeof contextText !== 'string' || contextText.length > 1_000))) return fail('语音配置无效。');
 
         state = 'connecting';
         try {
@@ -88,7 +90,7 @@ export function attachSpeechStream(server, { env = process.env, timeoutMs = 45_0
               output_audio: {
                 codec: 'pcm', pcm_config: { sample_rate: SAMPLE_RATE, frame_size_ms: 100 },
                 voice_id: voiceId.trim(), speech_rate: Math.round((speed - 1) * 100),
-                ...(emotion ? { emotion_config: { emotion, emotion_scale: 4 } } : {}),
+                ...(contextText?.trim() ? { context_texts: contextText.trim() } : emotion ? { emotion_config: { emotion, emotion_scale: 4 } } : {}),
               },
             });
           } else if (event?.event_type === 'speech.updated' && state === 'configuring') {

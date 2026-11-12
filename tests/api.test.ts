@@ -59,6 +59,28 @@ describe('hospital patient API', () => {
     expect(upstreamBody).toMatchObject({ input: '医生我身体不舒服', voice_id: 'voice-a', emotion: 'sad', response_format: 'mp3', speed: 0.95 });
   });
 
+  it('forwards voice direction for the patient and caches each direction separately', async () => {
+    const bodies: any[] = [];
+    const upstream = await startUpstream(async (request, response) => {
+      bodies.push(await readJson(request));
+      response.setHeader('content-type', 'audio/mpeg');
+      response.end(Buffer.from([0x49, 0x44, 0x33]));
+    });
+    const url = await startApp({ OPENAPI_BASE_URL: upstream, OPENAPI_TOKEN: 'coze-secret', PATIENT_VOICE_ID: 'fallback-voice' });
+    for (const contextText of ['成年男声，轻度腹痛不适。', '成年男声，轻度腹痛不适。', '成年男声，平静自然。']) {
+      const response = await fetch(`${url}/api/tts`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ text: '医生，我身体不舒服。', voiceId: '7568423452617588790', contextText, emotion: 'sad', speed: 0.94 }),
+      });
+      expect(response.status).toBe(200);
+      await response.arrayBuffer();
+    }
+    expect(bodies).toHaveLength(2);
+    expect(bodies[0]).toMatchObject({ context_texts: '成年男声，轻度腹痛不适。', speed: 0.94 });
+    expect(bodies[0]).not.toHaveProperty('emotion');
+    expect(bodies[1].context_texts).toBe('成年男声，平静自然。');
+  });
+
   it('caches identical speech requests per voice and text', async () => {
     let calls = 0;
     const upstream = await startUpstream(async (_request, response) => {

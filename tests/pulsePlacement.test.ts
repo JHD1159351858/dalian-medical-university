@@ -60,6 +60,8 @@ describe('adult three-finger placement practice', () => {
       expect(checked.feedback.code).toBe('finger-count')
       expect(checked.positionChecked).toBe(false)
       expect(checked.feedback.message).not.toContain('非法')
+      expect(checked.feedback.message).toContain('本练习考核成人三指布指')
+      expect(checked.feedback.message).toContain('临床另有单按等指法')
     }
   })
 
@@ -86,6 +88,7 @@ describe('adult three-finger placement practice', () => {
     expect(state.confirmed).toEqual(['middle', 'index', 'ring'])
     expect(state.feedback.kind).toBe('success')
     expect(state.feedback.code).toBe('complete')
+    expect(state.feedback.message).toContain('成人三指布指练习完成')
   })
 
   it('explains an incorrect contact order and resets contact confirmations', () => {

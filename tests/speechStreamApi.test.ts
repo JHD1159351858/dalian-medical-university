@@ -98,6 +98,25 @@ describe('bidirectional Coze speech proxy', () => {
     expect(received.every((event) => typeof event.id === 'string' && event.id)).toBe(true);
   });
 
+  it('forwards the patient voice direction in bidirectional speech configuration', async () => {
+    const received: any[] = [];
+    const base = await startUpstream((upstream) => {
+      upstream.on('message', (raw) => {
+        const message = JSON.parse(raw.toString());
+        received.push(message);
+        if (message.event_type === 'speech.update') send(upstream, { event_type: 'speech.updated' });
+      });
+      send(upstream, { event_type: 'speech.created' });
+    });
+    const { socket, next } = await startApp(configured(base));
+    send(socket, { type: 'start', voiceId: '7568423452617588790', speed: 0.94, contextText: '成年男声，轻度腹痛不适。', emotion: 'sad' });
+    expect(await next()).toEqual({ type: 'ready', sampleRate: 24_000 });
+    expect(received[0].data.output_audio).toMatchObject({
+      voice_id: '7568423452617588790', speech_rate: -6, context_texts: '成年男声，轻度腹痛不适。',
+    });
+    expect(received[0].data.output_audio).not.toHaveProperty('emotion_config');
+  });
+
   it('rejects input before readiness without creating an upstream connection', async () => {
     let connections = 0;
     const base = await startUpstream(() => { connections += 1; });

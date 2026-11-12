@@ -223,8 +223,10 @@ export function createApp({ env = process.env, fetchImpl = globalThis.fetch, tim
     if (patientId.length > 128) return response.status(400).json({ error: '患者配置无效。' });
     const text = request.body.text.trim();
     const emotion = typeof request.body.emotion === 'string' && request.body.emotion.trim() ? request.body.emotion.trim() : undefined;
+    if (request.body.contextText !== undefined && (typeof request.body.contextText !== 'string' || request.body.contextText.length > 1_000)) return response.status(400).json({ error: '语音风格配置无效。' });
+    const contextText = request.body.contextText?.trim();
     const speed = speechSpeed(request.body);
-    const cacheKey = JSON.stringify([patientId, voiceId, text, emotion ?? '', speed]);
+    const cacheKey = JSON.stringify([patientId, voiceId, text, emotion ?? '', speed, contextText ?? '']);
     const cached = ttsCache.get(cacheKey);
     if (cached) {
       response.set('content-type', 'audio/mpeg');
@@ -241,7 +243,7 @@ export function createApp({ env = process.env, fetchImpl = globalThis.fetch, tim
       const upstream = await fetchImpl(cozeSpeechUrl(env), {
         method: 'POST',
         headers: cozeHeaders(env),
-        body: JSON.stringify({ input: text, voice_id: voiceId, response_format: 'mp3', sample_rate: 24_000, speed, ...(emotion ? { emotion, emotion_scale: 4 } : {}) }),
+        body: JSON.stringify({ input: text, voice_id: voiceId, response_format: 'mp3', sample_rate: 24_000, speed, ...(contextText ? { context_texts: contextText } : emotion ? { emotion, emotion_scale: 4 } : {}) }),
         signal: controller.signal,
       });
       if (!upstream.ok) {

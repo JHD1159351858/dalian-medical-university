@@ -56,12 +56,9 @@ it('preserves the existing auxiliary examination page', () => {
   expect(html).not.toContain('AI 患者 · 王旭')
 })
 
-it('offers inspection material categories while keeping unconfirmed patient findings explicit', () => {
+it('opens tongue inspection directly with the fixed case photo', () => {
   const html = renderToStaticMarkup(createElement(FourExaminationViewer, { ...examinationProps, kind: 'look' }))
-  expect(html).toContain('巩膜黄染')
-  expect(html).toContain('面色红')
-  expect(html).toContain('阳黄')
-  expect(html).toContain('阴黄')
+  expect(html).not.toMatch(/望诊素材分类|巩膜黄染|面色红|阳黄|阴黄/)
   expect(html).toContain('病例原始照片待教师提供')
   expect(html).toContain('舌诊观察实训')
   expect(html).toContain('当前病例固定使用一张舌象教学配图')

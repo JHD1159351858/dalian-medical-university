@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest'
-import { startSpeechStream, stopSpeech } from '../src/diagnosis/speech'
+import { emotionForSpeech, preloadSpeech, startSpeechStream, stopSpeech } from '../src/diagnosis/speech'
+import { PATIENT_VOICE_PROFILE } from '../src/diagnosis/voiceProfiles'
 
 class FakeSocket {
   static instances: FakeSocket[] = []
@@ -66,6 +67,47 @@ afterEach(() => {
   vi.unstubAllGlobals()
   FakeSocket.instances = []
   FakeContext.instances = []
+})
+
+it.each([
+  ['医生，我身体不舒服。您帮我看看吧。', 'sad'],
+  ['谢谢医生，但我还是不舒服。', 'sad'],
+  ['今天不太舒服。', 'sad'],
+  ['我这里很疼。', 'sad'],
+  ['现在舒服多了，谢谢医生。', 'happy'],
+  ['已经好多了。', 'happy'],
+  ['嗯，您接着问吧。', 'neutral'],
+])('classifies patient speech without confusing discomfort with relief: %s', (text, emotion) => {
+  setup()
+  expect(emotionForSpeech(text)).toBe(emotion)
+})
+
+it('keeps Wang Xu’s adult male voice and discomfort direction in the streaming request', () => {
+  setup()
+  startSpeechStream(PATIENT_VOICE_PROFILE)
+  const socket = FakeSocket.instances[0]
+  socket.ready()
+  expect(socket.sent[0]).toMatchObject({
+    voiceId: '7568423452617588790',
+    contextText: expect.stringContaining('腹痛不适'),
+    speed: 0.94,
+  })
+})
+
+it('uses the same patient voice direction when preloading the opening line', async () => {
+  setup()
+  const fetchAudio = vi.fn(async (_url: string, _options?: RequestInit) => ({ ok: true, blob: async () => new Blob(['audio']) }))
+  vi.stubGlobal('fetch', fetchAudio)
+  window.fetch = fetchAudio as unknown as typeof fetch
+  await preloadSpeech('医生，我身体不舒服。您帮我看看吧。', { ...PATIENT_VOICE_PROFILE, emotion: 'sad' })
+  expect(fetchAudio).toHaveBeenCalledOnce()
+  const body = JSON.parse(fetchAudio.mock.calls[0][1]!.body as string)
+  expect(body).toMatchObject({
+    voiceId: '7568423452617588790',
+    contextText: expect.stringContaining('腹痛不适'),
+    speed: 0.94,
+    emotion: 'sad',
+  })
 })
 
 it('streams text after readiness and plays audio before the reply is complete', async () => {

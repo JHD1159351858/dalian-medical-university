@@ -12,7 +12,7 @@ let activeStreamCleanup: (() => void) | null = null
 const audioCache = new Map<string, Blob>()
 const pendingPreloads = new Map<string, Promise<boolean>>()
 
-export type SpeechOptions = Pick<PatientVoiceProfile, 'patientId' | 'voiceId' | 'speed'> & { emotion?: SpeechEmotion }
+export type SpeechOptions = PatientVoiceProfile & { emotion?: SpeechEmotion }
 
 export interface SpeechStreamController {
   push(text: string): void
@@ -25,6 +25,7 @@ function optionsWithDefaults(options: Partial<SpeechOptions> = {}): SpeechOption
     patientId: options.patientId ?? 'default-patient',
     voiceId: options.voiceId ?? '',
     speed: options.speed ?? 0.95,
+    contextText: options.contextText,
     emotion: options.emotion ?? 'neutral',
   }
 }
@@ -38,7 +39,7 @@ async function requestAudio(text: string, options: Partial<SpeechOptions>, signa
   const response = await fetch('/api/tts', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ text, emotion: request.emotion, patientId: request.patientId, voiceId: request.voiceId || undefined, speed: request.speed }),
+    body: JSON.stringify({ text, emotion: request.emotion, patientId: request.patientId, voiceId: request.voiceId || undefined, speed: request.speed, contextText: request.contextText }),
     signal,
   })
   if (!response.ok) throw new Error('tts unavailable')
@@ -210,7 +211,7 @@ export function startSpeechStream(
     socket = connection
     connection.onopen = () => {
       if (closed || socket !== connection) return
-      connection.send(JSON.stringify({ type: 'start', voiceId: voiceOptions.voiceId || undefined, speed: voiceOptions.speed, emotion: voiceOptions.emotion }))
+      connection.send(JSON.stringify({ type: 'start', voiceId: voiceOptions.voiceId || undefined, speed: voiceOptions.speed, emotion: voiceOptions.emotion, contextText: voiceOptions.contextText }))
     }
     connection.onmessage = (event) => {
       if (closed || socket !== connection || run !== speechRun) return
@@ -262,7 +263,7 @@ export function startSpeechStream(
 }
 
 export function emotionForSpeech(text: string): SpeechEmotion {
-  if (/剧烈|很疼|明显疼|痛苦|难受/.test(text)) return 'sad'
+  if (/不(?:太|怎么|大)?舒服|剧烈|很疼|明显疼|痛苦|难受/.test(text)) return 'sad'
   if (/害怕|喘不上气|呼吸困难/.test(text)) return 'fear'
   if (/谢谢|好多了|舒服/.test(text)) return 'happy'
   if (/怎么会|真的吗|没想到/.test(text)) return 'surprised'
