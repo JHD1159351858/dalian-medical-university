@@ -2,7 +2,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { PulsePalpationTrainer } from '../src/clinical/PulsePalpationTrainer'
-import { PULSE_GEOMETRY, clampHandPosition, createPulsePlacement, handFingertips, idealHandPosition, imagePointFromClient, pulsePlacementReducer } from '../src/clinical/pulsePlacement'
+import { PULSE_GEOMETRY, clampHandPosition, createPulsePlacement, handFingertips, idealHandPosition, imagePointFromClient, misplacedFingers, pulsePlacementReducer } from '../src/clinical/pulsePlacement'
 
 const aligned = () => pulsePlacementReducer(createPulsePlacement(), { type: 'drop', position: idealHandPosition(3), moved: true })
 
@@ -44,25 +44,35 @@ describe('pulse photograph geometry', () => {
   })
 })
 
-describe('adult three-finger placement practice', () => {
+describe('pulse position checks', () => {
   it('does not pass a position check until the learner moves the hand', () => {
-    const state = { ...createPulsePlacement(), position: idealHandPosition(3) }
-    const checked = pulsePlacementReducer(state, { type: 'check' })
-    expect(checked.positionChecked).toBe(false)
-    expect(checked.feedback.code).toBe('not-positioned')
+    for (const count of [1, 3] as const) {
+      const state = { ...createPulsePlacement(count), position: idealHandPosition(count) }
+      const checked = pulsePlacementReducer(state, { type: 'check' })
+      expect(checked.positionChecked).toBe(false)
+      expect(checked.feedback.code).toBe('not-positioned')
+    }
   })
 
-  it('treats one and two fingers as incomplete for this adult three-finger task', () => {
-    for (const count of [1, 2] as const) {
+  it('accepts aligned one-finger guan placement and three-finger placement without sequential confirmation', () => {
+    for (const count of [1, 3] as const) {
       const selected = pulsePlacementReducer(createPulsePlacement(), { type: 'select', count })
       const dropped = pulsePlacementReducer(selected, { type: 'drop', position: idealHandPosition(count), moved: true })
       const checked = pulsePlacementReducer(dropped, { type: 'check' })
-      expect(checked.feedback.code).toBe('finger-count')
-      expect(checked.positionChecked).toBe(false)
-      expect(checked.feedback.message).not.toContain('非法')
-      expect(checked.feedback.message).toContain('本练习考核成人三指布指')
-      expect(checked.feedback.message).toContain('临床另有单按等指法')
+      expect(checked.positionChecked).toBe(true)
+      expect(checked.feedback).toMatchObject({ kind: 'success', code: 'ready' })
+      expect(checked.feedback.message).toBe('位置已对齐，可轻点或持续按住指尖进行触诊。')
+      expect(checked).not.toHaveProperty('confirmed')
+      expect(JSON.stringify(checked)).not.toContain('沉滑数')
     }
+  })
+
+  it('keeps two fingers as a transition rather than a completed placement mode', () => {
+    const dropped = pulsePlacementReducer(createPulsePlacement(2), { type: 'drop', position: idealHandPosition(2), moved: true })
+    const checked = pulsePlacementReducer(dropped, { type: 'check' })
+    expect(checked.positionChecked).toBe(false)
+    expect(checked.feedback.code).toBe('finger-count')
+    expect(checked.feedback.message).toContain('过渡')
   })
 
   it('identifies misplaced fingers rather than accepting any dropped hand', () => {
@@ -73,43 +83,25 @@ describe('adult three-finger placement practice', () => {
     expect(checked.feedback.message).toContain('中指')
   })
 
-  it('requires a valid group position before any fingertip can be confirmed', () => {
-    const state = pulsePlacementReducer(aligned(), { type: 'confirm', finger: 'middle' })
-    expect(state.confirmed).toEqual([])
-    expect(state.feedback.code).toBe('unchecked')
+  it('reports only the fingertips present in the hand image using the same position tolerance', () => {
+    expect(misplacedFingers(1, idealHandPosition(1))).toEqual([])
+    expect(misplacedFingers(1, { x: 30, y: 35 })).toEqual(['middle'])
+    const position = { ...idealHandPosition(3), y: idealHandPosition(3).y - 1.5 }
+    expect(misplacedFingers(3, position)).toEqual(['index'])
+    const dropped = pulsePlacementReducer(createPulsePlacement(), { type: 'drop', position, moved: true })
+    const checked = pulsePlacementReducer(dropped, { type: 'check' })
+    expect(checked.positionChecked).toBe(false)
+    expect(checked.feedback.message).toContain('食指需对准寸位')
+    expect(checked.feedback.message).not.toContain('中指需对准')
   })
 
-  it('confirms the middle, index and ring fingers in order before showing success', () => {
-    let state = pulsePlacementReducer(aligned(), { type: 'check' })
-    expect(state.positionChecked).toBe(true)
-    expect(state.feedback.code).toBe('ready')
-    expect(state.feedback.kind).not.toBe('success')
-    for (const finger of ['middle', 'index', 'ring'] as const) state = pulsePlacementReducer(state, { type: 'confirm', finger })
-    expect(state.confirmed).toEqual(['middle', 'index', 'ring'])
-    expect(state.feedback.kind).toBe('success')
-    expect(state.feedback.code).toBe('complete')
-    expect(state.feedback.message).toContain('成人三指布指练习完成')
-  })
-
-  it('explains an incorrect contact order and resets contact confirmations', () => {
-    let state = pulsePlacementReducer(aligned(), { type: 'check' })
-    state = pulsePlacementReducer(state, { type: 'confirm', finger: 'middle' })
-    state = pulsePlacementReducer(state, { type: 'confirm', finger: 'ring' })
-    expect(state.confirmed).toEqual([])
-    expect(state.feedback.code).toBe('order')
-    expect(state.feedback.message).toContain('食指')
-    expect(state.feedback.message).toContain('中指')
-  })
-
-  it('invalidates confirmations when the hand is dragged, nudged, changed or reset', () => {
-    let state = pulsePlacementReducer(aligned(), { type: 'check' })
-    state = pulsePlacementReducer(state, { type: 'confirm', finger: 'middle' })
+  it('invalidates position validation when the hand is dragged, nudged, changed or reset', () => {
+    const state = pulsePlacementReducer(aligned(), { type: 'check' })
     const moved = pulsePlacementReducer(state, { type: 'move', position: { x: 60, y: 40 } })
     const nudged = pulsePlacementReducer(state, { type: 'nudge', dx: 1, dy: 0 })
     const changed = pulsePlacementReducer(state, { type: 'select', count: 2 })
     const reset = pulsePlacementReducer(state, { type: 'reset' })
     for (const next of [moved, nudged, changed, reset]) {
-      expect(next.confirmed).toEqual([])
       expect(next.positionChecked).toBe(false)
       expect(next.feedback.kind).not.toBe('success')
     }
@@ -117,26 +109,31 @@ describe('adult three-finger placement practice', () => {
     expect(reset).toEqual(createPulsePlacement())
   })
 
-  it('cancels a pointer gesture without confirming its drop', () => {
+  it('cancels a pointer gesture by restoring the entire previous state', () => {
     const previous = createPulsePlacement()
     const moved = pulsePlacementReducer(previous, { type: 'move', position: idealHandPosition(3) })
     const cancelled = pulsePlacementReducer(moved, { type: 'cancel', previous })
-    expect(cancelled.position).toEqual(previous.position)
-    expect(cancelled.hasPositioned).toBe(false)
-    expect(cancelled.positionChecked).toBe(false)
-    expect(cancelled.confirmed).toEqual([])
+    expect(cancelled).toEqual(previous)
+    const checked = pulsePlacementReducer(aligned(), { type: 'check' })
+    const movedFromChecked = pulsePlacementReducer(checked, { type: 'move', position: { x: 30, y: 35 } })
+    const restored = pulsePlacementReducer(movedFromChecked, { type: 'cancel', previous: checked })
+    expect(restored).toEqual(checked)
+    expect(restored.positionChecked).toBe(true)
   })
 })
 
-it('opens directly in the photographic drag workspace with three hand-image options', () => {
+it('opens directly in the photographic drag workspace with one- and three-finger options', () => {
   const html = renderToStaticMarkup(createElement(PulsePalpationTrainer))
   expect(html).not.toContain('操作演示')
-  expect(html).toContain('拖动练习')
+  expect(html).toContain('自主辨脉')
   expect(html).toContain('学习提示')
   expect(html).toContain('/four-exam-images/realistic/pulse-arm.png')
-  for (const count of [1, 2, 3]) expect(html).toContain(`/four-exam-images/realistic/doctor-hand-${count}.png`)
+  for (const count of [1, 3]) expect(html).toContain(`/four-exam-images/realistic/doctor-hand-${count}.png`)
+  expect(html).not.toContain('/four-exam-images/realistic/doctor-hand-2.png')
   expect(html).toContain('操作要点')
-  expect(html).toContain('操作反馈')
+  expect(html).not.toContain('操作反馈')
+  expect(html).toContain('触诊线索')
+  expect(html).toContain('提交脉象判断')
   expect(html).toContain('按住医生手部拖到患者手腕')
   expect(html).toContain('aria-label="拖动医生手部"')
   expect(html).toContain('检查位置')

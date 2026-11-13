@@ -66,10 +66,10 @@ it('opens tongue inspection directly with the fixed case photo', () => {
   expect(html).not.toContain('完整舌象图谱')
 })
 
-it('keeps the recorded pulse result hidden until the practice is completed', () => {
+it('keeps the case pulse answer hidden before the student submits a judgement', () => {
   const html = renderToStaticMarkup(createElement(FourExaminationViewer, { ...examinationProps, kind: 'feel' }))
   expect(html).not.toContain('沉滑数')
-  expect(html).toContain('正确完成布指练习后，可查看王旭原病例记录的脉象')
+  expect(html).toContain('在各部位轻取、深取，完成判断后再核对病例参考')
 })
 
 it('lets students listen before judging without exposing listening categories or the latest reply', () => {
@@ -96,7 +96,7 @@ it('varies listening phrases at conversational speeds without adjacent repeats',
 it.each([
   ['look', '望诊观察记录', '你看到了哪些舌色、舌形和舌苔特征'],
   ['listen', '闻诊观察记录', '你听到的音量、语速和语调有什么特点'],
-  ['feel', '切诊观察记录', '你如何定位寸、关、尺'],
+  ['feel', '切诊观察记录', '轻取、深取时分别感到什么'],
   ['ask', '问诊要点记录', '患者对你的追问作出了哪些回答'],
 ] as const)('offers a mode-specific prompt and the current record in the %s dialog', (kind, label, prompt) => {
   const html = renderToStaticMarkup(createElement(FourExaminationViewer, { ...examinationProps, kind, record: '已填写的记录' }))

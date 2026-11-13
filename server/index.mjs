@@ -8,6 +8,7 @@ import { attachSpeechStream } from './speechStream.mjs';
 import { patientInterviewReply } from './patientInterview.mjs';
 import { evaluateTreatment, validEvaluationAdvice, validTreatmentSubmission } from './treatmentEvaluation.mjs';
 import { chatConfigured, speechConfigured, validMessages, cozeHeaders, cozeSpeechUrl, validSpeechRequest, speechSpeed, speechVoiceId, speechPatientId, requestCozeChatReply } from './patientServices.mjs';
+import { getPulseExam, submitPulseExam } from './pulseExam.mjs';
 
 export { attachSpeechStream };
 
@@ -21,6 +22,16 @@ export function createApp({ env = /** @type {Record<string, string | undefined>}
   app.use(express.json({ limit: '512kb' }));
 
   app.get('/api/health', (_request, response) => response.json({ configured: chatConfigured(env), tts: speechConfigured(env), interview: true }));
+
+  app.get('/api/pulse-exam', (request, response) => {
+    const result = getPulseExam(request.query.caseId);
+    response.status(result.status).json(result.body);
+  });
+
+  app.post('/api/pulse-exam', (request, response) => {
+    const result = submitPulseExam(request.body?.caseId, request.body?.selected);
+    response.status(result.status).json(result.body);
+  });
 
   app.post('/api/chat', async (request, response) => {
     const messages = request.body?.messages;
