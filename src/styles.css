@@ -78,7 +78,7 @@ button:focus-visible, textarea:focus-visible { outline: 3px solid rgba(22, 107, 
 .four-guidance-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .four-view-examination { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex-shrink: 0; padding: 8px; color: #077c99; background: #dff3fc; border: 1px solid #b8dfe9; border-radius: 6px; font-size: 14px; }
 .four-view-examination:hover { background: #c8eaf7; }
-.four-examination-dialog { width: min(800px, calc(100vw - 48px)); max-height: calc(100dvh - 64px); padding: 0; color: #214566; background: #fff; border: 1px solid #cfe5ef; border-radius: 16px; box-shadow: 0 24px 80px #123c5d40; }
+.four-examination-dialog { width: min(800px, calc(100vw - 48px)); max-height: calc(100dvh - 64px); margin: auto; padding: 0; color: #214566; background: #fff; border: 1px solid #cfe5ef; border-radius: 16px; box-shadow: 0 24px 80px #123c5d40; }
 .four-examination-dialog::backdrop { background: #13354f70; }
 .four-examination-dialog > header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #dfedf4; }
 .four-examination-dialog header span { color: #69889c; font-size: 13px; }
