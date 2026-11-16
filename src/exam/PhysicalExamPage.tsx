@@ -3,6 +3,7 @@ import { ArrowLeft, Check, CircleAlert, FilePlus2, Monitor, MousePointer2, Rotat
 import { playCachedSpeech, preloadSpeech, stopSpeech } from '../diagnosis/speech'
 import { PATIENT_VOICE_PROFILE } from '../diagnosis/voiceProfiles'
 import { CASE_CHIEF_COMPLAINT } from '../clinical/caseData'
+import { useEncounterRecords } from '../records/EncounterRecordsProvider'
 import { ExamScene } from './ExamScene'
 import { ExamInteractionPanel } from './ExamInteractionPanel'
 import { palpationSpeech, resolvePalpationResponse, type PalpationRegion, type PalpationResponse } from './palpation'
@@ -25,23 +26,28 @@ interface PhysicalExamPageProps {
 }
 
 export function PhysicalExamPage({ muted, onBack, onFinish, onReset }: PhysicalExamPageProps) {
+  const { physicalExam, updatePhysicalExam, recordSubmission } = useEncounterRecords()
   const [selectedRegion, setSelectedRegion] = useState<PalpationRegion>('left-upper')
-  const [selectedItem, setSelectedItem] = useState('')
-  const [orderedIds, setOrderedIds] = useState<string[]>([])
+  const [selectedItem, setSelectedItem] = useState(() => physicalExam?.orderedIds[0] ?? '')
+  const [orderedIds, setOrderedIds] = useState<string[]>(() => physicalExam?.orderedIds ?? [])
   const [orderSelection, setOrderSelection] = useState<string[]>([])
-  const [notes, setNotes] = useState<Record<string, string>>({})
-  const [submittedNotes, setSubmittedNotes] = useState<Record<string, string>>({})
+  const [notes, setNotes] = useState<Record<string, string>>(() => physicalExam?.notes ?? {})
+  const [submittedNotes, setSubmittedNotes] = useState<Record<string, string>>(() => physicalExam?.submittedNotes ?? {})
   const [orderOpen, setOrderOpen] = useState(false)
   const [computerOpen, setComputerOpen] = useState(false)
   const [hisCategory, setHisCategory] = useState('')
   const [finishOpen, setFinishOpen] = useState(false)
   const [pressing, setPressing] = useState(false)
   const [lastResponse, setLastResponse] = useState<PalpationResponse | null>(null)
-  const [history, setHistory] = useState<ExamEntry[]>([])
+  const [history, setHistory] = useState<ExamEntry[]>(() => physicalExam?.history ?? [])
   const [teachingDemo, setTeachingDemo] = useState(false)
   const pointerId = useRef<number | null>(null)
   const pressStartedAt = useRef(0)
   const pressRegion = useRef<PalpationRegion>(selectedRegion)
+
+  useEffect(() => {
+    updatePhysicalExam({ orderedIds, notes, submittedNotes, history })
+  }, [orderedIds, notes, submittedNotes, history, updatePhysicalExam])
 
   const selectedLabel = useMemo(() => regions.find((region) => region.id === selectedRegion)?.label ?? '腹部区域', [selectedRegion])
   const selectedExam = physicalExamItems.find((item) => item.id === selectedItem && orderedIds.includes(item.id))
@@ -128,6 +134,14 @@ export function PhysicalExamPage({ muted, onBack, onFinish, onReset }: PhysicalE
     setOrderOpen(false)
   }
 
+  const submitNote = () => {
+    if (!selectedExam) return
+    const note = notes[selectedExam.id]?.trim()
+    if (!note) return
+    setSubmittedNotes((current) => ({ ...current, [selectedExam.id]: note }))
+    recordSubmission('physical-exam', { examId: selectedExam.id, label: selectedExam.label, note })
+  }
+
   const responseCopy = lastResponse?.type === 'rebound'
     ? lastResponse.result === 'rebound-positive' ? '松开瞬间剧烈疼痛 · 阳性教学示例' : '松开时无明显反跳痛'
     : lastResponse?.result === 'tender' && lastResponse.region === 'left-upper' ? '左上腹压痛明显 · 按压时诉疼' : lastResponse ? '按压时未诉明显疼痛' : '请选择腹部区域开始触诊'
@@ -155,7 +169,7 @@ export function PhysicalExamPage({ muted, onBack, onFinish, onReset }: PhysicalE
       <section className="exam-stage">
         <div className="exam-stage-title"><strong>{selectedExam?.label ?? '请选择检查项目'}</strong><span>{selectedExam?.hint ?? '从左侧开单后，在此查看病例结果并填写记录'}</span></div>
         <div className="exam-canvas-wrap"><ExamScene response={lastResponse} pressing={pressing} /></div>
-        {selectedExam && <div className="exam-note-entry"><div><strong>{selectedExam.label}记录</strong><span>{submittedNotes[selectedExam.id] ? '本项记录已提交，可继续修改后再次提交' : '查看电脑中的病例结果后，在这里描述你的检查发现'}</span></div><textarea aria-label={`${selectedExam.label}记录`} value={notes[selectedExam.id] ?? ''} placeholder="根据检查结果填写描述…" onChange={(event) => setNotes((current) => ({ ...current, [selectedExam.id]: event.target.value }))} /><button className="exam-note-submit" type="button" disabled={!notes[selectedExam.id]?.trim()} onClick={() => setSubmittedNotes((current) => ({ ...current, [selectedExam.id]: notes[selectedExam.id].trim() }))}>{submittedNotes[selectedExam.id] ? '重新提交本项记录' : '提交本项记录'}</button></div>}
+        {selectedExam && <div className="exam-note-entry"><div><strong>{selectedExam.label}记录</strong><span>{submittedNotes[selectedExam.id] ? '本项记录已提交，可继续修改后再次提交' : '查看电脑中的病例结果后，在这里描述你的检查发现'}</span></div><textarea aria-label={`${selectedExam.label}记录`} value={notes[selectedExam.id] ?? ''} placeholder="根据检查结果填写描述…" onChange={(event) => setNotes((current) => ({ ...current, [selectedExam.id]: event.target.value }))} /><button className="exam-note-submit" type="button" disabled={!notes[selectedExam.id]?.trim()} onClick={submitNote}>{submittedNotes[selectedExam.id] ? '重新提交本项记录' : '提交本项记录'}</button></div>}
         {selectedExam?.id === 'inspection' && <div className="exam-instruction"><MousePointer2 size={14} aria-hidden="true" /> 按压后突然松开，可检查反跳痛</div>}
         {!selectedExam && <div className="exam-stage-empty"><FilePlus2 size={22} /><strong>请先开具体格检查项目</strong><span>点击“查看电脑”即可查看已开项目的病例结果</span></div>}
       </section>

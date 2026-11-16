@@ -3,6 +3,7 @@ import { Check, ChevronRight, Move, RotateCcw } from 'lucide-react'
 import { PULSE_FINGER_LABELS, PULSE_FINGER_ORDER, PULSE_GEOMETRY, createPulsePlacement, handHeight, imagePointFromClient, misplacedFingers, pulsePlacementReducer, type FingerCount, type ImagePoint, type PulseFinger, type PulsePlacementState } from './pulsePlacement'
 import { createPulseTouch, type PulsePressure } from './pulseTouch'
 import { loadPulseCase, submitPulseAnswer, type PulseAssessment, type PulseCaseData } from './pulseExam'
+import { useEncounterRecords } from '../records/EncounterRecordsProvider'
 import './pulsePalpation.css'
 
 const asset = (count: FingerCount) => `/four-exam-images/realistic/doctor-hand-${count}.png`
@@ -22,6 +23,7 @@ interface DragSession {
 }
 
 export function PulsePalpationTrainer({ caseId = 'wang-xu' }: { caseId?: string }) {
+  const { recordSubmission } = useEncounterRecords()
   const [showHints, setShowHints] = useState(true)
   const [dragging, setDragging] = useState(false)
   const [practice, dispatch] = useReducer(pulsePlacementReducer, undefined, () => createPulsePlacement())
@@ -114,7 +116,10 @@ export function PulsePalpationTrainer({ caseId = 'wang-xu' }: { caseId?: string 
     setError('')
     try {
       const result = await submitPulseAnswer(caseId, selected, controller.signal)
-      if (!controller.signal.aborted) setAssessment(result)
+      if (!controller.signal.aborted) {
+        setAssessment(result)
+        recordSubmission('pulse', { selected: [...selected], readings, result })
+      }
     } catch (reason) {
       if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : '脉象判断暂时无法核对。')
     } finally {

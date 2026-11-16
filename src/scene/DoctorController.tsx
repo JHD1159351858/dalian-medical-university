@@ -14,6 +14,7 @@ const up = new Vector3(0, 1, 0);
 
 export function DoctorController({
   phase,
+  paused = false,
   movementInput,
   interactionRequest,
   patient,
@@ -28,6 +29,7 @@ export function DoctorController({
   onDoorInteractionChange,
 }: {
   phase: Phase;
+  paused?: boolean;
   movementInput: RefObject<{ x: number; y: number }>;
   interactionRequest: number;
   patient: RefObject<Group | null>;
@@ -49,7 +51,7 @@ export function DoctorController({
   const doorActionRef = useRef<DoorAction | null>(null);
   const speed = useRef(1);
   const [moving, setMoving] = useState(false);
-  const enabled = ['walking', 'waiting', 'exiting', 'completed'].includes(phase);
+  const enabled = !paused && ['walking', 'waiting', 'exiting', 'completed'].includes(phase);
   const velocity = useRef(new Vector3());
   const pendingInteraction = useRef<number | null>(null);
   const temp = useMemo(() => ({
@@ -86,6 +88,7 @@ export function DoctorController({
     };
   }, [clearKeys, enabled]);
   useEffect(() => { if (!enabled) clearKeys(); }, [clearKeys, enabled]);
+  useEffect(() => { if (paused) pendingInteraction.current = null; }, [paused]);
 
   useFrame((_, rawDelta) => {
     const doctor = groupRef.current;
@@ -162,7 +165,7 @@ export function DoctorController({
       if (staticHit && staticHit.distance < distance - 0.08) return false;
       return !sightColliders().some((box) => { const hit = temp.ray.intersectBox(box, new Vector3()); return hit !== null && hit.distanceTo(origin) < distance - 0.08; });
     };
-    const eligible = phase === 'waiting' && pendingInteraction.current === null && canInteractWithPatient(doctor.position, temp.facing, patientObject.position, hasLineOfSight);
+    const eligible = enabled && phase === 'waiting' && pendingInteraction.current === null && canInteractWithPatient(doctor.position, temp.facing, patientObject.position, hasLineOfSight);
     if (eligible !== eligibleRef.current) {
       eligibleRef.current = eligible;
       onInteractionChange(eligible);
@@ -189,7 +192,7 @@ export function DoctorController({
         door.current.interact();
       }
     }
-    if (pendingInteraction.current !== null) {
+    if (!paused && pendingInteraction.current !== null) {
       pendingInteraction.current += delta;
       temp.facing.copy(doctor.position).sub(patientObject.position).setY(0);
       temp.rotation.setFromAxisAngle(up, Math.atan2(temp.facing.x, temp.facing.z));

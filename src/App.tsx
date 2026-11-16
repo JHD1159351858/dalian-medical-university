@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef, useState, type PointerEvent, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type PointerEvent, type RefObject } from 'react'
 import { useProgress } from '@react-three/drei'
 import { RotateCcw, ShieldCheck, Stethoscope, Volume2, VolumeX } from 'lucide-react'
 
@@ -13,6 +13,8 @@ import World, { clearModelCache } from './scene/World'
 import type { DoorAction } from './scene/collision'
 import { emotionForSpeech, preloadSpeech, speakChinese, startSpeechStream, stopSpeech, type SpeechStreamController } from './diagnosis/speech'
 import { PATIENT_VOICE_PROFILE } from './diagnosis/voiceProfiles'
+import { EncounterRecordsProvider, useEncounterRecords } from './records/EncounterRecordsProvider'
+import { EncounterRecordsDialog } from './records/EncounterRecordsDialog'
 
 const phaseLabels = {
   loading: '载入临床场景',
@@ -49,6 +51,8 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
   const [doorAction, setDoorAction] = useState<DoorAction | null>(null)
   const [interactionRequest, setInteractionRequest] = useState(0)
   const [arrivalNotice, setArrivalNotice] = useState(false)
+  const [recordsOpen, setRecordsOpen] = useState(false)
+  const encounterSnapshot = useMemo(() => ({ messages, fourDiagnosis: fourDiagnosisRecords, auxiliaryExam: auxiliaryExamRecords, clinicalDiagnosis: clinicalDiagnosisRecords, treatment: treatmentPlan }), [messages, fourDiagnosisRecords, auxiliaryExamRecords, clinicalDiagnosisRecords, treatmentPlan])
   const movementInput = useRef({ x: 0, y: 0 })
   const patientView = useRef<HTMLDivElement>(null)
   const doctorView = useRef<HTMLDivElement>(null)
@@ -71,7 +75,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
   const canChat = isDiagnosis || isFourDiagnosis
   const isPhysicalExam = flow.phase === 'physicalExam'
   const isClinicalModule = ['fourDiagnosis', 'auxiliaryExam', 'clinicalDiagnosis', 'treatment'].includes(flow.phase)
-  const canMove = ['walking', 'waiting', 'exiting', 'completed'].includes(flow.phase) && !sceneError
+  const canMove = ['walking', 'waiting', 'exiting', 'completed'].includes(flow.phase) && !sceneError && !recordsOpen
 
   const requestInteraction = useCallback(() => {
     if (canMove) setInteractionRequest((request) => request + 1)
@@ -244,6 +248,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
 
   const resetTraining = () => {
     abortConversation()
+    setRecordsOpen(false)
     setMessages([])
     setDraft('')
     setConversationError('')
@@ -313,6 +318,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
   }
 
   return (
+    <EncounterRecordsProvider snapshot={encounterSnapshot} phase={flow.phase} session={flow.session} onIdentityChange={resetTraining}>
     <main className={`app-shell ${isDiagnosis ? 'is-diagnosis' : ''} ${isPhysicalExam ? 'is-exam-app' : ''} ${isFourDiagnosis ? 'is-four-diagnosis' : ''} ${isAuxiliaryExam ? 'is-auxiliary-exam' : ''} ${isClinicalDiagnosis ? 'is-clinical-diagnosis' : ''} ${isTreatment ? 'is-treatment' : ''}`}>
       <header className="app-header">
         <div className="brand-block">
@@ -320,6 +326,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
           <div><strong>大连医科大学</strong><span>临床问诊实训</span></div>
         </div>
         <div className="header-actions">
+          <EncounterSaveStatus />
           <span className="session-chip"><ShieldCheck aria-hidden="true" size={15} /> 教学模拟环境</span>
           <button className="icon-text-button" type="button" onClick={toggleMute}>
             {muted ? <VolumeX aria-hidden="true" size={17} /> : <Volume2 aria-hidden="true" size={17} />}
@@ -334,8 +341,10 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
       </header>
 
       <div className={`stage-shell ${isDiagnosis ? 'is-diagnosis-shell' : ''} ${isPhysicalExam ? 'is-exam-shell' : ''} ${isFourDiagnosis ? 'is-four-diagnosis-shell' : isAuxiliaryExam ? 'is-auxiliary-exam-shell' : isClinicalDiagnosis ? 'is-clinical-diagnosis-shell' : isTreatment ? 'is-treatment-shell' : isClinicalModule ? 'is-clinical-shell' : ''}`}>
-        {!isPhysicalExam && !isClinicalModule && <div className={`world-layer ${isDiagnosis ? 'world-diagnosis' : ''}`} aria-hidden="true">
+        {!isPhysicalExam && !isClinicalModule && <div className={`world-layer ${isDiagnosis ? 'world-diagnosis' : ''}`} aria-hidden={isDiagnosis || undefined}>
           <World
+            onOpenRecords={() => setRecordsOpen(true)}
+            recordsOpen={recordsOpen}
             key={`${flow.session}-${sceneAttempt}`}
             phase={flow.phase}
             patientSpeaking={flow.phase === 'patientSpeech' || (isDiagnosis && conversationStatus === 'talking')}
@@ -488,8 +497,18 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
           </section>
         )}
       </div>
+      <EncounterRecordsDialog open={recordsOpen} onClose={() => setRecordsOpen(false)} />
     </main>
+    </EncounterRecordsProvider>
   )
+}
+
+function EncounterSaveStatus() {
+  const { access, saveState, retrySave } = useEncounterRecords()
+  if (access === 'loading') return null
+  if (saveState === 'error') return <button className="icon-text-button" type="button" onClick={retrySave}>记录保存失败，点击重试</button>
+  const label = access === 'unconfigured' ? '云端存档待配置' : access === 'signed_out' ? '登录后保存接诊记录' : saveState === 'saving' ? '接诊记录保存中…' : saveState === 'saved' ? '接诊记录已保存' : '接诊记录自动保存已开启'
+  return <span className="session-chip" role="status">{label}</span>
 }
 
 export default App

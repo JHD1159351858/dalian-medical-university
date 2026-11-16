@@ -9,6 +9,7 @@ import { patientInterviewReply } from './patientInterview.mjs';
 import { evaluateTreatment, validEvaluationAdvice, validTreatmentSubmission } from './treatmentEvaluation.mjs';
 import { chatConfigured, speechConfigured, validMessages, cozeHeaders, cozeSpeechUrl, validSpeechRequest, speechSpeed, speechVoiceId, speechPatientId, requestCozeChatReply } from './patientServices.mjs';
 import { getPulseExam, submitPulseExam } from './pulseExam.mjs';
+import { encounterRecords, recordsConfiguration } from './encounterRecords.mjs';
 
 export { attachSpeechStream };
 
@@ -19,9 +20,26 @@ const defaultTreatmentRubric = JSON.parse(readFileSync(new URL('./treatment-rubr
 export function createApp({ env = /** @type {Record<string, string | undefined>} */ (process.env), fetchImpl = globalThis.fetch, timeoutMs = 45_000, treatmentRubric = defaultTreatmentRubric } = {}) {
   const app = express();
   const ttsCache = new Map();
+  app.use('/api/encounters', (_request, response, next) => {
+    response.set('cache-control', 'private, no-store');
+    next();
+  });
   app.use(express.json({ limit: '512kb' }));
 
   app.get('/api/health', (_request, response) => response.json({ configured: chatConfigured(env), tts: speechConfigured(env), interview: true }));
+
+  app.get('/api/records-config', (_request, response) => {
+    const result = recordsConfiguration(env);
+    response.status(result.status).json(result.body);
+  });
+
+  app.route('/api/encounters').get(async (request, response) => {
+    const result = await encounterRecords({ method: 'GET', url: request.originalUrl, authorization: request.get('authorization') }, { env, fetchImpl, timeoutMs });
+    response.status(result.status).json(result.body);
+  }).put(async (request, response) => {
+    const result = await encounterRecords({ method: 'PUT', url: request.originalUrl, authorization: request.get('authorization'), body: request.body }, { env, fetchImpl, timeoutMs });
+    response.status(result.status).json(result.body);
+  });
 
   app.get('/api/pulse-exam', (request, response) => {
     const result = getPulseExam(request.query.caseId);
@@ -172,6 +190,7 @@ export function createApp({ env = /** @type {Record<string, string | undefined>}
   });
 
   app.use((error, _request, response, _next) => {
+    if (error?.type === 'entity.too.large' && _request.path === '/api/encounters') return response.status(413).json({ error: '接诊记录不能超过512KB。' });
     if (error?.type === 'entity.parse.failed' || error?.type === 'entity.too.large') {
       return response.status(400).json({ error: '消息格式无效。' });
     }

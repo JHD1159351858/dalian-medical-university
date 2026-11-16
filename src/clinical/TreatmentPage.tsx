@@ -4,6 +4,7 @@ import { PatientPortrait } from '../exam/ExamScene'
 import { CASE_CHIEF_COMPLAINT, clinicalModules, type ClinicalModuleId } from './caseData'
 import type { MedicationRow, TreatmentPlan, TreatmentRow } from './treatmentPlan'
 import { requestTreatmentEvaluation, type TreatmentEvaluation } from './treatmentEvaluation'
+import { useEncounterRecords } from '../records/EncounterRecordsProvider'
 import './treatmentEvaluation.css'
 
 export interface TreatmentPageProps {
@@ -16,6 +17,7 @@ export interface TreatmentPageProps {
 }
 
 export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFinish, onNavigate }: TreatmentPageProps) {
+  const { recordSubmission } = useEncounterRecords()
   const treatmentTableRef = useRef<HTMLDivElement>(null)
   const medicationTableRef = useRef<HTMLDivElement>(null)
   const pendingRowRef = useRef<{ kind: 'treatments' | 'medications'; id: string } | null>(null)
@@ -61,7 +63,10 @@ export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFi
     setEvaluationError('')
     try {
       const result = await requestTreatmentEvaluation({ caseId: 'wang-xu', diagnosis, plan }, controller.signal)
-      if (!controller.signal.aborted && activeSignature.current === signature) setEvaluation({ signature, result })
+      if (!controller.signal.aborted && activeSignature.current === signature) {
+        setEvaluation({ signature, result })
+        recordSubmission('treatment', { diagnosis, plan, result })
+      }
     } catch (error) {
       if (!controller.signal.aborted) setEvaluationError(error instanceof Error ? error.message : '处置评价暂时不可用，请重新提交。')
     } finally {

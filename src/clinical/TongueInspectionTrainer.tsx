@@ -3,6 +3,7 @@ import { Check, Eye, Maximize2, Play, X } from 'lucide-react'
 import { CASE_TONGUE_SAMPLE_ID } from './caseData'
 import { isTongueAnswerCorrect, tongueSamples } from './tongueSamples'
 import { createTongueSequence, reduceTongueSequence, tongueFrameBlend } from './tongueSequence'
+import { useEncounterRecords } from '../records/EncounterRecordsProvider'
 import './tongueInspection.css'
 
 const actionSteps = [
@@ -27,6 +28,7 @@ function PatientTongueMotion({ phase, open, tongue }: { phase: number; open: num
 }
 
 export function TongueInspectionTrainer() {
+  const { recordSubmission } = useEncounterRecords()
   const [state, dispatch] = useReducer(reduceTongueSequence, CASE_TONGUE_SAMPLE_ID, createTongueSequence)
   const [reducedMotion, setReducedMotion] = useState(false)
   const [zoomed, setZoomed] = useState(false)
@@ -67,7 +69,9 @@ export function TongueInspectionTrainer() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
+    if (!state.photoRevealed || !state.answer || state.submitted) return
     dispatch({ type: 'submit' })
+    recordSubmission('tongue', { sampleId: state.sampleId, answer: state.answer, observation, correct: isTongueAnswerCorrect(sample, state.answer) })
   }
   return <section className="tongue-inspection-trainer" aria-label="舌诊观察实训" data-photo-id={state.sampleId} data-reduced-motion={reducedMotion}>
     <div className="tongue-inspection-grid">

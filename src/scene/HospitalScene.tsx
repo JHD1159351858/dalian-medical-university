@@ -8,6 +8,7 @@ import { Character } from './Character';
 import { DoctorController } from './DoctorController';
 import { EntranceDoors, type DoorRuntime } from './EntranceDoors';
 import { hospitalCollision, movePlanarCircle, type DoorAction } from './collision';
+import '../records/encounterRecords.css';
 import {
   advanceAlongPath,
   PATIENT_MOVE_SPEED,
@@ -33,6 +34,8 @@ export type HospitalSceneProps = {
   onInteract: () => void;
   onInteractionChange: (eligible: boolean) => void;
   onDoorInteractionChange: (action: DoorAction | null) => void;
+  onOpenRecords: () => void;
+  recordsOpen?: boolean;
 };
 
 function actorBox(group: Group | null): Box3[] {
@@ -62,6 +65,8 @@ export function HospitalScene({
   onInteract,
   onInteractionChange,
   onDoorInteractionChange,
+  onOpenRecords,
+  recordsOpen = false,
 }: HospitalSceneProps) {
   const hospital = useGLTF('/models/hospital.glb');
   const scene = useMemo(() => hospital.scene.clone(true), [hospital.scene]);
@@ -147,6 +152,7 @@ export function HospitalScene({
   }, [camera, size]);
 
   useFrame((state, rawDelta) => {
+    if (recordsOpen) return;
     if (!patient.current || !doctor.current) return;
     const delta = Math.min(rawDelta, 0.05);
     if (zoomTarget.current !== null && 'zoom' in camera && phase !== 'diagnosis') {
@@ -258,12 +264,17 @@ export function HospitalScene({
       <directionalLight position={[-5, 14, 9]} intensity={3.1} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-12} shadow-camera-right={12} shadow-camera-top={12} shadow-camera-bottom={-12} shadow-normalBias={0.035} />
       <directionalLight position={[8, 10, -8]} intensity={1.7} color="#c9e1ff" />
       <primitive object={scene} dispose={null} />
+      {/* Hospital_Dark's first 24 vertices form the reception monitor, centered at (-3.6, 1.72, 2.8632). */}
+      {!diagnosis && <Html position={[-3.6, 1.99, 2.96]} center zIndexRange={[5, 0]}>
+        <button className="reception-records-hotspot" type="button" aria-label="查看接诊记录" aria-haspopup="dialog" onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenRecords(); }}>接诊记录</button>
+      </Html>}
       <group ref={patient} visible={phase !== 'completed'} position={phase === 'exiting' ? patientOutboundPath[0] : patientStart} rotation={[0, Math.PI, 0]}>
-        <Character kind="patient" animation={patientMoving ? 'Walk' : patientSpeaking ? 'Talk' : 'Idle'} speed={patientSpeed} onLoaded={onPatientLoaded} />
+        <Character kind="patient" animation={recordsOpen ? 'Idle' : patientMoving ? 'Walk' : patientSpeaking ? 'Talk' : 'Idle'} speed={patientSpeed} onLoaded={onPatientLoaded} />
         {phase === 'waiting' && <Html position={[0, 1.95, 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}><div style={{ background: '#ffffffed', color: '#235587', border: '1px solid #bed6ed', borderRadius: 18, padding: '6px 12px', fontSize: 12, boxShadow: '0 4px 16px #12345b15' }}>王旭 · 等待接诊</div></Html>}
       </group>
       <DoctorController
         phase={phase}
+        paused={recordsOpen}
         movementInput={movementInput}
         interactionRequest={interactionRequest}
         patient={patient}
@@ -278,11 +289,11 @@ export function HospitalScene({
         onInteractionChange={reportInteraction}
         onDoorInteractionChange={onDoorInteractionChange}
       />
-      <EntranceDoors scene={scene} actors={[patient, doctor]} runtime={doors} paused={diagnosis} />
+      <EntranceDoors scene={scene} actors={[patient, doctor]} runtime={doors} paused={diagnosis || recordsOpen} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[consultationPoint[0], 0.036, consultationPoint[2]]}>
         <ringGeometry args={[0.46, 0.49, 64]} /><meshBasicMaterial color="#3686ea" transparent opacity={0.45} depthWrite={false} />
       </mesh>
     </group>
-    <OrbitControls onStart={() => { zoomTarget.current = null; }} ref={controls} enabled={!diagnosis} target={[0, 0.5, 0.5]} enablePan={false} minZoom={10} maxZoom={130} minPolarAngle={0.35} maxPolarAngle={1.15} />
+    <OrbitControls onStart={() => { zoomTarget.current = null; }} ref={controls} enabled={!diagnosis && !recordsOpen} target={[0, 0.5, 0.5]} enablePan={false} minZoom={10} maxZoom={130} minPolarAngle={0.35} maxPolarAngle={1.15} />
   </>;
 }

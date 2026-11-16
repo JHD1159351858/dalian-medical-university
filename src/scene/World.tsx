@@ -82,7 +82,7 @@ export default function World(props: WorldProps) {
       dpr={[1, 1]} shadows={{ type: PCFSoftShadowMap }} gl={{ antialias: false, alpha: true, powerPreference: 'high-performance', toneMapping: ACESFilmicToneMapping }}
       style={{ position: 'absolute', inset: 0, pointerEvents: diagnosis ? 'none' : 'auto' }}
       onCreated={({ gl }) => { gl.setClearColor('#eef3f8', 0); gl.toneMappingExposure = 1; }}
-      fallback={<div className="webgl-fallback">当前浏览器无法显示三维场景，请启用硬件加速后重试。</div>}>
+      fallback={<div className="webgl-fallback" aria-hidden="true">当前浏览器无法显示三维场景，请启用硬件加速后重试。</div>}>
       <Suspense fallback={null}>
         <PrepareFrame diagnosis={diagnosis} />
         <HospitalScene {...props} />

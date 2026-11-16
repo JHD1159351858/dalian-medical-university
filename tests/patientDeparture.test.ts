@@ -25,7 +25,7 @@ function initialPatientPosition(phase: HospitalSceneProps['phase']) {
     const html = renderToStaticMarkup(createElement(HospitalScene, {
       phase, patientSpeaking: false, movementInput: { current: { x: 0, y: 0 } }, interactionRequest: 0,
       onReady: noop, onArrive: noop, onDepart: noop, onInteract: noop,
-      onInteractionChange: noop, onDoorInteractionChange: noop,
+      onInteractionChange: noop, onDoorInteractionChange: noop, onOpenRecords: noop,
     }));
     return html.match(/<group[^>]*position="([^"]+)"[^>]*rotation=/)?.[1].split(',').map(Number);
   } finally {
