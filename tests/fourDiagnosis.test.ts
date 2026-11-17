@@ -4,6 +4,8 @@ import { expect, it, vi } from 'vitest'
 import { ClinicalModulePage } from '../src/clinical/ClinicalModulePage'
 import { FourExaminationViewer } from '../src/clinical/FourExaminationViewer'
 import { nextListeningSample } from '../src/clinical/PatientListening'
+import { CASE_TONGUE_SAMPLE_ID } from '../src/clinical/caseData'
+import { isTongueAnswerCorrect, tongueSamples } from '../src/clinical/tongueSamples'
 
 vi.mock('../src/exam/ExamScene', () => ({
   PatientPortrait: () => createElement('canvas', { 'aria-label': '项目卡通患者模型' }),
@@ -58,10 +60,11 @@ it('preserves the existing auxiliary examination page', () => {
 
 it('opens tongue inspection directly with the fixed case photo', () => {
   const html = renderToStaticMarkup(createElement(FourExaminationViewer, { ...examinationProps, kind: 'look' }))
-  expect(html).not.toMatch(/望诊素材分类|巩膜黄染|面色红|阳黄|阴黄/)
-  expect(html).toContain('病例原始照片待教师提供')
+  expect(html).not.toContain('望诊素材分类')
+  expect(html).toContain('望诊图谱')
+  expect(html).not.toMatch(/AI教学示意|独立AI图谱|不代表当前患者体征|病例原始照片待教师提供/)
   expect(html).toContain('舌诊观察实训')
-  expect(html).toContain('当前病例固定使用一张舌象教学配图')
+  expect(html).toContain('data-photo-id="tongue-7"')
   expect(html).not.toContain('换一张')
   expect(html).not.toContain('完整舌象图谱')
 })
@@ -75,11 +78,19 @@ it('keeps the case pulse answer hidden before the student submits a judgement', 
 it('lets students listen before judging without exposing listening categories or the latest reply', () => {
   const html = renderToStaticMarkup(createElement(FourExaminationViewer, { ...examinationProps, kind: 'listen' }))
   expect(html).toContain('播放患者声音')
-  expect(html).toContain('合成练习语音')
+  expect(html).not.toContain('教师录音和本病例闻诊结论待补充')
   expect(html).not.toContain('声音洪亮')
   expect(html).not.toContain('声音低沉')
   expect(html).not.toContain('口臭')
   expect(html).not.toContain('左上腹痛。')
+})
+
+it('uses the thin white coating photo and rejects the old yellow greasy answer for the current case', () => {
+  const sample = tongueSamples.find(({ id }) => id === CASE_TONGUE_SAMPLE_ID)!
+  expect(sample.label).toBe('薄白苔')
+  expect(sample.image).toBe('/four-exam-images/tongue-library/image1.jpeg')
+  expect(isTongueAnswerCorrect(sample, '薄白苔')).toBe(true)
+  expect(isTongueAnswerCorrect(sample, '黄腻苔')).toBe(false)
 })
 
 it('varies listening phrases at conversational speeds without adjacent repeats', () => {
@@ -94,7 +105,7 @@ it('varies listening phrases at conversational speeds without adjacent repeats',
 })
 
 it.each([
-  ['look', '望诊观察记录', '你看到了哪些舌色、舌形和舌苔特征'],
+  ['look', '望诊观察记录', '记录患者的神色、形态、舌质和舌苔'],
   ['listen', '闻诊观察记录', '你听到的音量、语速和语调有什么特点'],
   ['feel', '切诊观察记录', '轻取、深取时分别感到什么'],
   ['ask', '问诊要点记录', '患者对你的追问作出了哪些回答'],

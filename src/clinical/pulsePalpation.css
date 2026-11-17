@@ -49,7 +49,6 @@
 .pulse-action-area button:disabled { opacity: .4; cursor: default; }
 .pulse-trainer button:focus-visible, .pulse-hint-toggle input:focus-visible { outline: 3px solid #8ecadf; outline-offset: 3px; }
 .pulse-trainer .pulse-drag-help { margin: 0; padding: 0 20px 10px; color: #53748a; font-size: 12px; line-height: 1.7; }
-.pulse-trainer .pulse-practice-note { display: block; padding: 0 20px 17px; color: #8298a7; font-size: 11px; line-height: 1.6; }
 @container (max-width: 760px) {
   .pulse-trainer-heading { gap: 12px; padding: 14px; }
   .pulse-trainer-title { width: 100%; }

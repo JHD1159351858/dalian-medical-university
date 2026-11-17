@@ -3,8 +3,7 @@ export type ClinicalModuleId = 'diagnosis' | 'physicalExam' | 'fourDiagnosis' | 
 export interface ClinicalItem { id: string; label: string; detail: string; result?: string }
 
 export const CASE_CHIEF_COMPLAINT = '左上腹痛'
-// 王旭原病例记载「舌红苔黄燥腻」，选用资料中的黄腻苔作为固定教学配图。
-export const CASE_TONGUE_SAMPLE_ID = 'tongue-10'
+export const CASE_TONGUE_SAMPLE_ID = 'tongue-7'
 export const PATIENT_OPENING = '医生，我身体不舒服。您帮我看看吧。'
 
 export const clinicalModules: Array<{ id: ClinicalModuleId; label: string; short: string }> = [

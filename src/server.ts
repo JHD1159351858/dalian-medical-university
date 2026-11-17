@@ -30,7 +30,8 @@ app.prepare().then(() => {
       const parsedUrl = parse(req.url!, true);
       await handle(req, res, parsedUrl);
     } catch (err) {
-      console.error('Error occurred handling', req.url, err);
+      const requestPath = req.url?.split('?')[0] ?? '/';
+      console.error('Error occurred handling', requestPath, requestPath.startsWith('/api/auth/chaoxing') ? 'Authentication request failed' : err);
       res.statusCode = 500;
       res.end('Internal server error');
     }

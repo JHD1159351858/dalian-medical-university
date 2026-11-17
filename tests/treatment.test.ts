@@ -19,6 +19,9 @@ it('shows separate treatment and medication checklists with blank student answer
   expect(html).toContain('第1行药物名称')
   expect(html).toContain('项目卡通患者模型')
   expect(html).toContain('完成病例')
+  const finishButton = html.match(/<button[^>]*class="four-next"[^>]*>/)?.[0]
+  expect(finishButton).toBeDefined()
+  expect(finishButton).not.toContain('disabled')
   expect(html).not.toContain('临床问诊实训')
   expect(createInitialTreatmentPlan().treatments.every((row) => row.item === '')).toBe(true)
   expect(createInitialTreatmentPlan().medications[0]).toMatchObject({ name: '', route: '', dose: '' })

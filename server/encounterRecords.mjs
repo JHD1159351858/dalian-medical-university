@@ -22,7 +22,10 @@ const textMap = (value) => object(value) && Object.entries(value).every(([key, e
 
 /** @param {RecordsEnvironment} env */
 function configuration(env) {
-  const key = (env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY || '').trim();
+  const legacy = [env.SUPABASE_URL, env.SUPABASE_PUBLISHABLE_KEY, env.SUPABASE_ANON_KEY].some((value) => value?.trim());
+  const key = (legacy ? env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY || '' : env.CODER_SUPABASE_ANON_KEY || '').trim();
+  const tenantId = legacy ? '' : (env.CODER_SUPABASE_TENANT_ID || '').trim();
+  if (tenantId.length > 256 || /[\u0000-\u001f\u007f]/.test(tenantId)) return null;
   if (key.startsWith('sb_secret_')) return null;
   let publicKey = /^sb_publishable_[A-Za-z0-9_-]+$/.test(key);
   if (!publicKey && key.split('.').length === 3) {
@@ -30,9 +33,9 @@ function configuration(env) {
   }
   if (!publicKey) return null;
   try {
-    const url = new URL(env.SUPABASE_URL || '');
+    const url = new URL((legacy ? env.SUPABASE_URL : env.CODER_SUPABASE_URL) || '');
     if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) return null;
-    return { url: url.href.replace(/\/+$/, ''), publishableKey: key };
+    return { url: url.href.replace(/\/+$/, ''), publishableKey: key, ...(tenantId ? { tenantId } : {}) };
   } catch { return null; }
 }
 
@@ -118,7 +121,7 @@ export async function encounterRecords(input, { env = process.env, fetchImpl = g
   signal?.addEventListener('abort', abort, { once: true });
   if (signal?.aborted) abort();
   const timer = setTimeout(() => controller.abort(new Error('timeout')), timeoutMs);
-  const headers = { apikey: config.publishableKey, authorization: `Bearer ${bearer}` };
+  const headers = { apikey: config.publishableKey, authorization: `Bearer ${bearer}`, ...(config.tenantId ? { 'X-Instance-ID': config.tenantId } : {}) };
   try {
     const auth = await fetchImpl(`${config.url}/auth/v1/user`, { headers, signal: controller.signal });
     if (auth.status === 401 || auth.status === 403) return error(401, '学生登录已失效，请重新登录。');

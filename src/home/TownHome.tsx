@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useState } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { ArrowRight, BookOpen, ChartNoAxesCombined, ShieldCheck, Stethoscope } from 'lucide-react';
 import { TownBackground } from './TownBackground';
+import { StudentAccount } from '../auth/StudentAuthProvider';
 
 const Training = lazy(() => import('../App'));
 
@@ -22,7 +23,7 @@ export default function TownHome() {
     <div className="town-shade" />
     <header className="town-header">
       <div className="brand-block" aria-label="首页品牌"><span className="brand-seal"><Stethoscope size={22} aria-hidden="true" /></span><div><strong>大连医科大学</strong><span>临床问诊实训</span></div></div>
-      <span className="session-chip"><ShieldCheck size={15} aria-hidden="true" />教学模拟环境</span>
+      <div className="header-actions"><StudentAccount /><span className="session-chip"><ShieldCheck size={15} aria-hidden="true" />教学模拟环境</span></div>
     </header>
     <section className="town-hero" aria-label="首页介绍">
       <div className="town-hero-copy">

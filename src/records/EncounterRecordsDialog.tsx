@@ -18,6 +18,7 @@ const fieldNames: Record<string, string> = {
   status: '评价状态', checks: '评价要点', outcome: '核对结果', studentText: '学生填写', reason: '评价说明', reference: '参考依据', ai: '补充评价',
   expected: '参考判断', missing: '待补充', extra: '需核对', selectedCorrect: '判断一致', primary: '西医主要诊断', secondary: '西医次要诊断', tcm: '中医诊断', summary: '总结',
   standardAnswer: '参考脉象', studentAnswer: '学生判断', missed: '待补充的脉象', explanation: '核对说明',
+  caseAssessment: '病例参考总评', score: '得分', maxScore: '满分', modules: '分项评分', feedback: '评分反馈', scopeNote: '核对范围', teacherApproved: '教师审核', completed: '完成病例提交',
 }
 const valueNames: Record<string, string> = {
   ...Object.fromEntries(physicalExamItems.map(({ id, label }) => [id, label])),

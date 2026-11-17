@@ -36,13 +36,11 @@
 .tongue-observation-guide { margin-top: 18px; padding-top: 14px; border-top: 1px solid #dfeaf1; color: #335f7b; font-size: 12px; }
 .tongue-observation-guide > summary { cursor: pointer; line-height: 1.7; }
 .tongue-inspection-trainer .tongue-observation-guide > p { margin: 9px 0 0; color: #6a8598; font-size: 12px; line-height: 1.7; }
-.tongue-inspection-source { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 5px 18px; margin-top: 12px; color: #8b9ca9; font-size: 11px; line-height: 1.7; }
 .tongue-photo-zoom { max-width: min(920px, calc(100vw - 40px)); max-height: calc(100dvh - 40px); padding: 18px; color: #234c66; border: 1px solid #c9dce7; border-radius: 9px; background: #fff; box-shadow: 0 20px 80px #173d5750; }
 .tongue-photo-zoom::backdrop { background: #102c43ad; }
 .tongue-photo-zoom > header { display: flex; align-items: center; justify-content: space-between; gap: 35px; margin-bottom: 14px; }
 .tongue-photo-zoom > header > button { display: grid; place-items: center; padding: 5px; color: #47728b; border: 0; background: #edf5fa; border-radius: 4px; cursor: pointer; }
 .tongue-photo-zoom > img { display: block; max-width: 100%; width: auto; max-height: calc(100dvh - 190px); margin: 0 auto; object-fit: contain; }
-.tongue-photo-zoom > p { margin: 12px 0 0; color: #6d879a; font-size: 12px; }
 @keyframes tongue-photo-appear { from { opacity: .5; } to { opacity: 1; } }
 @media (max-width: 900px) { .tongue-inspection-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, .9fr); gap: 12px; } .tongue-action-scene { min-height: 330px; } .tongue-observation-panel { padding: 14px; } .tongue-scene-caption > small { display: none; } }
 @media (max-width: 680px) { .tongue-inspection-grid { grid-template-columns: 1fr; } .tongue-action-scene { min-height: 280px; max-height: 55vh; } .tongue-observation-panel > h3 { font-size: 17px; } }

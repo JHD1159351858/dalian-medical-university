@@ -15,6 +15,7 @@ interface RecordsContext {
   loadList: (offset?: number) => Promise<EncounterList>
   loadRecord: (id: string) => Promise<EncounterRecord>
   retrySave: () => void
+  getAssessmentSnapshot: () => EncounterSnapshot | null
 }
 
 const signInRequired = () => Promise.reject(new RecordsError('请先登录后查看自己的接诊记录。', 401))
@@ -22,6 +23,7 @@ const context = createContext<RecordsContext>({
   access: 'signed_out', studentId: null, saveState: 'idle', error: '', physicalExam: null,
   updatePhysicalExam: () => {}, recordSubmission: () => {},
   loadList: signInRequired, loadRecord: signInRequired, retrySave: () => {},
+  getAssessmentSnapshot: () => null,
 })
 
 export const useEncounterRecords = () => useContext(context)
@@ -142,9 +144,12 @@ export function EncounterRecordsProvider({ snapshot, phase, session, onIdentityC
 
   const updatePhysicalExam = useCallback((value: PhysicalExamRecord) => { setPhysicalExam(value) }, [])
   const recordSubmission = useCallback((kind: SubmissionKind, payload: Record<string, unknown>) => {
+    const latestSnapshot = { ...snapshot, physicalExam }
+    recorder.begin(latestSnapshot)
+    recorder.update(latestSnapshot)
     recorder.submit(kind, payload)
     void flush()
-  }, [recorder, flush])
+  }, [recorder, flush, snapshot, physicalExam])
 
   const loadList = useCallback(async (offset = 0) => {
     const owner = ownerRef.current
@@ -158,5 +163,7 @@ export function EncounterRecordsProvider({ snapshot, phase, session, onIdentityC
     return loadEncounter(owner, id)
   }, [])
 
-  return <context.Provider value={{ access, studentId, saveState, error, physicalExam, updatePhysicalExam, recordSubmission, loadList, loadRecord, retrySave: () => { void flush() } }}>{children}</context.Provider>
+  const getAssessmentSnapshot = useCallback((): EncounterSnapshot => structuredClone({ ...snapshot, physicalExam }), [snapshot, physicalExam])
+
+  return <context.Provider value={{ access, studentId, saveState, error, physicalExam, updatePhysicalExam, recordSubmission, loadList, loadRecord, getAssessmentSnapshot, retrySave: () => { void flush() } }}>{children}</context.Provider>
 }

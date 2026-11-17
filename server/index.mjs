@@ -10,6 +10,8 @@ import { evaluateTreatment, validEvaluationAdvice, validTreatmentSubmission } fr
 import { chatConfigured, speechConfigured, validMessages, cozeHeaders, cozeSpeechUrl, validSpeechRequest, speechSpeed, speechVoiceId, speechPatientId, requestCozeChatReply } from './patientServices.mjs';
 import { getPulseExam, submitPulseExam } from './pulseExam.mjs';
 import { encounterRecords, recordsConfiguration } from './encounterRecords.mjs';
+import { assessCase } from './caseAssessment.mjs';
+import { chaoxingAuth } from './chaoxingAuth.mjs';
 
 export { attachSpeechStream };
 
@@ -28,16 +30,39 @@ export function createApp({ env = /** @type {Record<string, string | undefined>}
 
   app.get('/api/health', (_request, response) => response.json({ configured: chatConfigured(env), tts: speechConfigured(env), interview: true }));
 
+  for (const [path, action, method] of [
+    ['/api/auth/chaoxing', 'start', 'get'],
+    ['/api/auth/chaoxing/callback', 'callback', 'get'],
+    ['/api/auth/chaoxing/config', 'config', 'get'],
+    ['/api/auth/chaoxing/session', 'session', 'post'],
+    ['/api/auth/chaoxing/logout', 'logout', 'get'],
+  ]) {
+    app[method](path, async (request, response) => {
+      const headers = new Headers();
+      for (const name of ['origin', 'cookie']) if (request.get(name) !== undefined) headers.set(name, request.get(name));
+      const result = await chaoxingAuth({ action, method: request.method, url: request.originalUrl, headers }, { env, fetchImpl, timeoutMs: Math.min(timeoutMs, 15_000) });
+      response.set(result.headers).status(result.status);
+      if (result.body === null) response.end();
+      else response.json(result.body);
+    });
+  }
+
+  app.post('/api/case-assessment', (request, response) => {
+    const result = assessCase(request.body);
+    response.set('cache-control', 'private, no-store');
+    response.status(result.status).json(result.body);
+  });
+
   app.get('/api/records-config', (_request, response) => {
     const result = recordsConfiguration(env);
     response.status(result.status).json(result.body);
   });
 
   app.route('/api/encounters').get(async (request, response) => {
-    const result = await encounterRecords({ method: 'GET', url: request.originalUrl, authorization: request.get('authorization') }, { env, fetchImpl, timeoutMs });
+    const result = await encounterRecords({ method: 'GET', url: request.originalUrl, authorization: request.get('x-sandbox-authorization') ?? request.get('authorization') }, { env, fetchImpl, timeoutMs });
     response.status(result.status).json(result.body);
   }).put(async (request, response) => {
-    const result = await encounterRecords({ method: 'PUT', url: request.originalUrl, authorization: request.get('authorization'), body: request.body }, { env, fetchImpl, timeoutMs });
+    const result = await encounterRecords({ method: 'PUT', url: request.originalUrl, authorization: request.get('x-sandbox-authorization') ?? request.get('authorization'), body: request.body }, { env, fetchImpl, timeoutMs });
     response.status(result.status).json(result.body);
   });
 

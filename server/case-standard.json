@@ -1,0 +1,1157 @@
+{
+  "caseId": "wang-xu",
+  "version": "2026-11-17-thin-white-case-reference-100-v2",
+  "source": "case_reference",
+  "teacherApproved": false,
+  "scopeNote": "这是当前训练病例资料与原病例诊断记录的填写复现评分，不代表通用临床正确性、教师审核或独立医疗建议。2026-11-17按用户要求将训练舌象修订为舌质淡红、苔薄白；病名证型仍沿用原病例记录，不以薄白苔单独推导湿热毒蕴。问诊以最新case.json为准，未提供的闻诊、小便、面色等资料保留待确认。",
+  "sources": [
+    "server/case.json（当前问诊事实与未确认资料）",
+    "src/exam/examData.ts（11项体检报告）",
+    "src/clinical/auxiliaryExamData.ts及auxiliaryLabResults.ts（7项辅助检查报告）",
+    "src/clinical/caseData.ts与tongueSamples.ts（当前薄白苔配图tongue-7）",
+    "server/pulse-cases.json（沉、滑、数）",
+    "../case-extracted.txt:232–258（原病例诊断记录）",
+    "server/treatment-rubric.json（原病例12项处置与5项用药）",
+    "2026-11-17 用户明确修订：当前训练舌象改为舌质淡红、苔薄白，替代原资料的舌红苔黄燥腻；病名、证型及其他病例资料未据此重定。"
+  ],
+  "modules": [
+    {
+      "id": "diagnosis",
+      "label": "问诊",
+      "maxScore": 20,
+      "criteria": [
+        {
+          "id": "location",
+          "label": "询问不适部位",
+          "path": "messages.user",
+          "maxScore": 2,
+          "groups": [
+            [
+              "哪里疼",
+              "哪里不舒服",
+              "哪个部位",
+              "哪儿疼"
+            ]
+          ],
+          "mode": "question"
+        },
+        {
+          "id": "duration",
+          "label": "询问腹痛病程",
+          "path": "messages.user",
+          "maxScore": 2,
+          "groups": [
+            [
+              "腹痛",
+              "疼痛",
+              "疼了"
+            ],
+            [
+              "多久",
+              "几天",
+              "什么时候",
+              "病程"
+            ]
+          ],
+          "mode": "question"
+        },
+        {
+          "id": "character",
+          "label": "询问疼痛性质",
+          "path": "messages.user",
+          "maxScore": 2,
+          "groups": [
+            [
+              "性质",
+              "什么感觉",
+              "怎么疼",
+              "什么样的疼"
+            ]
+          ],
+          "mode": "question"
+        },
+        {
+          "id": "triggers",
+          "label": "询问饮食及按压影响",
+          "path": "messages.user",
+          "maxScore": 2,
+          "groups": [
+            [
+              "进食",
+              "吃饭",
+              "饮食"
+            ],
+            [
+              "油腻"
+            ],
+            [
+              "按压",
+              "按肚子"
+            ]
+          ],
+          "mode": "question"
+        },
+        {
+          "id": "accompanying-abdomen",
+          "label": "询问放射痛及腹胀",
+          "path": "messages.user",
+          "maxScore": 2,
+          "groups": [
+            [
+              "放射",
+              "牵扯"
+            ],
+            [
+              "腹胀",
+              "肚子胀"
+            ]
+          ],
+          "mode": "question"
+        },
+        {
+          "id": "cold-heat-sweat",
+          "label": "询问寒热、发热与出汗",
+          "path": "messages.user",
+          "maxScore": 2,
+          "groups": [
+            [
+              "怕冷",
+              "怕热",
+              "畏寒"
+            ],
+            [
+              "发热",
+              "发烧"
+            ],
+            [
+              "汗"
+            ]
+          ],
+          "mode": "question"
+        },
+        {
+          "id": "appetite",
+          "label": "询问胃口与进食情况",
+          "path": "messages.user",
+          "maxScore": 2,
+          "groups": [
+            [
+              "胃口",
+              "食欲"
+            ],
+            [
+              "进食",
+              "吃饭",
+              "吃东西"
+            ]
+          ],
+          "mode": "question"
+        },
+        {
+          "id": "thirst-bowel-sleep",
+          "label": "询问口渴、排便与睡眠",
+          "path": "messages.user",
+          "maxScore": 2,
+          "groups": [
+            [
+              "口干",
+              "口渴"
+            ],
+            [
+              "大便",
+              "排便",
+              "便秘"
+            ],
+            [
+              "睡眠",
+              "睡觉"
+            ]
+          ],
+          "mode": "question"
+        },
+        {
+          "id": "associated",
+          "label": "询问相关伴随症状",
+          "path": "messages.user",
+          "maxScore": 2,
+          "groups": [
+            [
+              "恶心"
+            ],
+            [
+              "呕吐"
+            ],
+            [
+              "腹泻"
+            ],
+            [
+              "便血"
+            ],
+            [
+              "胸闷"
+            ],
+            [
+              "胸痛"
+            ],
+            [
+              "咳嗽"
+            ],
+            [
+              "咳痰"
+            ]
+          ],
+          "mode": "question"
+        },
+        {
+          "id": "boundary",
+          "label": "询问未确认资料并保留边界",
+          "path": "messages.user",
+          "maxScore": 2,
+          "groups": [
+            [
+              "小便",
+              "排尿"
+            ],
+            [
+              "呼吸",
+              "气短"
+            ]
+          ],
+          "mode": "question"
+        }
+      ]
+    },
+    {
+      "id": "physicalExam",
+      "label": "体格检查",
+      "maxScore": 15,
+      "criteria": [
+        {
+          "id": "vitals",
+          "label": "基本生命体征",
+          "path": "physicalExam.notes.vitals",
+          "maxScore": 3,
+          "groups": [
+            [
+              "37.5"
+            ],
+            [
+              "118"
+            ],
+            [
+              "32"
+            ],
+            [
+              "149/92"
+            ]
+          ]
+        },
+        {
+          "id": "nodes",
+          "label": "锁骨上淋巴结",
+          "path": "physicalExam.notes.nodes",
+          "maxScore": 1,
+          "groups": [
+            [
+              "未触及淋巴结肿大",
+              "淋巴结未肿大",
+              "无淋巴结肿大"
+            ]
+          ]
+        },
+        {
+          "id": "skin",
+          "label": "皮肤及巩膜",
+          "path": "physicalExam.notes.skin",
+          "maxScore": 1,
+          "groups": [
+            [
+              "皮肤无黄染",
+              "无皮肤黄染"
+            ],
+            [
+              "巩膜无黄染",
+              "无巩膜黄染"
+            ],
+            [
+              "白色色素沉着",
+              "白癜风"
+            ],
+            [
+              "无肝掌"
+            ],
+            [
+              "无肝掌、蜘蛛痣",
+              "无蜘蛛痣"
+            ]
+          ],
+          "forbidden": [
+            "皮肤黄染",
+            "巩膜黄染",
+            "有肝掌",
+            "有蜘蛛痣"
+          ]
+        },
+        {
+          "id": "nutrition",
+          "label": "营养状态",
+          "path": "physicalExam.notes.nutrition",
+          "maxScore": 1,
+          "groups": [
+            [
+              "肥胖"
+            ],
+            [
+              "急性面容"
+            ],
+            [
+              "神志清楚"
+            ]
+          ]
+        },
+        {
+          "id": "respiration",
+          "label": "呼吸",
+          "path": "physicalExam.notes.respiration",
+          "maxScore": 1,
+          "groups": [
+            [
+              "呼吸运动正常"
+            ],
+            [
+              "呼吸频率增快",
+              "呼吸增快"
+            ],
+            [
+              "呼吸音粗"
+            ],
+            [
+              "未闻及明显干湿啰音",
+              "无明显干湿啰音"
+            ]
+          ]
+        },
+        {
+          "id": "heart",
+          "label": "心律",
+          "path": "physicalExam.notes.heart",
+          "maxScore": 1,
+          "groups": [
+            [
+              "118"
+            ],
+            [
+              "律齐"
+            ],
+            [
+              "未闻及异常杂音",
+              "无异常杂音"
+            ],
+            [
+              "无心包摩擦感"
+            ]
+          ]
+        },
+        {
+          "id": "neuro",
+          "label": "神经系统",
+          "path": "physicalExam.notes.neuro",
+          "maxScore": 1,
+          "groups": [
+            [
+              "肌力、肌张力正常",
+              "肌力肌张力正常"
+            ]
+          ]
+        },
+        {
+          "id": "limbs",
+          "label": "下肢",
+          "path": "physicalExam.notes.limbs",
+          "maxScore": 1,
+          "groups": [
+            [
+              "无水肿"
+            ],
+            [
+              "无静脉显露"
+            ]
+          ]
+        },
+        {
+          "id": "inspection",
+          "label": "腹部视触诊",
+          "path": "physicalExam.notes.inspection",
+          "maxScore": 3,
+          "groups": [
+            [
+              "全腹膨隆"
+            ],
+            [
+              "腹肌略紧张",
+              "腹肌紧张"
+            ],
+            [
+              "左上腹压痛明显",
+              "左上腹明显压痛"
+            ],
+            [
+              "无反跳痛",
+              "反跳痛阴性"
+            ],
+            [
+              "肝脾肋下未及"
+            ],
+            [
+              "Murphy征阴性",
+              "墨菲征阴性"
+            ]
+          ],
+          "forbidden": [
+            "反跳痛阳性",
+            "有反跳痛",
+            "Murphy征阳性"
+          ]
+        },
+        {
+          "id": "percussion",
+          "label": "腹部叩诊",
+          "path": "physicalExam.notes.percussion",
+          "maxScore": 1,
+          "groups": [
+            [
+              "鼓音"
+            ],
+            [
+              "无叩痛"
+            ],
+            [
+              "无移动性浊音",
+              "移动性浊音阴性"
+            ]
+          ]
+        },
+        {
+          "id": "bowel",
+          "label": "肠鸣音",
+          "path": "physicalExam.notes.bowel",
+          "maxScore": 1,
+          "groups": [
+            [
+              "减弱"
+            ],
+            [
+              "2次/分",
+              "2次/分钟"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fourDiagnosis",
+      "label": "中医四诊",
+      "maxScore": 15,
+      "criteria": [
+        {
+          "id": "look",
+          "label": "望诊记录",
+          "path": "fourDiagnosis.look",
+          "maxScore": 4,
+          "groups": [
+            [
+              "薄白苔",
+              "苔薄白",
+              "白薄苔"
+            ],
+            [
+              "无黄染"
+            ]
+          ],
+          "forbidden": [
+            "巩膜黄染",
+            "皮肤黄染",
+            "黄腻苔",
+            "苔黄燥腻",
+            "黄苔",
+            "苔黄"
+          ]
+        },
+        {
+          "id": "listen",
+          "label": "闻诊资料边界",
+          "path": "fourDiagnosis.listen",
+          "maxScore": 2,
+          "groups": [
+            [
+              "合成"
+            ],
+            [
+              "语声",
+              "声音"
+            ],
+            [
+              "气味",
+              "口臭"
+            ],
+            [
+              "呼吸"
+            ],
+            [
+              "待确认",
+              "待教师确认",
+              "未提供"
+            ]
+          ],
+          "forbidden": [
+            "声音洪亮",
+            "声音低沉",
+            "呼吸困难",
+            "口臭明显"
+          ]
+        },
+        {
+          "id": "ask",
+          "label": "中医问诊要点",
+          "path": "fourDiagnosis.ask",
+          "maxScore": 3,
+          "groups": [
+            [
+              "怕热"
+            ],
+            [
+              "汗"
+            ],
+            [
+              "不能进食",
+              "不能吃饭"
+            ],
+            [
+              "口干",
+              "口渴"
+            ],
+            [
+              "3日",
+              "三日",
+              "3天",
+              "三天"
+            ],
+            [
+              "睡眠尚可",
+              "睡眠正常"
+            ],
+            [
+              "小便"
+            ],
+            [
+              "待确认",
+              "待教师确认",
+              "未提供"
+            ]
+          ],
+          "forbidden": [
+            "午后发热",
+            "发热明显",
+            "胸闷明显"
+          ]
+        },
+        {
+          "id": "feel",
+          "label": "脉诊及腹部按诊",
+          "path": "fourDiagnosis.feel",
+          "maxScore": 4,
+          "groups": [
+            [
+              "沉"
+            ],
+            [
+              "滑"
+            ],
+            [
+              "数"
+            ],
+            [
+              "左上腹压痛"
+            ],
+            [
+              "无反跳痛",
+              "反跳痛阴性"
+            ]
+          ],
+          "forbidden": [
+            "反跳痛阳性"
+          ]
+        },
+        {
+          "id": "summary",
+          "label": "四诊总结与资料边界",
+          "path": "fourDiagnosis.summary",
+          "maxScore": 2,
+          "groups": [
+            [
+              "脾心痛"
+            ],
+            [
+              "湿热毒蕴"
+            ],
+            [
+              "待确认",
+              "待教师确认",
+              "未提供"
+            ]
+          ],
+          "forbidden": [
+            "黄腻苔",
+            "苔黄燥腻",
+            "黄苔",
+            "苔黄"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "auxiliaryExam",
+      "label": "辅助检查",
+      "maxScore": 10,
+      "criteria": [
+        {
+          "id": "ecg",
+          "label": "心电图",
+          "path": "auxiliaryExam.ecg",
+          "maxScore": 1,
+          "groups": [
+            [
+              "窦性心率",
+              "窦性心律"
+            ],
+            [
+              "窦速",
+              "窦性心动过速"
+            ]
+          ]
+        },
+        {
+          "id": "ultrasound",
+          "label": "腹部B超",
+          "path": "auxiliaryExam.ultrasound",
+          "maxScore": 2,
+          "groups": [
+            [
+              "胰头、体肿胀",
+              "胰腺肿胀"
+            ],
+            [
+              "脂肪肝"
+            ],
+            [
+              "积液"
+            ]
+          ]
+        },
+        {
+          "id": "abdomen-ct",
+          "label": "腹部CT",
+          "path": "auxiliaryExam.abdomen-ct",
+          "maxScore": 2,
+          "groups": [
+            [
+              "胰腺炎"
+            ],
+            [
+              "脂肪肝"
+            ],
+            [
+              "积液"
+            ]
+          ]
+        },
+        {
+          "id": "chest-ct",
+          "label": "胸部CT",
+          "path": "auxiliaryExam.chest-ct",
+          "maxScore": 1,
+          "groups": [
+            [
+              "双肺炎症"
+            ],
+            [
+              "双侧胸腔积液"
+            ],
+            [
+              "不张"
+            ]
+          ]
+        },
+        {
+          "id": "enzymes",
+          "label": "胰酶",
+          "path": "auxiliaryExam.enzymes",
+          "maxScore": 2,
+          "groups": [
+            [
+              "4278"
+            ],
+            [
+              "670"
+            ]
+          ]
+        },
+        {
+          "id": "blood",
+          "label": "血常规及降钙素原",
+          "path": "auxiliaryExam.blood",
+          "maxScore": 1,
+          "groups": [
+            [
+              "降钙素原"
+            ],
+            [
+              ">100",
+              "超过100"
+            ],
+            [
+              "ng/mL"
+            ]
+          ]
+        },
+        {
+          "id": "liver-kidney",
+          "label": "肝肾功能",
+          "path": "auxiliaryExam.liver-kidney",
+          "maxScore": 1,
+          "groups": [
+            [
+              "肌酐",
+              "CREA"
+            ],
+            [
+              "663"
+            ],
+            [
+              "尿素",
+              "UREA"
+            ],
+            [
+              "24.09"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clinicalDiagnosis",
+      "label": "诊断",
+      "maxScore": 20,
+      "criteria": [
+        {
+          "id": "primary",
+          "label": "西医主要诊断及依据",
+          "path": "clinicalDiagnosis.primary",
+          "maxScore": 8,
+          "groups": [
+            [
+              "急性重症胰腺炎",
+              "重症急性胰腺炎"
+            ],
+            [
+              "左上腹"
+            ],
+            [
+              "4278"
+            ],
+            [
+              "670"
+            ],
+            [
+              "CT"
+            ]
+          ]
+        },
+        {
+          "id": "secondary",
+          "label": "原病例次要诊断",
+          "path": "clinicalDiagnosis.secondary",
+          "maxScore": 4,
+          "groups": [
+            [
+              "急性呼吸窘迫综合征",
+              "ARDS"
+            ],
+            [
+              "轻度"
+            ],
+            [
+              "急性肾功能不全"
+            ]
+          ]
+        },
+        {
+          "id": "tcm",
+          "label": "原病例中医诊断",
+          "path": "clinicalDiagnosis.tcm",
+          "maxScore": 4,
+          "groups": [
+            [
+              "脾心痛"
+            ],
+            [
+              "湿热毒蕴"
+            ],
+            [
+              "薄白苔",
+              "苔薄白",
+              "白薄苔"
+            ],
+            [
+              "沉"
+            ]
+          ],
+          "forbidden": [
+            "黄腻苔",
+            "苔黄燥腻",
+            "黄苔",
+            "苔黄"
+          ]
+        },
+        {
+          "id": "summary",
+          "label": "诊断总结与证据边界",
+          "path": "clinicalDiagnosis.summary",
+          "maxScore": 4,
+          "groups": [
+            [
+              "急性重症胰腺炎",
+              "重症急性胰腺炎"
+            ],
+            [
+              "呼吸窘迫",
+              "ARDS"
+            ],
+            [
+              "急性肾功能不全"
+            ],
+            [
+              "湿热毒蕴"
+            ],
+            [
+              "未提供",
+              "待确认"
+            ]
+          ],
+          "forbidden": [
+            "黄腻苔",
+            "苔黄燥腻",
+            "黄苔",
+            "苔黄"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "treatment",
+      "label": "处置",
+      "maxScore": 20,
+      "criteria": []
+    }
+  ],
+  "referenceSubmission": {
+    "caseId": "wang-xu",
+    "snapshot": {
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "医生，我身体不舒服。您帮我看看吧。"
+        },
+        {
+          "role": "user",
+          "content": "哪里疼？"
+        },
+        {
+          "role": "assistant",
+          "content": "我左上腹痛。"
+        },
+        {
+          "role": "user",
+          "content": "腹痛多久了？"
+        },
+        {
+          "role": "assistant",
+          "content": "疼了两三天了。"
+        },
+        {
+          "role": "user",
+          "content": "疼痛是什么性质？"
+        },
+        {
+          "role": "assistant",
+          "content": "主要是胀痛。"
+        },
+        {
+          "role": "user",
+          "content": "进食后腹痛会加重吗？吃油腻食物后呢？"
+        },
+        {
+          "role": "assistant",
+          "content": "进食后腹痛会加重，吃油腻的食物后更明显。"
+        },
+        {
+          "role": "user",
+          "content": "按压会加重吗？"
+        },
+        {
+          "role": "assistant",
+          "content": "按压后腹痛会加重。"
+        },
+        {
+          "role": "user",
+          "content": "疼痛向其他地方放射吗？有没有腹胀？"
+        },
+        {
+          "role": "assistant",
+          "content": "疼痛没有向其他地方放射。有腹胀。"
+        },
+        {
+          "role": "user",
+          "content": "怕冷还是怕热？有没有发热？出汗多吗？"
+        },
+        {
+          "role": "assistant",
+          "content": "我怕热，没有畏寒、恶寒，也没有发热。比较容易出汗。"
+        },
+        {
+          "role": "user",
+          "content": "平时胃口怎么样？这两天能进食吗？"
+        },
+        {
+          "role": "assistant",
+          "content": "平时饮食还可以，这两天不能进食。"
+        },
+        {
+          "role": "user",
+          "content": "口干口渴吗？"
+        },
+        {
+          "role": "assistant",
+          "content": "口干，也觉得口渴。"
+        },
+        {
+          "role": "user",
+          "content": "大便怎么样，多久没排便？"
+        },
+        {
+          "role": "assistant",
+          "content": "大便困难，已经三天没有排大便了。"
+        },
+        {
+          "role": "user",
+          "content": "睡眠怎么样？"
+        },
+        {
+          "role": "assistant",
+          "content": "睡眠还可以。"
+        },
+        {
+          "role": "user",
+          "content": "有恶心、呕吐、腹泻、便血吗？"
+        },
+        {
+          "role": "assistant",
+          "content": "没有恶心。没有呕吐。没有腹泻。没有便血。"
+        },
+        {
+          "role": "user",
+          "content": "有胸闷、胸痛、咳嗽、咳痰吗？"
+        },
+        {
+          "role": "assistant",
+          "content": "没有胸闷。没有胸痛。没有咳嗽，也没有咳痰。"
+        },
+        {
+          "role": "user",
+          "content": "小便情况如何？"
+        },
+        {
+          "role": "assistant",
+          "content": "本病例小便情况待教师确认。"
+        },
+        {
+          "role": "user",
+          "content": "呼吸气短等情况如何？"
+        },
+        {
+          "role": "assistant",
+          "content": "本病例当前呼吸表现待教师确认。"
+        }
+      ],
+      "fourDiagnosis": {
+        "look": "舌质淡红，苔薄白。皮肤、巩膜无黄染，面色资料待确认。",
+        "listen": "当前仅提供合成语声。语声特征、异常气味和当前呼吸表现均待教师确认，未提供可作阳性结论的真实记录。",
+        "ask": "怕热，容易出汗；平时饮食尚可，近两天不能进食；口干口渴；大便困难，3日未排大便；睡眠尚可。无畏寒、恶寒、发热，否认恶心、呕吐、腹泻、便血、胸闷、胸痛、咳嗽、咳痰。小便情况待确认。",
+        "feel": "脉沉、滑、数。左上腹压痛明显，无反跳痛。",
+        "summary": "当前训练四诊所见为左上腹痛、怕热汗多口渴、便秘、舌质淡红苔薄白及沉滑数脉。原病例中医诊断为脾心痛、湿热毒蕴，病名证型沿用原记录，不以本轮修订的薄白苔单独推导该证型；小便、真实闻诊及面色资料待确认。"
+      },
+      "auxiliaryExam": {
+        "ecg": "窦性心率，窦速，心电轴不偏。",
+        "ultrasound": "胰头、体肿胀伴回声改变（考虑胰腺炎）。；脂肪肝，肝内钙化灶，胆囊壁略毛糙。；右上腹腹膜后可见少量无回声区，腹腔少量积液。",
+        "abdomen-ct": "胰腺炎征象。；脂肪肝。；肝右叶钙化灶或胆管结石可能。；腹腔、盆腔积液。",
+        "chest-ct": "双肺炎症，双侧胸腔积液，双下肺轻度不张。",
+        "enzymes": "脂肪酶（Lipase）：4278 U/L；淀粉酶（AMY）：670 U/L",
+        "blood": "白细胞（WBC）：8.40 10⁹/L；中性粒细胞比率（NEUT）：89.10 %；淋巴细胞比率（LYMPH）：8.30 %；单核细胞比率（MONO）：2.40 %；嗜酸性粒细胞比率（EO）：0.00 %；嗜碱性粒细胞比率（BASO）：0.20 %；中性粒细胞（NEUT*）：7.48 10⁹/L；淋巴细胞（LYMPH*）：0.70 10⁹/L；单核细胞（MONO*）：0.20 10⁹/L；嗜酸性粒细胞（EO*）：0.00 10⁹/L；嗜碱性粒细胞（BASO*）：0.02 10⁹/L；红细胞计数（RBC）：4.40 10¹²/L；血红蛋白（HB）：131.00 g/L；红细胞比积（HCT）：39.100 %；平均红细胞容积（MCV）：88.90 fL；平均红细胞Hb含量（MCH）：29.80 pg；平均红细胞Hb浓度（MCHC）：335.00 g/L；红细胞分布宽度SD（RDW-SD）：46.60 fL；红细胞分布宽度CV（RDW-CV）：0.144 ；血小板计数（PLT）：134.00 10⁹/L；血小板分布宽度（PDW）：14.50 fL；血小板平均容积（MPV）：11.40 fL；血小板压积（PCT）：0.150 ；大血小板比率（P-LCR）：35.90 %；降钙素原（PCT（降钙素原））：＞100 ng/mL",
+        "liver-kidney": "肌酸激酶同工酶-MB质量（CK-MBmass）：6.75 μg/L；超敏肌钙蛋白I（hs-TnI）：0.014 ng/L；肌红蛋白（MYO）：910.59 ng/mL；丙氨酸氨基转移酶（ALT）：26 U/L；天门冬氨酸氨基转移酶（AST）：88 U/L；碱性磷酸酶（ALP）：34 U/L；γ-谷氨酰基转移酶（γ-GT）：43 U/L；总胆红素（T-BIL）：26.8 μmol/L；结合胆红素（Bc）：0.0 μmol/L；非结合胆红素（Bu）：14.0 μmol/L；总蛋白（TP）：59.1 g/L；白蛋白（ALB）：28.5 g/L；球蛋白（Glob）：30.6 g/L；白球比值（A/G）：0.9 ；葡萄糖（GLU）：9.10 mmol/L；淀粉酶（AMY）：670 U/L；脂肪酶（Lipase）：4278 U/L；尿素（Urea）：24.09 mmol/L；肌酐（CRE）：663 μmol/L；尿酸（UA）：466 μmol/L；钾（K）：5.23 mmol/L；钠（Na）：141 mmol/L；氯（CL）：117 mmol/L；无机磷（P）：0.51 mmol/L；钙（Ca）：1.19 mmol/L；镁（Mg）：0.58 mmol/L"
+      },
+      "clinicalDiagnosis": {
+        "primary": "原病例主要诊断：急性重症胰腺炎。依据为左上腹痛、明显左上腹压痛，脂肪酶4278U/L、淀粉酶670U/L升高，腹部CT示胰腺炎征象。",
+        "secondary": "原病例次要诊断：急性呼吸窘迫综合征（轻度）、急性肾功能不全。按原病例诊断记录填写，不据此新增患者当前主诉。",
+        "tcm": "原病例中医诊断：脾心痛，湿热毒蕴。当前训练记录为左上腹痛、怕热汗多口渴、便秘、舌质淡红苔薄白及脉沉滑数。病名证型沿用原病例记录，不以本轮修订的薄白苔单独推导该证型。",
+        "summary": "综合问诊、体格检查和辅助检查，原病例诊断为急性重症胰腺炎，合并急性呼吸窘迫综合征（轻度）和急性肾功能不全；中医诊断脾心痛、湿热毒蕴。依据详见各模块记录，未提供或待确认的信息不作阳性结论。"
+      },
+      "treatment": {
+        "treatments": [
+          {
+            "id": "nursing-level-one",
+            "category": "护理",
+            "item": "一级护理"
+          },
+          {
+            "id": "nutrition-fasting",
+            "category": "饮食及营养",
+            "item": "禁食水"
+          },
+          {
+            "id": "monitoring-intensive-care",
+            "category": "监测及支持",
+            "item": "重症监护"
+          },
+          {
+            "id": "monitoring-enteral-nutrition",
+            "category": "监测及支持",
+            "item": "三腔喂养管肠内营养支持"
+          },
+          {
+            "id": "intervention-crrt",
+            "category": "介入及手术",
+            "item": "持续床旁血液净化（CRRT）"
+          },
+          {
+            "id": "intervention-mechanical-ventilation",
+            "category": "介入及手术",
+            "item": "呼吸机机械通气"
+          },
+          {
+            "id": "tcm-external-application",
+            "category": "中医治疗",
+            "item": "芒硝外敷"
+          },
+          {
+            "id": "tcm-decoction-oral",
+            "category": "中医治疗",
+            "item": "中药汤药口服"
+          },
+          {
+            "id": "medication-pancreatic-secretion",
+            "category": "药物治疗",
+            "item": "抑制胰酶分泌"
+          },
+          {
+            "id": "medication-gastric-acid",
+            "category": "药物治疗",
+            "item": "抑制胃酸分泌"
+          },
+          {
+            "id": "medication-fluid-support",
+            "category": "药物治疗",
+            "item": "补液支持"
+          },
+          {
+            "id": "medication-anti-infection",
+            "category": "药物治疗",
+            "item": "抗感染"
+          }
+        ],
+        "medications": [
+          {
+            "id": "medication-omeprazole",
+            "name": "奥美拉唑",
+            "route": "静脉滴注",
+            "dose": "40mg bid"
+          },
+          {
+            "id": "medication-somatostatin",
+            "name": "生长抑素",
+            "route": "静脉滴注",
+            "dose": "6mg qd"
+          },
+          {
+            "id": "medication-imipenem",
+            "name": "亚胺培南",
+            "route": "静脉滴注",
+            "dose": "1g bid"
+          },
+          {
+            "id": "medication-mirabilite",
+            "name": "芒硝",
+            "route": "外敷腹部",
+            "dose": "500g qd"
+          },
+          {
+            "id": "medication-tcm-decoction",
+            "name": "中药",
+            "route": "口服",
+            "dose": "柴胡10  黄芩15 枳实15 厚朴15\n姜半夏15 党参15 麦冬25 大黄（后）10 炒白芍25 木香5 大腹皮15 栀子10 金银花（后下）25 连翘10 浙贝母10 天花粉25 桃仁10 丹参15 冬瓜子25 蒲公英25 茵陈25 茯苓25"
+          }
+        ]
+      },
+      "physicalExam": {
+        "orderedIds": [
+          "vitals",
+          "nodes",
+          "skin",
+          "nutrition",
+          "respiration",
+          "heart",
+          "neuro",
+          "limbs",
+          "inspection",
+          "percussion",
+          "bowel"
+        ],
+        "notes": {
+          "vitals": "体温 37.5℃；脉搏 118 次/分；呼吸 32 次/分；血压 149/92 mmHg。",
+          "nodes": "双侧锁骨上未触及淋巴结肿大。",
+          "skin": "全身皮肤无黄染，皮肤散在大片白色色素沉着，无肝掌、蜘蛛痣。巩膜无黄染。",
+          "nutrition": "中等，体型肥胖，急性面容，神志清楚。",
+          "respiration": "胸部无畸形，呼吸运动正常，肋间隙无增宽，呼吸频率增快；双肺呼吸音粗，未闻及明显干湿啰音。",
+          "heart": "心率 118 次/分，律齐，各瓣膜区未闻及异常杂音，无心包摩擦感。",
+          "neuro": "肌力、肌张力正常。",
+          "limbs": "双下肢无水肿，无静脉显露。",
+          "inspection": "全腹膨隆，无胃肠型及蠕动波，腹肌略紧张，左上腹压痛明显，无反跳痛，肝脾肋下未及，Murphy 征阴性。",
+          "percussion": "腹部叩诊呈鼓音，肝肾区无叩痛，无移动性浊音。",
+          "bowel": "肠鸣音减弱，2 次/分。"
+        },
+        "submittedNotes": {
+          "vitals": "体温 37.5℃；脉搏 118 次/分；呼吸 32 次/分；血压 149/92 mmHg。",
+          "nodes": "双侧锁骨上未触及淋巴结肿大。",
+          "skin": "全身皮肤无黄染，皮肤散在大片白色色素沉着，无肝掌、蜘蛛痣。巩膜无黄染。",
+          "nutrition": "中等，体型肥胖，急性面容，神志清楚。",
+          "respiration": "胸部无畸形，呼吸运动正常，肋间隙无增宽，呼吸频率增快；双肺呼吸音粗，未闻及明显干湿啰音。",
+          "heart": "心率 118 次/分，律齐，各瓣膜区未闻及异常杂音，无心包摩擦感。",
+          "neuro": "肌力、肌张力正常。",
+          "limbs": "双下肢无水肿，无静脉显露。",
+          "inspection": "全腹膨隆，无胃肠型及蠕动波，腹肌略紧张，左上腹压痛明显，无反跳痛，肝脾肋下未及，Murphy 征阴性。",
+          "percussion": "腹部叩诊呈鼓音，肝肾区无叩痛，无移动性浊音。",
+          "bowel": "肠鸣音减弱，2 次/分。"
+        },
+        "history": []
+      }
+    }
+  },
+  "caseRevisions": [
+    {
+      "dateBeijing": "2026-11-17",
+      "field": "tongue",
+      "previous": "舌红，苔黄燥腻；原固定配图为黄腻苔。",
+      "current": "舌质淡红，苔薄白；固定配图为薄白苔tongue-7。",
+      "source": "用户当前场景修改要求；不是原始病例观察或教师复核。"
+    }
+  ]
+}

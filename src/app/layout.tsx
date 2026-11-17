@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 
 import { IframeSdkProvider } from '@/components/iframe-sdk-provider';
+import { StudentAuthProvider } from '@/auth/StudentAuthProvider';
 
 import './globals.css';
 import '../styles.css';
@@ -70,7 +71,7 @@ export default function RootLayout({
             __html: `window.__errorBridge = window.IframeErrorSync && window.IframeErrorSync.child.create({ debug: false, reporters: 'auto' }).init();`,
           }}
         />
-        <IframeSdkProvider>{children}</IframeSdkProvider>
+        <IframeSdkProvider><StudentAuthProvider>{children}</StudentAuthProvider></IframeSdkProvider>
       </body>
     </html>
   );

@@ -15,6 +15,7 @@ import { emotionForSpeech, preloadSpeech, speakChinese, startSpeechStream, stopS
 import { PATIENT_VOICE_PROFILE } from './diagnosis/voiceProfiles'
 import { EncounterRecordsProvider, useEncounterRecords } from './records/EncounterRecordsProvider'
 import { EncounterRecordsDialog } from './records/EncounterRecordsDialog'
+import { StudentAccount } from './auth/StudentAuthProvider'
 
 const phaseLabels = {
   loading: '载入临床场景',
@@ -327,6 +328,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
         </div>
         <div className="header-actions">
           <EncounterSaveStatus />
+          <StudentAccount returnTo="/training" />
           <span className="session-chip"><ShieldCheck aria-hidden="true" size={15} /> 教学模拟环境</span>
           <button className="icon-text-button" type="button" onClick={toggleMute}>
             {muted ? <VolumeX aria-hidden="true" size={17} /> : <Volume2 aria-hidden="true" size={17} />}

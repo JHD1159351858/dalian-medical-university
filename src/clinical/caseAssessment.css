@@ -1,0 +1,20 @@
+.case-assessment { margin-top: 16px; padding: 16px; color: #24475a; background: #f0f8fb; border: 1px solid #bcdce7; border-radius: 12px; }
+.case-assessment > header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.case-assessment h3 { margin: 0; font-size: 17px; }
+.case-assessment > header > strong { color: #136e86; font-size: 13px; white-space: nowrap; }
+.case-assessment > header > strong > span { margin-right: 3px; font-size: 30px; }
+.case-assessment-modules { display: grid; gap: 8px; }
+.case-assessment details { padding: 10px; background: #fff; border: 1px solid #deebf0; border-radius: 7px; }
+.case-assessment summary { cursor: pointer; color: #315d72; font-size: 13px; }
+.case-assessment summary b { float: right; color: #176f82; }
+.case-assessment ul { padding: 8px 0 0; margin: 0; list-style: none; }
+.case-assessment li { padding: 9px 0; border-top: 1px solid #e8eff3; font-size: 12px; }
+.case-assessment li > div { display: flex; justify-content: space-between; gap: 8px; }
+.case-assessment li > p { margin: 5px 0 0; color: #667f8f; line-height: 1.65; }
+.case-assessment .needs-review > div { color: #9a5f36; }
+.case-assessment-dialog { width: min(840px, calc(100vw - 40px)); max-width: none; max-height: calc(100dvh - 48px); margin: auto; padding: 0; overflow-y: auto; color: #24475a; background: #f0f8fb; border: 1px solid #bcdce7; border-radius: 12px; box-shadow: 0 20px 80px #173d5750; }
+.case-assessment-dialog::backdrop { background: #17394e99; }
+.case-assessment-dialog .case-assessment { margin: 0; padding: 24px; border: 0; }
+.case-assessment-dialog .case-assessment > header { padding-right: 38px; margin-bottom: 16px; }
+.case-assessment-close { position: absolute; top: 20px; right: 18px; display: grid; place-items: center; padding: 6px; color: #315d72; background: #e4f0f5; border: 0; border-radius: 6px; cursor: pointer; }
+.case-assessment-reopen { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 16px 18px; padding: 12px; color: #176f82; background: #f0f8fb; border: 1px solid #bcdce7; border-radius: 8px; font-size: 14px; cursor: pointer; }

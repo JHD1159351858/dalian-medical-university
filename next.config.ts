@@ -7,6 +7,7 @@ const isProd =
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['*.cxiagents.com'],
+  logging: { incomingRequests: { ignore: [/^\/api\/auth\/chaoxing(?:[/?]|$)/] } },
 
   // 生产关闭浏览器端 sourcemap，减少构建与运行时内存占用
   productionBrowserSourceMaps: false,

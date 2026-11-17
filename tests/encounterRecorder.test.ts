@@ -5,6 +5,24 @@ import type { EncounterRecord, EncounterSnapshot } from '../src/records/types'
 
 const snapshot = (): EncounterSnapshot => ({ messages: [], fourDiagnosis: {}, auxiliaryExam: {}, clinicalDiagnosis: {}, treatment: createInitialTreatmentPlan(), physicalExam: null })
 
+it('retains partial answers and empty fields when an unevaluated case is completed', async () => {
+  const saved: EncounterRecord[] = []
+  const recorder = createEncounterRecorder(async (_owner, record) => { saved.push(record) })
+  const partial = snapshot()
+  partial.fourDiagnosis.look = '舌质淡红，苔薄白'
+  partial.treatment.treatments[0].item = '学生填写的护理内容'
+  partial.treatment.medications[0].name = '学生填写的药名'
+  recorder.setOwner('student-a')
+  recorder.begin(partial)
+  recorder.submit('treatment', { diagnosis: {}, plan: partial.treatment, completed: true })
+  recorder.finish('completed')
+  await recorder.flush()
+  expect(saved.at(-1)).toMatchObject({ status: 'completed', snapshot: partial })
+  expect(saved.at(-1)?.endedAt).not.toBeNull()
+  expect(saved.at(-1)?.snapshot.treatment.medications[0]).toMatchObject({ route: '', dose: '' })
+  expect(saved.at(-1)?.submissions[0].payload).toEqual({ diagnosis: {}, plan: partial.treatment, completed: true })
+})
+
 it('keeps distinct encounters and all submissions while updating the same encounter id', async () => {
   const saved: EncounterRecord[] = []
   const recorder = createEncounterRecorder(async (_owner, record) => { saved.push(record) })

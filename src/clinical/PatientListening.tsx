@@ -93,7 +93,6 @@ export function PatientListening({ muted, onStopReading }: { muted: boolean; onS
     <div>
       <strong>患者语声观察</strong>
       <p>请听患者说话，留意声音大小、语速和语调，听完后返回记录。</p>
-      <small>合成练习语音会轮换门诊口语片段，用于练习描述听到的特征。教师录音和本病例闻诊结论待补充。</small>
     </div>
     <button type="button" disabled={muted} onClick={() => void playVoice()}>
       {active ? <Square size={18} /> : <Play size={18} />}

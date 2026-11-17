@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "kind": "ai-generated-teaching-illustration",
+  "generator": "built-in image_gen",
+  "generatedOnBeijing": "2026-11-17",
+  "caseEvidence": false,
+  "teacherApprovedClinicalPhoto": false,
+  "disclosure": "AI生成的独立教学示意，仅供色泽辨认练习，非真实患者照片、非教师标准临床照片；不能据图片单独判断疾病或证型，不代表当前病例体征。",
+  "reference": {
+    "title": "黄疸中医诊疗专家共识（2023）",
+    "organization": "中华中医药学会脾胃病分会",
+    "url": "https://files.sciengine.com/pdfs/1001-5256/55EEA68D89754A0CBBE530612D0EADA9.pdf",
+    "application": "阳黄色泽鲜明、阴黄色泽晦暗，仅据此设计颜色对照；不以图像代替结合病史与舌脉的诊断。"
+  },
+  "inspection": "四张图经view_image视觉检查；统一为原项目卡通患者、正面半身、白色病号服、蓝灰背景和方形画幅。仅作色泽示意，未作临床标准审核。",
+  "prompts": "PROMPTS.md",
+  "images": [
+    {
+      "id": "scleral-icterus",
+      "title": "巩膜黄染",
+      "file": "scleral-icterus-ai-20261116.png",
+      "sourceArtifact": "exec-f1028ea8-5a68-4530-96eb-d43ef2d3ebeb.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1420365,
+      "sha256": "015185abf44391c9d91750d66f3c046b8b03248d7fedb695ea6516834f3f33aa",
+      "visualReview": "同一卡通患者正面半身；眼白淡黄，虹膜棕色、瞳孔黑色，皮肤保持原色。"
+    },
+    {
+      "id": "facial-flushing",
+      "title": "面色红",
+      "file": "facial-flushing-ai-20261116.png",
+      "sourceArtifact": "exec-232bc1bf-796d-4a69-a7aa-201cadabfc53.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1652596,
+      "sha256": "e7b50a3f1058252144f6088d43d03e56fd6077ed99dcfa9b143ec3f5218cf429",
+      "visualReview": "同一卡通患者正面半身；脸颊、鼻和前额弥漫发红，眼白与手臂保持原色。"
+    },
+    {
+      "id": "yang-jaundice",
+      "title": "皮肤 · 阳黄",
+      "file": "yang-jaundice-ai-20261116.png",
+      "sourceArtifact": "exec-e06c7fb8-8750-4524-b1e5-38a89cbd16fe.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1411610,
+      "sha256": "45f17d17b0de03c98df61c3652b1ced2eee769f69ef69cdd334e76ef427b8a02",
+      "visualReview": "同一卡通患者正面半身；面部和手臂金黄色鲜明，白衣与蓝灰背景保持原色。"
+    },
+    {
+      "id": "yin-jaundice",
+      "title": "皮肤 · 阴黄",
+      "file": "yin-jaundice-ai-20261116.png",
+      "sourceArtifact": "exec-b4ba9f21-c358-48ca-b6c7-19475f34fe66.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1482391,
+      "sha256": "7f9f2038a8c7ab99c89109139d6d96105cbd3d53788b582f55971d3c696667f9",
+      "visualReview": "同一卡通患者正面半身；面部和手臂呈晦暗灰黄色，与阳黄色泽形成对照。"
+    }
+  ],
+  "style": "3d-cartoon-patient",
+  "styleReference": "../tongue-patient-portrait.png"
+}

@@ -245,6 +245,5 @@ export function PulsePalpationTrainer({ caseId = 'wang-xu' }: { caseId?: string 
         <dl>{assessment.standardAnswer.map((item) => <div key={item}><dt>{item}</dt><dd>{assessment.explanation[item]}</dd></div>)}</dl>
       </section>}
     </section>
-    <small className="pulse-practice-note">参考 GB/T 40665.4—2021 的布指及轻重取法。本图提供关部单按与三指布指定位。鼠标短点、长按模拟不同取脉力度，触感描述用于病例教学。</small>
   </section>
 }

@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type Server } from 'node:http';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createApp } from '../server/index.mjs';
+import { recordsConfiguration } from '../server/encounterRecords.mjs';
 
 const servers: Server[] = [];
 const alice = '11111111-1111-4111-8111-111111111111';
@@ -30,7 +31,7 @@ async function jsonBody(request: IncomingMessage): Promise<Record<string, unknow
   return JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>;
 }
 
-async function harness(adapter: Adapter, configured = true) {
+async function harness(adapter: Adapter, configured = true, platformTenant?: string) {
   const rows = new Map<string, Row>();
   const authCalls: string[] = [];
   const databaseCalls: URL[] = [];
@@ -40,6 +41,7 @@ async function harness(adapter: Adapter, configured = true) {
     const token = request.headers.authorization;
     const owner = token === 'Bearer alice-token' ? alice : token === 'Bearer bob-token' ? bob : null;
     expect(request.headers.apikey).toBe('sb_publishable_test');
+    expect(request.headers['x-instance-id']).toBe(platformTenant || undefined);
     if (url.pathname === '/auth/v1/user') {
       authCalls.push(String(token));
       response.statusCode = owner ? 200 : 401;
@@ -68,23 +70,79 @@ async function harness(adapter: Adapter, configured = true) {
     const limit = Number(url.searchParams.get('limit') ?? visible.length);
     response.end(JSON.stringify(visible.slice(offset, offset + limit)));
   }));
-  const env = { SUPABASE_URL: configured ? base : '', SUPABASE_PUBLISHABLE_KEY: configured ? 'sb_publishable_test' : '', SUPABASE_ANON_KEY: '' };
+  const platform = platformTenant !== undefined;
+  const env = {
+    SUPABASE_URL: configured && !platform ? base : '', SUPABASE_PUBLISHABLE_KEY: configured && !platform ? 'sb_publishable_test' : '', SUPABASE_ANON_KEY: '',
+    CODER_SUPABASE_URL: configured && platform ? base : '', CODER_SUPABASE_ANON_KEY: configured && platform ? 'sb_publishable_test' : '', CODER_SUPABASE_TENANT_ID: platformTenant ?? '',
+  };
   for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value);
   const app = adapter === 'express' ? await listen(createServer(createApp({ env }))) : 'http://localhost';
-  const call = async (method: 'GET' | 'PUT', query = '', body?: unknown, token: string | null = 'alice-token') => {
-    const headers: Record<string, string> = { 'content-type': 'application/json' };
+  const call = async (method: 'GET' | 'PUT', query = '', body?: unknown, token: string | null = 'alice-token', forwardedHeaders: Record<string, string> = {}) => {
+    const headers: Record<string, string> = { 'content-type': 'application/json', ...forwardedHeaders };
     if (token) headers.authorization = `Bearer ${token}`;
     const request = new Request(`${app}/api/encounters${query}`, { method, headers, ...(method === 'PUT' ? { body: JSON.stringify(body) } : {}) });
     if (adapter === 'express') return fetch(request);
     const route = await import('../src/app/api/encounters/route');
     return method === 'GET' ? route.GET(request) : route.PUT(request);
   };
-  return { rows, authCalls, databaseCalls, env, call, app };
+  const config = async () => adapter === 'express' ? fetch(`${app}/api/records-config`) : (await import('../src/app/api/records-config/route')).GET();
+  return { rows, authCalls, databaseCalls, env, call, app, config };
 }
 
 afterEach(async () => {
   vi.unstubAllEnvs();
   await Promise.all(servers.splice(0).map((server) => new Promise<void>((resolve) => server.close(() => resolve()))));
+});
+
+it.each(['express', 'next'] as const)('%s routes platform sessions and records through the configured tenant', async (adapter) => {
+  const h = await harness(adapter, true, 'hospital-tenant');
+  expect(await (await h.config()).json()).toEqual({ url: h.env.CODER_SUPABASE_URL, publishableKey: 'sb_publishable_test', tenantId: 'hospital-tenant' });
+  const forwarded = { 'x-sandbox-authorization': 'Bearer alice-token' };
+  expect((await h.call('PUT', '', encounter(), null, forwarded)).status).toBe(200);
+  const detail = await h.call('GET', `?id=${recordId}`, undefined, 'bob-token', forwarded);
+  expect(detail.status).toBe(200);
+  expect(await detail.json()).toMatchObject({ record: { id: recordId } });
+  expect(h.authCalls).toEqual(['Bearer alice-token', 'Bearer alice-token']);
+  expect(h.rows.get(recordId)?.student_id).toBe(alice);
+});
+
+it.each(['express', 'next'] as const)('%s never falls back to a direct token when a platform header is present but invalid', async (adapter) => {
+  const h = await harness(adapter);
+  for (const value of ['', 'not-a-bearer', 'Bearer invalid']) {
+    const response = await h.call('GET', '', undefined, 'alice-token', { 'x-sandbox-authorization': value });
+    expect(response.status).toBe(401);
+  }
+  expect(h.authCalls).toEqual(['Bearer invalid']);
+  expect(h.databaseCalls).toHaveLength(0);
+});
+
+it('keeps configuration families together and never combines a legacy URL with a platform key', () => {
+  const platform = { CODER_SUPABASE_URL: 'https://platform.example', CODER_SUPABASE_ANON_KEY: 'sb_publishable_platform', CODER_SUPABASE_TENANT_ID: 'hospital-tenant' };
+  expect(recordsConfiguration(platform)).toMatchObject({ status: 200, body: { url: 'https://platform.example', publishableKey: 'sb_publishable_platform', tenantId: 'hospital-tenant' } });
+  expect(recordsConfiguration({ ...platform, SUPABASE_URL: 'https://legacy.example' }).status).toBe(503);
+  expect(recordsConfiguration({ ...platform, SUPABASE_ANON_KEY: 'sb_publishable_legacy' }).status).toBe(503);
+  expect(recordsConfiguration({ ...platform, SUPABASE_URL: 'https://legacy.example', SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_legacy' })).toEqual({ status: 200, body: { url: 'https://legacy.example', publishableKey: 'sb_publishable_legacy' } });
+  for (const key of ['sb_secret_forbidden', 'invalid']) expect(recordsConfiguration({ ...platform, CODER_SUPABASE_ANON_KEY: key }).status).toBe(503);
+  expect(recordsConfiguration({ ...platform, CODER_SUPABASE_TENANT_ID: 'invalid\r\nheader' }).status).toBe(503);
+});
+
+it.each(['express', 'next'] as const)('%s saves a completed partial case without requiring evaluation or filled fields', async (adapter) => {
+  const h = await harness(adapter);
+  const partial = {
+    ...encounter(), status: 'completed', endedAt: '2026-11-13T02:00:00.000Z',
+    snapshot: {
+      ...encounter().snapshot, fourDiagnosis: { look: '薄白苔' },
+      treatment: {
+        treatments: [{ id: 't1', category: '护理', item: '学生已填写的内容' }],
+        medications: [{ id: 'm1', name: '学生药名', route: '', dose: '' }],
+      },
+    },
+    submissions: [{ id: '44444444-4444-4444-8444-444444444444', kind: 'treatment', at: '2026-11-13T02:00:00.000Z', payload: { completed: true } }],
+  };
+  expect((await h.call('PUT', '', partial)).status).toBe(200);
+  const response = await h.call('GET', `?id=${recordId}`);
+  expect(await response.json()).toMatchObject({ record: { status: 'completed', snapshot: partial.snapshot, submissions: partial.submissions } });
+  expect(h.rows.get(recordId)?.student_id).toBe(alice);
 });
 
 it.each(['express', 'next'] as const)('%s rejects missing or invalid sessions before accessing records', async (adapter) => {

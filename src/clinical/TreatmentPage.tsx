@@ -5,6 +5,8 @@ import { CASE_CHIEF_COMPLAINT, clinicalModules, type ClinicalModuleId } from './
 import type { MedicationRow, TreatmentPlan, TreatmentRow } from './treatmentPlan'
 import { requestTreatmentEvaluation, type TreatmentEvaluation } from './treatmentEvaluation'
 import { useEncounterRecords } from '../records/EncounterRecordsProvider'
+import { requestCaseAssessment, type CaseAssessment } from './caseAssessment'
+import { CaseAssessmentDialog } from './CaseAssessmentPanel'
 import './treatmentEvaluation.css'
 
 export interface TreatmentPageProps {
@@ -17,7 +19,7 @@ export interface TreatmentPageProps {
 }
 
 export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFinish, onNavigate }: TreatmentPageProps) {
-  const { recordSubmission } = useEncounterRecords()
+  const { recordSubmission, getAssessmentSnapshot } = useEncounterRecords()
   const treatmentTableRef = useRef<HTMLDivElement>(null)
   const medicationTableRef = useRef<HTMLDivElement>(null)
   const pendingRowRef = useRef<{ kind: 'treatments' | 'medications'; id: string } | null>(null)
@@ -30,17 +32,26 @@ export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFi
   activeSignature.current = signature
   const evaluationRequest = useRef<AbortController | null>(null)
   const evaluationPanel = useRef<HTMLElement>(null)
+  const [assessmentOpen, setAssessmentOpen] = useState(false)
   const [evaluation, setEvaluation] = useState<{ signature: string; result: TreatmentEvaluation } | null>(null)
   const [evaluating, setEvaluating] = useState(false)
   const [evaluationError, setEvaluationError] = useState('')
+  const [caseAssessment, setCaseAssessment] = useState<{ signature: string; result: CaseAssessment } | null>(null)
+  const [caseAssessmentError, setCaseAssessmentError] = useState('')
   const currentEvaluation = evaluation?.signature === signature ? evaluation.result : null
   const caseReference = currentEvaluation?.basis === 'case_reference'
   const pendingLabel = caseReference ? '超出病例对照范围' : '待教师确认'
-  const canFinish = !!currentEvaluation && (
-    currentEvaluation.status === 'passed' ||
-    (!caseReference && currentEvaluation.status === 'pending_review' && !currentEvaluation.checks.some((check) => ['missing', 'incorrect'].includes(check.outcome)))
-  )
   const hasContent = plan.treatments.some((row) => row.item.trim()) || plan.medications.some((row) => [row.name, row.route, row.dose].some((value) => value.trim()))
+
+  const finishCase = () => {
+    evaluationRequest.current?.abort()
+    recordSubmission('treatment', {
+      diagnosis, plan, completed: true,
+      ...(currentEvaluation ? { result: currentEvaluation } : {}),
+      ...(caseAssessment?.signature === signature ? { caseAssessment: caseAssessment.result } : {}),
+    })
+    onFinish()
+  }
 
   useEffect(() => {
     if (currentEvaluation) evaluationPanel.current?.scrollIntoView({ block: 'nearest' })
@@ -51,6 +62,8 @@ export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFi
     evaluationRequest.current = null
     setEvaluating(false)
     setEvaluationError('')
+    setCaseAssessmentError('')
+    setAssessmentOpen(false)
     return () => evaluationRequest.current?.abort()
   }, [signature])
 
@@ -60,12 +73,27 @@ export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFi
     evaluationRequest.current = controller
     setEvaluating(true)
     setEvaluation(null)
+    setCaseAssessment(null)
     setEvaluationError('')
+    setCaseAssessmentError('')
     try {
       const result = await requestTreatmentEvaluation({ caseId: 'wang-xu', diagnosis, plan }, controller.signal)
       if (!controller.signal.aborted && activeSignature.current === signature) {
         setEvaluation({ signature, result })
-        recordSubmission('treatment', { diagnosis, plan, result })
+        const snapshot = getAssessmentSnapshot()
+        let total: CaseAssessment | null = null
+        if (snapshot) {
+          try {
+            total = await requestCaseAssessment({ ...snapshot, clinicalDiagnosis: diagnosis, treatment: plan }, controller.signal)
+            if (!controller.signal.aborted && activeSignature.current === signature) {
+              setCaseAssessment({ signature, result: total })
+              setAssessmentOpen(true)
+            }
+          } catch (reason: unknown) {
+            if (!controller.signal.aborted) setCaseAssessmentError(reason instanceof Error ? reason.message : '病例总分暂时无法核对。')
+          }
+        }
+        if (!controller.signal.aborted && activeSignature.current === signature) recordSubmission('treatment', { diagnosis, plan, result, ...(total ? { caseAssessment: total } : {}) })
       }
     } catch (error) {
       if (!controller.signal.aborted) setEvaluationError(error instanceof Error ? error.message : '处置评价暂时不可用，请重新提交。')
@@ -142,14 +170,16 @@ export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFi
       <section className="treatment-summary-section treatment-completion"><h3><FileCheck2 size={19} />清单填写状态</h3><dl><div><dt>处置项目</dt><dd><strong>{completedTreatments}</strong> / {plan.treatments.length} 行</dd></div><div><dt>用药方案</dt><dd><strong>{completedMedications}</strong> / {plan.medications.length} 行</dd></div></dl><p>一行中的全部内容填写后，计为已填写。</p></section>
       <div className="treatment-tip"><Stethoscope size={20} /><p>按当前训练病例填写处置与用药。同一类别有多项处置时可用分号或换行分隔，每种药单独填写一行。</p></div>
       {evaluationError && <p className="treatment-evaluation-error" role="alert">{evaluationError}</p>}
+      {caseAssessmentError && <p className="treatment-evaluation-error" role="alert">{caseAssessmentError}</p>}
+      {caseAssessment?.signature === signature && <><button type="button" className="case-assessment-reopen" onClick={() => setAssessmentOpen(true)}>查看病例评分<strong>{caseAssessment.result.score}/100</strong></button><CaseAssessmentDialog result={caseAssessment.result} open={assessmentOpen} onClose={() => setAssessmentOpen(false)} /></>}
       {currentEvaluation && <section ref={evaluationPanel} className={`treatment-evaluation ${currentEvaluation.status}`} aria-label="处置评价结果" aria-live="polite">
         <h3>处置评价：{currentEvaluation.status === 'passed' ? '通过' : currentEvaluation.status === 'needs_revision' ? '需要修改' : pendingLabel}</h3>
         <p>{currentEvaluation.message}</p>
         <ul>{currentEvaluation.checks.map((check) => <li key={check.id}><strong>{check.label} · {{ met: '符合标准', missing: '需要补充', incorrect: '需要修改', unreviewed: caseReference ? '病例未覆盖' : '待确认' }[check.outcome]}</strong>{check.studentText && <blockquote>{check.studentText}</blockquote>}<p>{check.reason}</p><small>依据：{check.reference}</small></li>)}</ul>
-        {caseReference ? <small>按原始病例的处置和用药表核对，适用于本病例训练。</small> : currentEvaluation.ai.status === 'available' ? <div><strong>AI 辅助核对引用</strong>{currentEvaluation.ai.notes?.map((note, index) => <div key={`${note.checkId}-${index}`}><p>{currentEvaluation.checks.find((check) => check.id === note.checkId)?.label}</p>{note.studentQuote && <blockquote>学生原文：{note.studentQuote}</blockquote>}<small>对照依据：{note.referenceQuote}</small></div>)}</div> : <small>{currentEvaluation.ai.status === 'awaiting_standard' ? '教师标准未审核，当前不判通过。' : currentEvaluation.ai.status === 'unavailable' ? 'AI 辅助核对暂不可用，以上为教师标准规则检查结果。' : '以上为教师标准规则检查结果，未启用 AI 辅助核对。'}</small>}
+        {caseReference ? null : currentEvaluation.ai.status === 'available' ? <div><strong>AI 辅助核对引用</strong>{currentEvaluation.ai.notes?.map((note, index) => <div key={`${note.checkId}-${index}`}><p>{currentEvaluation.checks.find((check) => check.id === note.checkId)?.label}</p>{note.studentQuote && <blockquote>学生原文：{note.studentQuote}</blockquote>}<small>对照依据：{note.referenceQuote}</small></div>)}</div> : <small>{currentEvaluation.ai.status === 'awaiting_standard' ? '教师标准未审核，当前不判通过。' : currentEvaluation.ai.status === 'unavailable' ? 'AI 辅助核对暂不可用，以上为教师标准规则检查结果。' : '以上为教师标准规则检查结果，未启用 AI 辅助核对。'}</small>}
       </section>}
     </aside>
 
-    <footer className="four-footer"><button type="button" className="four-back" onClick={onBack}><ArrowLeft size={21} />返回上一步</button><span>{evaluation && !currentEvaluation ? '方案已修改，请重新提交评价' : '先提交处置评价，再结束本次训练'}</span><div className="treatment-evaluation-actions"><button type="button" className="treatment-evaluation-submit" disabled={!hasContent || evaluating} onClick={() => void submitEvaluation()}>{evaluating ? '正在评价…' : '提交处置评价'}</button><button type="button" className="four-next" disabled={!canFinish || evaluating} onClick={onFinish}>{!caseReference && currentEvaluation?.status === 'pending_review' ? '结束训练（待教师确认）' : '完成病例'}<Check size={22} /></button></div></footer>
+    <footer className="four-footer"><button type="button" className="four-back" onClick={onBack}><ArrowLeft size={21} />返回上一步</button><span>可直接提交已填写内容，评分不影响完成病例</span><div className="treatment-evaluation-actions"><button type="button" className="treatment-evaluation-submit" disabled={!hasContent || evaluating} onClick={() => void submitEvaluation()}>{evaluating ? '正在评价…' : '提交处置评价'}</button><button type="button" className="four-next" onClick={finishCase}>完成病例<Check size={22} /></button></div></footer>
   </section>
 }

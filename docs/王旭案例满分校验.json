@@ -1,0 +1,51 @@
+{
+  "verifiedOnBeijing": "2026-11-17",
+  "verification": "local production Next HTTP API with revised thin-white standard; readable answer reconstructed and checked by tests/caseAssessment.test.ts",
+  "caseId": "wang-xu",
+  "version": "2026-11-17-thin-white-case-reference-100-v2",
+  "httpStatus": 200,
+  "score": 100,
+  "maxScore": 100,
+  "teacherApproved": false,
+  "modules": [
+    {
+      "id": "diagnosis",
+      "label": "问诊",
+      "score": 20,
+      "maxScore": 20
+    },
+    {
+      "id": "physicalExam",
+      "label": "体格检查",
+      "score": 15,
+      "maxScore": 15
+    },
+    {
+      "id": "fourDiagnosis",
+      "label": "中医四诊",
+      "score": 15,
+      "maxScore": 15
+    },
+    {
+      "id": "auxiliaryExam",
+      "label": "辅助检查",
+      "score": 10,
+      "maxScore": 10
+    },
+    {
+      "id": "clinicalDiagnosis",
+      "label": "诊断",
+      "score": 20,
+      "maxScore": 20
+    },
+    {
+      "id": "treatment",
+      "label": "处置",
+      "score": 20,
+      "maxScore": 20
+    }
+  ],
+  "referenceSubmissionSha256": "02c639425c3f765da663eb83420e42ad5310116694eb535eb10cfdfed3559e55",
+  "answerDocumentSha256": "0f73a5f4b18ef5f06ef7c582c2ef33f84911f73beb6e0e4d74e528531cdfabda",
+  "previousTongueFindingScore": 96
+}
