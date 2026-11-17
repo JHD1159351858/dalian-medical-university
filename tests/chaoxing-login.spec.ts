@@ -1,25 +1,5 @@
-import { expect, test, type Page } from '@playwright/test'
-
-async function mockAuthentication(page: Page) {
-  const now = Math.floor(Date.now() / 1000)
-  const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url')
-  const token = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: '11111111-1111-4111-8111-111111111111', aud: 'authenticated', role: 'authenticated', exp: now + 3600, iat: now, iss: 'https://supabase.example/auth/v1' })}.${Buffer.from('test-signature').toString('base64url')}`
-  const user = { id: '11111111-1111-4111-8111-111111111111', aud: 'authenticated', role: 'authenticated', email: 'student@sso.invalid', created_at: '2026-11-17T00:00:00.000Z', app_metadata: { provider: 'email', providers: ['email'] }, user_metadata: { display_name: '测试学生' } }
-  let handoffs = 0
-  await page.route('**/api/records-config', (route) => route.fulfill({ json: { url: 'https://supabase.example', publishableKey: 'sb_publishable_test' } }))
-  await page.route('**/api/auth/chaoxing/config', (route) => route.fulfill({ json: { available: true } }))
-  await page.route((url) => url.pathname === '/api/auth/chaoxing', (route) => route.fulfill({ status: 302, headers: { location: '/auth/chaoxing/callback' } }))
-  await page.route('**/api/auth/chaoxing/session', (route) => {
-    handoffs += 1
-    return route.fulfill({ json: { access_token: token, refresh_token: 'test-refresh', next: '/' } })
-  })
-  await page.route((url) => url.origin === 'https://supabase.example', (route) => {
-    const url = new URL(route.request().url())
-    return route.fulfill(url.pathname.endsWith('/user') ? { json: user } : { status: 204, body: '' })
-  })
-  await page.route((url) => url.pathname === '/api/auth/chaoxing/logout', (route) => route.fulfill({ status: 302, headers: { location: '/' } }))
-  return { handoffs: () => handoffs }
-}
+import { expect, test } from '@playwright/test'
+import { mockAuthentication } from './helpers/mockStudentAuth'
 
 test('finishes one session handoff, restores the student after reload and signs out', async ({ page }) => {
   const mocked = await mockAuthentication(page)
@@ -46,10 +26,69 @@ test('reports missing configuration without leaving the homepage or showing pass
   await expect(page.locator('input[type="password"]')).toHaveCount(0)
 })
 
+test('requires login when starting training and stays on the homepage if login is unavailable', async ({ page }) => {
+  const mocked = await mockAuthentication(page)
+  await page.route('**/api/auth/chaoxing/config', (route) => route.fulfill({ json: { available: false } }))
+  await page.goto('/')
+  await page.getByRole('button', { name: '开始实训', exact: true }).click()
+  await expect(page.locator('.student-auth-notice')).toContainText('超星登录尚未配置')
+  await expect(page.locator('.town-home')).toBeVisible()
+  await expect(page.getByRole('button', { name: '静音', exact: true })).toHaveCount(0)
+  expect(mocked.handoffs()).toBe(0)
+})
+
+test('logs in before entering training and returns to the requested case page', async ({ page }) => {
+  const mocked = await mockAuthentication(page)
+  await page.goto('/')
+  await page.getByRole('button', { name: '开始实训', exact: true }).click()
+  await expect(page).toHaveURL(/\/training$/)
+  await expect(page.getByText('测试学生', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '静音', exact: true })).toBeVisible()
+  expect(mocked.next()).toBe('/training')
+  expect(mocked.handoffs()).toBe(1)
+})
+
+test('blocks direct training access until the student logs in', async ({ page }) => {
+  const mocked = await mockAuthentication(page)
+  await page.goto('/training')
+  await expect(page.getByRole('heading', { name: '请先登录', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '静音', exact: true })).toHaveCount(0)
+  await page.getByRole('button', { name: '超星登录', exact: true }).click()
+  await expect(page.getByText('测试学生', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '静音', exact: true })).toBeVisible()
+  expect(mocked.handoffs()).toBe(1)
+})
+
+test('waits for the stored session to be verified before enabling training', async ({ page }) => {
+  await mockAuthentication(page, true)
+  let release = () => {}
+  const verification = new Promise<void>((resolve) => { release = resolve })
+  await page.route('**/auth/v1/user', async (route) => {
+    await verification
+    await route.fallback()
+  })
+  try {
+    await page.goto('/')
+    await expect(page.getByRole('button', { name: '正在检查登录…', exact: true })).toBeDisabled()
+    await expect(page.getByRole('button', { name: '静音', exact: true })).toHaveCount(0)
+  } finally { release() }
+  await page.getByRole('button', { name: '开始实训', exact: true }).click()
+  await expect(page.getByRole('button', { name: '静音', exact: true })).toBeVisible()
+})
+
+test('rejects an invalid stored session instead of opening the case', async ({ page }) => {
+  await mockAuthentication(page, true)
+  await page.route('**/auth/v1/user', (route) => route.fulfill({ status: 401, json: { message: 'invalid session' } }))
+  await page.goto('/training')
+  await expect(page.getByRole('heading', { name: '请先登录', exact: true })).toBeVisible()
+  await expect(page.getByText('测试学生', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '静音', exact: true })).toHaveCount(0)
+})
+
 test('shows a safe callback failure without attempting session exchange', async ({ page }) => {
   const mocked = await mockAuthentication(page)
   await page.goto('/auth/chaoxing/callback?error=invalid_state')
-  await expect(page.getByRole('alert')).toContainText('登录请求已失效')
+  await expect(page.locator('.student-auth-card').getByRole('alert')).toContainText('登录请求已失效')
   await expect(page.getByRole('button', { name: '重新超星登录', exact: true })).toBeVisible()
   await expect(page).toHaveURL(/\/auth\/chaoxing\/callback$/)
   expect(mocked.handoffs()).toBe(0)

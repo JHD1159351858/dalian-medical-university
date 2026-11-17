@@ -2,16 +2,22 @@ import { lazy, Suspense, useCallback, useState } from 'react';
 import { useGLTF } from '@react-three/drei';
 import { ArrowRight, BookOpen, ChartNoAxesCombined, ShieldCheck, Stethoscope } from 'lucide-react';
 import { TownBackground } from './TownBackground';
-import { StudentAccount } from '../auth/StudentAuthProvider';
+import { StudentAccount, useStudentAuth } from '../auth/StudentAuthProvider';
 
 const Training = lazy(() => import('../App'));
 
 export default function TownHome() {
+  const auth = useStudentAuth();
   const [mode, setMode] = useState<'home' | 'diving' | 'training'>('home');
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const ready = useCallback(() => setStatus('ready'), []);
   const failed = useCallback(() => setStatus('error'), []);
   const startTraining = () => {
+    if (auth.status === 'loading' || auth.busy) return;
+    if (auth.status !== 'signed_in' || !auth.user) {
+      void auth.login('/training');
+      return;
+    }
     useGLTF.preload('/models/hospital.glb');
     useGLTF.preload('/models/patient.glb');
     useGLTF.preload('/models/doctor.glb');
@@ -41,7 +47,7 @@ export default function TownHome() {
     </section>
     <section className="town-welcome" aria-label="实训入口">
       <div><h2>走进医院，成为接诊医生。</h2><p>从第一句主诉，到一次完整的问诊。</p></div>
-      <button type="button" className="town-start" onClick={startTraining} disabled={mode === 'diving'}>开始实训<ArrowRight size={20} aria-hidden="true" /></button>
+      <button type="button" className="town-start" onClick={startTraining} disabled={mode === 'diving' || auth.status === 'loading' || auth.busy}>{auth.busy ? '正在登录…' : auth.status === 'loading' ? '正在检查登录…' : '开始实训'}<ArrowRight size={20} aria-hidden="true" /></button>
     </section>
     {mode === 'diving' && <div className="town-transition-overlay" role="status"><span>正在进入医院</span><i /></div>}
     <footer className="town-footer"><span>医院小镇 <i /> 临床情境模拟</span><span role="status">{status === 'loading' ? '正在载入小镇，可直接开始实训' : status === 'error' ? '小镇暂未载入，仍可开始实训' : '准备好，迎接你的第一位患者。'}</span></footer>

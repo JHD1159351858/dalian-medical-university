@@ -15,7 +15,7 @@ import { emotionForSpeech, preloadSpeech, speakChinese, startSpeechStream, stopS
 import { PATIENT_VOICE_PROFILE } from './diagnosis/voiceProfiles'
 import { EncounterRecordsProvider, useEncounterRecords } from './records/EncounterRecordsProvider'
 import { EncounterRecordsDialog } from './records/EncounterRecordsDialog'
-import { StudentAccount } from './auth/StudentAuthProvider'
+import { RequireStudentSession, StudentAccount } from './auth/StudentAuthProvider'
 
 const phaseLabels = {
   loading: '载入临床场景',
@@ -513,7 +513,9 @@ function EncounterSaveStatus() {
   return <span className="session-chip" role="status">{label}</span>
 }
 
-export default App
+export default function AuthenticatedApp({ autoStart = false }: { autoStart?: boolean }) {
+  return <RequireStudentSession><App autoStart={autoStart} /></RequireStudentSession>
+}
 
 function HospitalControls({ movementInput: movementInputRef, waiting, eligible, doorAction, resume, onInteract }: {
   movementInput: RefObject<{ x: number; y: number }>

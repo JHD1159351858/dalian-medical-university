@@ -24,6 +24,17 @@ const callbackErrors: Record<string, string> = {
   session_failed: '学生会话建立失败，请重试或联系管理员。',
 }
 
+export function useStudentAuth() {
+  return useContext(StudentAuthContext)
+}
+
+export function RequireStudentSession({ children }: { children: ReactNode }) {
+  const { user, status, busy, login } = useStudentAuth()
+  if (status === 'loading') return <div className="training-loading" role="status">正在检查登录状态…</div>
+  if (status !== 'signed_in' || !user) return <main className="student-auth-callback"><section className="student-auth-card"><Stethoscope size={36} aria-hidden="true" /><h1>请先登录</h1><p>登录学生账号后，才能开始实训。</p><div className="student-auth-actions"><button type="button" className="icon-text-button" disabled={busy} onClick={() => void login('/training')}>{busy ? '正在登录…' : '超星登录'}</button><button type="button" className="icon-text-button" onClick={() => window.location.assign(window.location.origin)}>返回首页</button></div></section></main>
+  return children
+}
+
 export function StudentAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [status, setStatus] = useState<StudentAuth['status']>('loading')
@@ -138,7 +149,7 @@ export function StudentAuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function StudentAccount({ returnTo = '/' }: { returnTo?: '/' | '/training' }) {
-  const { user, status, busy, login, logout } = useContext(StudentAuthContext)
+  const { user, status, busy, login, logout } = useStudentAuth()
   const labels: unknown[] = user ? [user.user_metadata.display_name, user.user_metadata.displayName, user.user_metadata.name, user.user_metadata.full_name] : []
   const name = labels.find((value): value is string => typeof value === 'string' && !!value.trim())?.trim().slice(0, 80) ?? '已登录学生'
   return <div className="student-account">{user ? <><span className="student-account-name">{name}</span><button type="button" className="icon-text-button" disabled={busy} onClick={() => void logout()}><LogOut size={16} aria-hidden="true" />退出登录</button></> : <button type="button" className="icon-text-button" disabled={busy || status === 'loading'} onClick={() => void login(returnTo)}><LogIn size={16} aria-hidden="true" />{busy ? '正在登录…' : '超星登录'}</button>}</div>

@@ -240,6 +240,9 @@ importers:
       tailwindcss:
         specifier: ^4
         version: 4.1.18
+      three-stdlib:
+        specifier: ^2.36.1
+        version: 2.36.1(three@0.186.1)
       tsup:
         specifier: ^8.3.5
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.23)(tsx@4.21.0)(typescript@5.9.3)

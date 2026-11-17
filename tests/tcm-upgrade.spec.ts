@@ -4,9 +4,11 @@ import treatmentPresets from '../shared/treatment-presets.json'
 import { CASE_TONGUE_SAMPLE_ID, PATIENT_OPENING } from '../src/clinical/caseData'
 import { tongueSamples } from '../src/clinical/tongueSamples'
 import { idealHandPosition, PULSE_GEOMETRY } from '../src/clinical/pulsePlacement'
+import { mockAuthentication } from './helpers/mockStudentAuth'
 
 
 async function enterConsultation(page: Page) {
+  await mockAuthentication(page, true)
   await page.goto('/')
   await page.getByRole('button', { name: '开始实训', exact: true }).click()
   await page.getByRole('button', { name: '静音', exact: true }).click()
