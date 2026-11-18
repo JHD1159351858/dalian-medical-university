@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ChevronRight, ClipboardList, RefreshCw, X } from 'lucide-react'
 import { moduleItems } from '../clinical/caseData'
+import { CaseAssessmentPanel } from '../clinical/CaseAssessmentPanel'
+import { validAssessment } from '../clinical/caseAssessment'
 import { physicalExamItems } from '../exam/examData'
 import { useEncounterRecords } from './EncounterRecordsProvider'
 import type { EncounterRecord, EncounterSummary, SubmissionKind } from './types'
@@ -18,7 +20,7 @@ const fieldNames: Record<string, string> = {
   status: '评价状态', checks: '评价要点', outcome: '核对结果', studentText: '学生填写', reason: '评价说明', reference: '参考依据', ai: '补充评价',
   expected: '参考判断', missing: '待补充', extra: '需核对', selectedCorrect: '判断一致', primary: '西医主要诊断', secondary: '西医次要诊断', tcm: '中医诊断', summary: '总结',
   standardAnswer: '参考脉象', studentAnswer: '学生判断', missed: '待补充的脉象', explanation: '核对说明',
-  caseAssessment: '病例参考总评', score: '得分', maxScore: '满分', modules: '分项评分', feedback: '评分反馈', scopeNote: '核对范围', teacherApproved: '教师审核', completed: '完成病例提交',
+  caseAssessment: '病例评分预览', score: '得分', maxScore: '满分', modules: '分项评分', feedback: '评分反馈', scopeNote: '核对范围', teacherApproved: '教师审核', completed: '完成病例提交',
 }
 const valueNames: Record<string, string> = {
   ...Object.fromEntries(physicalExamItems.map(({ id, label }) => [id, label])),
@@ -58,16 +60,24 @@ function ModuleRecords({ value, module }: { value: Record<string, string>; modul
 
 export function EncounterRecordDetails({ record }: { record: EncounterRecord }) {
   const snapshot = record.snapshot
+  const finalSubmission = [...record.submissions].reverse().find((submission) => submission.kind === 'treatment' && submission.payload.completed === true)
+  const savedAssessment = finalSubmission?.payload.caseAssessment
+  const finalAssessment = validAssessment(savedAssessment) && savedAssessment.caseId === record.caseId ? savedAssessment : null
   return <article className="enc-record-detail">
     <div className="enc-record-patient"><div><h3>{record.patient.name}</h3><p>{record.patient.sex} · {record.patient.age} 岁</p></div><span className={`enc-record-status is-${record.status}`}>{statuses[record.status]}</span></div>
     <dl className="enc-record-times"><div><dt>开始接诊</dt><dd>{timeLabel(record.startedAt)}</dd></div><div><dt>结束接诊</dt><dd>{record.endedAt ? timeLabel(record.endedAt) : '尚未结束'}</dd></div></dl>
+    {finalAssessment ? <CaseAssessmentPanel result={finalAssessment} /> : (finalSubmission || record.status === 'completed') && <section><h3>病例参考评分</h3><p className="enc-record-empty-value">这次接诊未保存整体评分。</p></section>}
     <section><h3>问诊对话</h3>{snapshot.messages.length ? <ol className="enc-record-messages">{snapshot.messages.map((message, index) => <li key={index}><strong>{message.role === 'user' ? '学生医生' : '患者'}</strong><p>{message.content}</p></li>)}</ol> : <p className="enc-record-empty-value">尚无问诊对话</p>}</section>
     <section><h3>体格检查</h3><RecordedValue value={snapshot.physicalExam} /></section>
     <section><h3>中医四诊</h3><ModuleRecords value={snapshot.fourDiagnosis} module="fourDiagnosis" /></section>
     <section><h3>辅助检查</h3><ModuleRecords value={snapshot.auxiliaryExam} module="auxiliaryExam" /></section>
     <section><h3>诊断记录</h3><ModuleRecords value={snapshot.clinicalDiagnosis} module="clinicalDiagnosis" /></section>
     <section><h3>处置与用药</h3><RecordedValue value={snapshot.treatment} /></section>
-    <section><h3>历次提交 <small>{record.submissions.length} 次</small></h3>{record.submissions.length ? <ol className="enc-record-submissions">{record.submissions.map((submission) => <li key={submission.id}><header><strong>{submissionNames[submission.kind]}</strong><time dateTime={submission.at}>{timeLabel(submission.at)}</time></header><RecordedValue value={submission.payload} /></li>)}</ol> : <p className="enc-record-empty-value">尚无已提交内容</p>}</section>
+    <section><h3>历次提交 <small>{record.submissions.length} 次</small></h3>{record.submissions.length ? <ol className="enc-record-submissions">{record.submissions.map((submission) => {
+      const payload = { ...submission.payload }
+      if (payload.completed === true) delete payload.caseAssessment
+      return <li key={submission.id}><header><strong>{submissionNames[submission.kind]}</strong><time dateTime={submission.at}>{timeLabel(submission.at)}</time></header><RecordedValue value={payload} /></li>
+    })}</ol> : <p className="enc-record-empty-value">尚无已提交内容</p>}</section>
   </article>
 }
 

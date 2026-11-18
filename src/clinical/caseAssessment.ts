@@ -19,7 +19,7 @@ const scored = (value: unknown): value is { score: number; maxScore: number } =>
   return typeof point.score === 'number' && Number.isFinite(point.score) && typeof point.maxScore === 'number' && Number.isFinite(point.maxScore) && point.maxScore > 0 && point.score >= 0 && point.score <= point.maxScore
 }
 
-function validAssessment(value: unknown): value is CaseAssessment {
+export function validAssessment(value: unknown): value is CaseAssessment {
   if (!value || typeof value !== 'object') return false
   const result = value as Partial<CaseAssessment>
   return result.caseId === 'wang-xu' && result.source === 'case_reference' && typeof result.version === 'string' && typeof result.teacherApproved === 'boolean' && scored(result) && result.maxScore === 100 && typeof result.scopeNote === 'string' && Array.isArray(result.modules) && result.modules.length === 6 && result.modules.every((module) =>

@@ -105,7 +105,7 @@ it('varies listening phrases at conversational speeds without adjacent repeats',
 })
 
 it.each([
-  ['look', '望诊观察记录', '记录患者的神色、形态、舌质和舌苔'],
+  ['look', '望诊观察记录', '记录患者的神色、形态、皮肤及巩膜颜色，以及舌质和舌苔'],
   ['listen', '闻诊观察记录', '你听到的音量、语速和语调有什么特点'],
   ['feel', '切诊观察记录', '轻取、深取时分别感到什么'],
   ['ask', '问诊要点记录', '患者对你的追问作出了哪些回答'],

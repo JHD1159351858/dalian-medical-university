@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState, type FormEvent } from 'react'
 import { Check, Eye, Maximize2, Play, X } from 'lucide-react'
-import { CASE_TONGUE_SAMPLE_ID } from './caseData'
+import { CASE_APPEARANCE, CASE_TONGUE_SAMPLE_ID } from './caseData'
 import { isTongueAnswerCorrect, tongueSamples } from './tongueSamples'
 import { createTongueSequence, reduceTongueSequence, tongueFrameBlend } from './tongueSequence'
 import { useEncounterRecords } from '../records/EncounterRecordsProvider'
@@ -14,7 +14,7 @@ const actionSteps = [
 
 function PatientTongueMotion({ phase, open, tongue }: { phase: number; open: number; tongue: number }) {
   return <svg className="tongue-patient-motion" viewBox="0 0 960 720" role="img" aria-label={`训练患者${actionSteps[phase].title}动作`}>
-    <image href="/four-exam-images/tongue-patient-portrait.png" width="960" height="720" />
+    <image href={CASE_APPEARANCE.src} width="960" height="720" />
     <g opacity={open}>
       <path d="M455 422 Q477 407 502 422 Q500 444 479 446 Q457 445 455 422Z" fill="#654049" stroke="#b78179" strokeWidth="2" />
       <path d="M462 422 Q478 414 495 422 L493 426 Q478 429 464 426Z" fill="#fff3ea" />

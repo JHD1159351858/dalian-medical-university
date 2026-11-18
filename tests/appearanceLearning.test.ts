@@ -3,7 +3,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { expect, it } from 'vitest'
-import { AppearanceLearning, CASE_APPEARANCE } from '../src/clinical/AppearanceLearning'
+import { AppearanceLearning } from '../src/clinical/AppearanceLearning'
+import { CASE_APPEARANCE } from '../src/clinical/caseData'
 
 it('shows one current patient image without the old gallery annotations', () => {
   const html = renderToStaticMarkup(createElement(AppearanceLearning))
@@ -14,9 +15,8 @@ it('shows one current patient image without the old gallery annotations', () => 
   expect(html).not.toMatch(/AI教学示意|AI生成|独立图谱|不代表当前患者体征|仅供|巩膜黄染|阳黄|阴黄|&#x20;/)
 })
 
-it('uses the existing cartoon patient portrait with matching dimensions', () => {
+it('loads the current cartoon patient portrait with matching dimensions', () => {
   const file = readFileSync(resolve('public', CASE_APPEARANCE.src.slice(1)))
-  expect(CASE_APPEARANCE.src).toBe('/four-exam-images/tongue-patient-portrait.png')
   expect(file.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a')
   expect([file.readUInt32BE(16), file.readUInt32BE(20)]).toEqual([CASE_APPEARANCE.width, CASE_APPEARANCE.height])
 })

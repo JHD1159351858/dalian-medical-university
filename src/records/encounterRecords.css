@@ -39,6 +39,8 @@
 .enc-record-times dt { margin-bottom: 5px; color: #7992a0; }
 .enc-record-times dd { margin: 0; color: #456c82; }
 .enc-record-detail > section { margin-top: 16px; padding: 20px 22px; background: #fff; border: 1px solid #e0ecf2; border-radius: 11px; }
+.enc-record-detail > .case-assessment { background: #f0f8fb; border-color: #bcdce7; }
+.enc-record-detail > .case-assessment > header { margin-bottom: 10px; }
 .enc-record-detail > section > h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; color: #23536c; font-size: 18px; }
 .enc-record-detail h3 small { color: #7c97a7; font-size: 13px; font-weight: 400; }
 .enc-record-messages { display: grid; gap: 13px; padding: 0; margin: 0; list-style: none; }

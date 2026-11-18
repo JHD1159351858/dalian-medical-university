@@ -4,6 +4,12 @@ export interface ClinicalItem { id: string; label: string; detail: string; resul
 
 export const CASE_CHIEF_COMPLAINT = '左上腹痛'
 export const CASE_TONGUE_SAMPLE_ID = 'tongue-7'
+export const CASE_APPEARANCE = {
+  src: '/four-exam-images/wang-xu-appearance.png',
+  alt: '卡通患者王旭，双颊和颈侧可见散在浅白色斑片',
+  width: 1448,
+  height: 1086,
+} as const
 export const PATIENT_OPENING = '医生，我身体不舒服。您帮我看看吧。'
 
 export const clinicalModules: Array<{ id: ClinicalModuleId; label: string; short: string }> = [
@@ -17,7 +23,7 @@ export const clinicalModules: Array<{ id: ClinicalModuleId; label: string; short
 
 export const moduleItems: Record<Exclude<ClinicalModuleId, 'diagnosis' | 'physicalExam'>, ClinicalItem[]> = {
   fourDiagnosis: [
-    { id: 'look', label: '望诊', detail: '神色、形态、舌质与舌苔' },
+    { id: 'look', label: '望诊', detail: '神色、皮肤、形态及舌象' },
     { id: 'listen', label: '闻诊', detail: '声音、呼吸与异常气味' },
     { id: 'ask', label: '问诊', detail: '寒热、汗出、饮食与二便' },
     { id: 'feel', label: '切诊', detail: '脉象与腹部按诊' },

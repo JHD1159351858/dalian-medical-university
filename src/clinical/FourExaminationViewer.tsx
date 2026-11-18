@@ -8,7 +8,7 @@ import './fourDiagnosisTeaching.css'
 export type FourExaminationKind = 'look' | 'listen' | 'ask' | 'feel'
 
 export const fourExaminations = {
-  look: { button: '查看望诊资料', title: '望诊观察', recordLabel: '望诊观察记录', prompt: '记录患者的神色、形态、舌质和舌苔。' },
+  look: { button: '查看望诊资料', title: '望诊观察', recordLabel: '望诊观察记录', prompt: '记录患者的神色、形态、皮肤及巩膜颜色，以及舌质和舌苔。' },
   listen: { button: '听取声音', title: '闻诊观察', recordLabel: '闻诊观察记录', prompt: '听完患者语音后，你听到的音量、语速和语调有什么特点？' },
   ask: { button: '打开问诊对话', title: '四诊问诊', recordLabel: '问诊要点记录', prompt: '患者对你的追问作出了哪些回答？请整理与病情有关的要点。' },
   feel: { button: '查看脉象', title: '脉诊教学与检查', recordLabel: '切诊观察记录', prompt: '轻取、深取时分别感到什么？请结合触诊线索判断脉象。' },

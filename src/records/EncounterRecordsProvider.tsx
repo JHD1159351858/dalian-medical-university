@@ -148,6 +148,7 @@ export function EncounterRecordsProvider({ snapshot, phase, session, onIdentityC
     recorder.begin(latestSnapshot)
     recorder.update(latestSnapshot)
     recorder.submit(kind, payload)
+    if (kind === 'treatment' && payload.completed === true) recorder.finish('completed')
     void flush()
   }, [recorder, flush, snapshot, physicalExam])
 

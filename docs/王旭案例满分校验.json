@@ -1,8 +1,8 @@
 {
-  "verifiedOnBeijing": "2026-11-17",
-  "verification": "local production Next HTTP API with revised thin-white standard; readable answer reconstructed and checked by tests/caseAssessment.test.ts",
+  "verifiedOnBeijing": "2026-11-18",
+  "verification": "Local production Next HTTP API. The readable answer was reconstructed and verified in tests/caseAssessment.test.ts.",
   "caseId": "wang-xu",
-  "version": "2026-11-17-thin-white-case-reference-100-v2",
+  "version": "2026-11-18-appearance-case-reference-100-v3",
   "httpStatus": 200,
   "score": 100,
   "maxScore": 100,
@@ -45,7 +45,8 @@
       "maxScore": 20
     }
   ],
-  "referenceSubmissionSha256": "02c639425c3f765da663eb83420e42ad5310116694eb535eb10cfdfed3559e55",
-  "answerDocumentSha256": "0f73a5f4b18ef5f06ef7c582c2ef33f84911f73beb6e0e4d74e528531cdfabda",
-  "previousTongueFindingScore": 96
+  "referenceSubmissionSha256": "125d588005d4371bcb2625e89cadead186dae21fdbabfe223c51459dfaa8f996",
+  "answerDocumentSha256": "ff0e6c0b5f628e88b4295c87ac2af77df7816a3371af367ffd9e787e1dd23aab",
+  "portraitSha256": "68de9339460c2145c9c3ecbecab058a9533db3c1a4776ccc5857a8aa35346082",
+  "previousAppearanceFindingScore": 96
 }

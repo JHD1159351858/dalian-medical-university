@@ -2,11 +2,12 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, it } from 'vitest'
 import { PulseTeaching, TongueTeaching } from '../src/clinical/ExaminationTeaching'
+import { CASE_APPEARANCE } from '../src/clinical/caseData'
 it('renders the training patient and photographic pulse workspace without invented case findings', () => {
   const tongue = renderToStaticMarkup(createElement(TongueTeaching))
   const pulse = renderToStaticMarkup(createElement(PulseTeaching))
   expect(tongue).toContain('aria-label="舌诊观察实训"')
-  expect(tongue).toContain('/four-exam-images/tongue-patient-portrait.png')
+  expect(tongue).toContain(`href="${CASE_APPEARANCE.src}"`)
   expect(tongue).toContain('正在演示张口伸舌')
   expect(tongue).not.toContain('播放舌诊演示')
   expect(tongue).not.toContain('舌诊动作进度')

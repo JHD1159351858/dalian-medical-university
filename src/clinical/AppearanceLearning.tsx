@@ -1,13 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Maximize2, X } from 'lucide-react'
+import { CASE_APPEARANCE } from './caseData'
 import './appearanceLearning.css'
-
-export const CASE_APPEARANCE = {
-  src: '/four-exam-images/tongue-patient-portrait.png',
-  alt: '王旭：眉头微蹙、面露不适的卡通患者',
-  width: 960,
-  height: 720,
-} as const
 
 function AppearanceImage({ onClose }: { onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null)

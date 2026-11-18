@@ -22,7 +22,7 @@ it('also gives the readable six-category treatment answer 100', async () => {
 it('scores the revised thin white coating without requiring the previous red and yellow tongue findings', async () => {
   const { assessCase } = await import('../server/caseAssessment.mjs');
   const value = structuredClone(standard.referenceSubmission);
-  value.snapshot.fourDiagnosis.look = '舌质淡红，苔薄白，皮肤和巩膜无黄染。';
+  value.snapshot.fourDiagnosis.look = '皮肤可见白斑，皮肤和巩膜无黄染。舌质淡红，苔薄白。';
   value.snapshot.clinicalDiagnosis.tcm = '原病例中医诊断：脾心痛，湿热毒蕴。当前训练舌象为薄白苔，脉沉滑数；证型沿用原病例记录。';
   expect(assessCase(value)).toMatchObject({ status: 200, body: { score: 100 } });
 });
@@ -30,7 +30,7 @@ it('scores the revised thin white coating without requiring the previous red and
 it.each(['黄腻苔', '苔黄燥腻', '薄白苔，同时有黄腻苔'])('deducts the outdated or conflicting tongue finding %s', async (tongue) => {
   const { assessCase } = await import('../server/caseAssessment.mjs');
   const value = structuredClone(standard.referenceSubmission);
-  value.snapshot.fourDiagnosis.look = `舌质淡红，${tongue}，皮肤和巩膜无黄染。`;
+  value.snapshot.fourDiagnosis.look = `皮肤可见白色斑片，皮肤和巩膜无黄染。舌质淡红，${tongue}。`;
   const result = assessCase(value);
   expect(result.body.score).toBeLessThan(100);
   expect(result.body.modules?.find((module: { id: string }) => module.id === 'fourDiagnosis')?.score).toBeLessThan(15);
@@ -39,10 +39,19 @@ it.each(['黄腻苔', '苔黄燥腻', '薄白苔，同时有黄腻苔'])('deduct
 it('deducts a missing tongue observation while retaining full marks for a negated old finding', async () => {
   const { assessCase } = await import('../server/caseAssessment.mjs');
   const value = structuredClone(standard.referenceSubmission);
-  value.snapshot.fourDiagnosis.look = '皮肤和巩膜无黄染。';
+  value.snapshot.fourDiagnosis.look = '皮肤可见色素减退斑，皮肤和巩膜无黄染。';
   expect(assessCase(value).body.score).toBeLessThan(100);
-  value.snapshot.fourDiagnosis.look = '舌质淡红，薄白苔，无黄腻苔。皮肤和巩膜无黄染。';
+  value.snapshot.fourDiagnosis.look = '皮肤可见色素减退斑，皮肤和巩膜无黄染。舌质淡红，薄白苔，无黄腻苔。';
   expect(assessCase(value).body.score).toBe(100);
+});
+
+it.each(['', '皮肤未见明显白色斑片。'])('deducts the appearance observation when it is missing or negated: %s', async (appearance) => {
+  const { assessCase } = await import('../server/caseAssessment.mjs');
+  const value = structuredClone(standard.referenceSubmission);
+  value.snapshot.fourDiagnosis.look = appearance + '舌质淡红，苔薄白。皮肤、巩膜无黄染。';
+  const result = assessCase(value);
+  const look = result.body.modules?.find((module: { id: string }) => module.id === 'fourDiagnosis')?.checks.find((check: { id: string }) => check.id === 'look');
+  expect(look).toMatchObject({ score: 0, maxScore: 4, feedback: expect.stringContaining('浅白色斑片') });
 });
 
 it('gives the complete answer reconstructed from the readable document 100', async () => {
@@ -82,6 +91,6 @@ it('gives the complete answer reconstructed from the readable document 100', asy
   expect(medicationRows).toHaveLength(5);
   const [herbs] = textBlocks(medicationSection);
   value.snapshot.treatment.medications = medicationRows.map(([name, route, dose], index) => ({ id: `document-medication-${index}`, name, route, dose: name === '中药' ? herbs : dose }));
-  expect(value.snapshot.fourDiagnosis.look).toContain('苔薄白');
+  expect(value.snapshot.fourDiagnosis).toEqual(standard.referenceSubmission.snapshot.fourDiagnosis);
   expect(assessCase(value)).toMatchObject({ status: 200, body: { score: 100, maxScore: 100, teacherApproved: false } });
 });

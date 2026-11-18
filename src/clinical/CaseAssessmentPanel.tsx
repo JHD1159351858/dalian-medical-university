@@ -13,7 +13,12 @@ export function CaseAssessmentPanel({ result }: { result: CaseAssessment }) {
   </section>
 }
 
-export function CaseAssessmentDialog({ result, open, onClose }: { result: CaseAssessment; open: boolean; onClose: () => void }) {
+export function CaseAssessmentDialog({ result, open, onClose, onConfirm }: {
+  result: CaseAssessment
+  open: boolean
+  onClose: () => void
+  onConfirm?: () => void
+}) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     const dialog = dialogRef.current
@@ -23,5 +28,9 @@ export function CaseAssessmentDialog({ result, open, onClose }: { result: CaseAs
   return <dialog ref={dialogRef} className="case-assessment-dialog" aria-label="病例参考评分" onCancel={(event) => { event.preventDefault(); onClose() }} onClick={(event) => { if (event.target === event.currentTarget) onClose() }}>
     <button type="button" className="case-assessment-close" aria-label="关闭评分" onClick={onClose}><X size={21} /></button>
     <CaseAssessmentPanel result={result} />
+    {onConfirm && <footer className="case-assessment-actions">
+      <button type="button" onClick={onClose}>返回修改</button>
+      <button type="button" className="four-next" onClick={onConfirm}>确认完成</button>
+    </footer>}
   </dialog>
 }

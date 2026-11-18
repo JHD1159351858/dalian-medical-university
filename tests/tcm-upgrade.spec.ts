@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test'
 import caseRubric from '../server/treatment-rubric.json'
 import treatmentPresets from '../shared/treatment-presets.json'
-import { CASE_TONGUE_SAMPLE_ID, PATIENT_OPENING } from '../src/clinical/caseData'
+import { CASE_APPEARANCE, CASE_TONGUE_SAMPLE_ID, PATIENT_OPENING } from '../src/clinical/caseData'
 import { tongueSamples } from '../src/clinical/tongueSamples'
 import { idealHandPosition, PULSE_GEOMETRY } from '../src/clinical/pulsePlacement'
 import { mockAuthentication } from './helpers/mockStudentAuth'
+import type { EncounterRecord } from '../src/records/types'
 
 
 async function enterConsultation(page: Page) {
@@ -31,7 +32,50 @@ async function enterConsultation(page: Page) {
   await expect(page.getByLabel('问诊训练台')).toBeVisible()
 }
 
-test('allows a partly filled case to finish without submitting an evaluation', async ({ page }) => {
+test('scores a blank case before finishing and shows the saved score in reception records', async ({ page }) => {
+  let saved: EncounterRecord | undefined
+  let storedFinalScoreBeforeCompletion = false
+  await page.route('**/api/encounters*', (route) => {
+    if (route.request().method() === 'PUT') {
+      saved = route.request().postDataJSON() as EncounterRecord
+      if (saved.status !== 'completed' && saved.submissions.some(({ payload }) => payload.completed === true)) storedFinalScoreBeforeCompletion = true
+      return route.fulfill({ status: 204 })
+    }
+    if (new URL(route.request().url()).searchParams.has('id')) return route.fulfill({ json: { record: saved } })
+    return route.fulfill({ json: { records: saved ? [saved] : [], hasMore: false } })
+  })
+  await page.route('**/api/case-assessment', (route) => route.fulfill({ status: 503, json: { error: '服务暂不可用' } }), { times: 1 })
+  await enterConsultation(page)
+  for (const name of ['开始体格检查', '完成检查', '进入中医四诊', '进入辅助检查', '进入诊断', '进入处置']) {
+    await page.getByRole('button', { name, exact: true }).click()
+  }
+  const workspace = page.getByLabel('处置训练台')
+  const finish = workspace.getByRole('button', { name: '完成病例', exact: true })
+  await finish.click()
+  await expect(workspace.getByRole('alert')).toContainText('请重新点击“完成病例”')
+  await expect(workspace).toBeVisible()
+  expect(saved?.status).toBe('in_progress')
+  await finish.click()
+  const assessment = page.getByRole('dialog', { name: '病例参考评分', exact: true })
+  await expect(assessment).toBeVisible()
+  await expect(assessment.getByLabel('病例参考总分')).toContainText('0/100')
+  await expect(assessment.locator('details')).toHaveCount(6)
+  expect(saved?.status).toBe('in_progress')
+  await assessment.getByRole('button', { name: '确认完成', exact: true }).click()
+  await expect(workspace).toHaveCount(0)
+  await expect.poll(() => saved?.status).toBe('completed')
+  expect(storedFinalScoreBeforeCompletion).toBe(false)
+  expect(saved?.submissions.filter((submission) => submission.payload.completed === true)).toMatchObject([
+    { kind: 'treatment', payload: { caseAssessment: { score: 0, maxScore: 100 } } },
+  ])
+  await page.getByRole('button', { name: '查看接诊记录', exact: true }).click()
+  const records = page.getByRole('dialog', { name: '接诊记录', exact: true })
+  await records.getByRole('button', { name: '查看王旭的接诊详情', exact: true }).click()
+  await expect(records.getByLabel('病例参考总分')).toContainText('0/100')
+  await expect(records.getByLabel('病例参考总分').locator('details')).toHaveCount(6)
+})
+
+test('scores a partly filled case without requiring a separate treatment evaluation', async ({ page }) => {
   await enterConsultation(page)
   await page.getByRole('button', { name: '开始体格检查' }).click()
   await page.getByRole('button', { name: '完成检查', exact: true }).click()
@@ -42,6 +86,7 @@ test('allows a partly filled case to finish without submitting an evaluation', a
   await workspace.getByLabel('第1行药物名称', { exact: true }).fill('尚未填写途径和剂量的药名')
   await expect(workspace.getByLabel('第1行用药剂量', { exact: true })).toHaveValue('')
   await workspace.getByRole('button', { name: '完成病例', exact: true }).click()
+  await page.getByRole('dialog', { name: '病例参考评分', exact: true }).getByRole('button', { name: '确认完成', exact: true }).click()
   await expect(workspace).toHaveCount(0)
   await expect(page.getByText('暂时无法完成病例', { exact: true })).toHaveCount(0)
 })
@@ -73,10 +118,11 @@ test('shows the optional score dialog and allows finishing even when the evaluat
   await expect(workspace.getByRole('button', { name: '提交处置评价', exact: true })).toBeEnabled()
   await expect(workspace.getByLabel('处置评价结果')).toContainText('需要修改')
   await workspace.getByRole('button', { name: '完成病例', exact: true }).click()
+  await assessment.getByRole('button', { name: '确认完成', exact: true }).click()
   await expect(workspace).toHaveCount(0)
 })
 
-test('shows the thin white case tongue and one patient state image without gallery annotations', async ({ page }) => {
+test('shows the thin white case tongue and one patient state image without gallery annotations', async ({ page }, testInfo) => {
   await enterConsultation(page)
   await page.getByRole('button', { name: '开始体格检查' }).click()
   await page.getByRole('button', { name: '完成检查', exact: true }).click()
@@ -91,14 +137,15 @@ test('shows the thin white case tongue and one patient state image without galle
   await expect(dialog.getByRole('status')).toContainText('标签匹配')
   const gallery = dialog.locator('.appearance-learning')
   await expect(gallery.locator('img')).toHaveCount(1)
-  await expect(gallery.locator('img')).toHaveAttribute('src', '/four-exam-images/tongue-patient-portrait.png')
+  await expect(gallery.locator('img')).toHaveAttribute('src', CASE_APPEARANCE.src)
   await expect(dialog).not.toContainText(/AI教学示意|AI生成|独立图谱|不代表当前患者体征|病例原始照片待教师提供/)
   await gallery.getByRole('button', { name: '放大查看患者状态', exact: true }).click()
   const zoom = page.getByRole('dialog', { name: '患者状态', exact: true })
   await expect(zoom).toBeVisible()
-  await expect(zoom.locator('img')).toHaveAttribute('src', '/four-exam-images/tongue-patient-portrait.png')
+  await expect(zoom.locator('img')).toHaveAttribute('src', CASE_APPEARANCE.src)
+  await expect.poll(() => zoom.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(CASE_APPEARANCE.width)
+  await zoom.screenshot({ path: testInfo.outputPath('current-case-appearance.png') })
   await zoom.getByRole('button', { name: '关闭望诊大图', exact: true }).click()
-  await gallery.screenshot({ path: 'verification/current-case-appearance.png' })
 })
 
 test('retains the fixed tongue photo and shares four-diagnosis interview history and notes', async ({ page }) => {
@@ -202,7 +249,7 @@ test('case disclosure, independent tongue learning, pulse teaching and honest tr
 
   await page.getByRole('navigation', { name: '病例模块' }).getByRole('button', { name: /06.*处置/ }).click()
   await expect(page.getByLabel('处置训练台')).toBeVisible()
-  await expect(page.getByRole('button', { name: '完成病例', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: '完成病例', exact: true })).toBeEnabled()
   const treatment = page.getByRole('textbox', { name: '第1行处置项目', exact: true })
   await treatment.fill('学生拟定的处置方案，等待教师核对')
   await page.getByRole('textbox', { name: '第1行处置类别', exact: true }).fill('')
@@ -211,7 +258,7 @@ test('case disclosure, independent tongue learning, pulse teaching and honest tr
   await expect(page.getByLabel('处置评价结果')).toContainText('需要修改')
   await expect(page.getByLabel('处置评价结果')).toContainText('处置类别')
   await expect(page.getByLabel('处置评价结果')).toContainText('用药途径')
-  await expect(page.getByRole('button', { name: '完成病例', exact: true })).toBeDisabled()
+  await page.getByRole('dialog', { name: '病例参考评分', exact: true }).getByRole('button', { name: '关闭评分', exact: true }).click()
   await page.getByRole('textbox', { name: '第1行处置类别', exact: true }).fill('饮食及营养')
   await treatment.fill(caseRubric.treatments[0].item)
   await page.getByRole('textbox', { name: '第1行药物名称', exact: true }).fill('')
@@ -219,11 +266,12 @@ test('case disclosure, independent tongue learning, pulse teaching and honest tr
   await expect(page.getByLabel('处置评价结果')).toContainText('处置第1行')
   await expect(page.getByLabel('处置评价结果')).toContainText('类别')
   await expect(page.getByLabel('处置评价结果')).not.toContainText('处置评价：通过')
+  await page.getByRole('dialog', { name: '病例参考评分', exact: true }).getByRole('button', { name: '关闭评分', exact: true }).click()
   await page.getByLabel('处置评价结果').scrollIntoViewIfNeeded()
   await page.screenshot({ path: 'verification/tcm-treatment-feedback.png' })
   await treatment.fill('修改后的学生方案')
   await expect(page.getByLabel('处置评价结果')).toHaveCount(0)
-  await expect(page.getByRole('button', { name: '完成病例', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: '完成病例', exact: true })).toBeEnabled()
 
   let release!: () => void
   const gate = new Promise<void>((resolve) => { release = resolve })
@@ -237,7 +285,7 @@ test('case disclosure, independent tongue learning, pulse teaching and honest tr
   await page.route('**/api/treatment-evaluation', (route) => route.fulfill({ status: 502, json: { error: '测试：评价服务暂不可用' } }))
   await page.getByRole('button', { name: '提交处置评价', exact: true }).click()
   await expect(page.getByRole('alert')).toContainText('测试：评价服务暂不可用')
-  await expect(page.getByRole('button', { name: '完成病例', exact: true })).toBeDisabled()
+  await expect(page.getByRole('button', { name: '完成病例', exact: true })).toBeEnabled()
   await page.unroute('**/api/treatment-evaluation')
 
   for (const [index, preset] of treatmentPresets.entries()) {
@@ -253,7 +301,9 @@ test('case disclosure, independent tongue learning, pulse teaching and honest tr
   }
   await page.getByRole('button', { name: '提交处置评价', exact: true }).click()
   await expect(page.getByLabel('处置评价结果')).toContainText('处置评价：通过')
+  await page.getByRole('dialog', { name: '病例参考评分', exact: true }).getByRole('button', { name: '关闭评分', exact: true }).click()
   await page.getByRole('button', { name: '完成病例', exact: true }).click()
+  await page.getByRole('dialog', { name: '病例参考评分', exact: true }).getByRole('button', { name: '确认完成', exact: true }).click()
   await expect(page.getByLabel('处置训练台')).toHaveCount(0)
   expect(errors).toEqual([])
 })

@@ -1,6 +1,7 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, expect, it, vi } from 'vitest'
+import type { CaseAssessment } from '../src/clinical/caseAssessment'
 import { EncounterRecordDetails, EncounterRecordsDialog, EncounterRecordsList } from '../src/records/EncounterRecordsDialog'
 import type { EncounterRecord } from '../src/records/types'
 
@@ -12,7 +13,7 @@ vi.mock('../src/records/EncounterRecordsProvider', () => ({
 afterEach(() => { context.access = 'signed_out' })
 const noop = () => {}
 const record: EncounterRecord = {
-  id: 'encounter-a', caseId: 'case-01', patient: { name: '王旭', age: 48, sex: '男' },
+  id: 'encounter-a', caseId: 'wang-xu', patient: { name: '王旭', age: 48, sex: '男' },
   startedAt: '2026-11-12T10:00:00Z', endedAt: '2026-11-12T10:20:00Z', status: 'completed',
   snapshot: {
     messages: [{ role: 'user', content: '哪里不舒服？' }, { role: 'assistant', content: '我身体不舒服。' }],
@@ -49,4 +50,31 @@ it('presents the saved clinical content and submissions as readable records', ()
   for (const text of ['问诊对话', '学生医生', '哪里不舒服？', '我身体不舒服。', '学生记录的舌象。', '学生记录的血常规。', '学生填写的主要诊断。', '观察病情', '学生填写的药物', '学生填写的腹部检查。', '已提交的腹部所见。', '左季肋区', '压痛', '历次提交', '学生提交的舌象判断', '学生提交的观察依据']) expect(html).toContain(text)
   expect(html).not.toContain('[object Object]')
   expect(html).not.toContain('&quot;fourDiagnosis&quot;')
+  expect(html).toContain('这次接诊未保存整体评分。')
+})
+
+it('shows a saved zero-point final score once, with all six modules and feedback', () => {
+  const result: CaseAssessment = {
+    caseId: 'wang-xu', source: 'case_reference', teacherApproved: false, version: 'test', score: 0, maxScore: 100, scopeNote: '病例参考',
+    modules: [
+      { id: 'diagnosis', label: '问诊', score: 0, maxScore: 20, checks: [] },
+      { id: 'physicalExam', label: '体格检查', score: 0, maxScore: 15, checks: [] },
+      { id: 'fourDiagnosis', label: '中医四诊', score: 0, maxScore: 15, checks: [] },
+      { id: 'auxiliaryExam', label: '辅助检查', score: 0, maxScore: 10, checks: [] },
+      { id: 'clinicalDiagnosis', label: '诊断', score: 0, maxScore: 20, checks: [] },
+      { id: 'treatment', label: '处置', score: 0, maxScore: 20, checks: [{ id: 'plan', label: '处置方案', score: 0, maxScore: 20, feedback: '尚未填写处置方案。' }] },
+    ],
+  }
+  const submitted: EncounterRecord = {
+    ...record,
+    submissions: [
+      { id: 'previous-completion', kind: 'treatment', at: '2026-11-12T10:19:00Z', payload: { completed: true } },
+      { id: 'final', kind: 'treatment', at: '2026-11-12T10:20:00Z', payload: { completed: true, caseAssessment: result } },
+    ],
+  }
+  const html = renderToStaticMarkup(createElement(EncounterRecordDetails, { record: submitted }))
+  expect(html).toContain('<span>0</span>/100')
+  expect(html.match(/<summary>/g)).toHaveLength(6)
+  expect(html.match(/尚未填写处置方案。/g)).toHaveLength(1)
+  expect(html).not.toContain('这次接诊未保存整体评分。')
 })
