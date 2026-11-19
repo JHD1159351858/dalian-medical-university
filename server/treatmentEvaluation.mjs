@@ -1,9 +1,10 @@
 import treatmentPresets from '../shared/treatment-presets.json' with { type: 'json' };
+import { casePatient, findTrainingCase, treatmentReferenceChecks } from './trainingCases.mjs';
 const text = (value) => typeof value === 'string' && value.length <= 4_000;
 const normalized = (value) => value.trim().replace(/[\s，,。；;：:]/g, '').toLowerCase();
 
 export function validTreatmentSubmission(value) {
-  if (!value || value.caseId !== 'wang-xu' || !value.plan || !value.diagnosis || typeof value.diagnosis !== 'object' || Array.isArray(value.diagnosis)) return false;
+  if (!value || !casePatient(value.caseId) || !value.plan || !value.diagnosis || typeof value.diagnosis !== 'object' || Array.isArray(value.diagnosis)) return false;
   const { treatments, medications } = value.plan;
   if (![treatments, medications].every((rows) => Array.isArray(rows) && rows.length <= 30)) return false;
   if (Object.keys(value.diagnosis).length > 10 || !Object.values(value.diagnosis).every(text)) return false;
@@ -234,6 +235,13 @@ export function evaluateTreatment(submission, rubric) {
     if (![row.name, row.route, row.dose, row.frequency ?? ''].some((value) => value.trim())) continue;
     const missing = [['name', '药物名称'], ['route', '用药途径'], ['dose', '用药剂量']].filter(([key]) => !row[key].trim()).map(([, label]) => label);
     if (missing.length) checks.push({ id: `medication-fields-${index}`, label: `用药第${index + 1}行`, outcome: 'missing', studentText: [row.name, row.route, row.dose].join('；'), reason: `未填写${missing.join('、')}，请补充后再提交。`, reference: '处置表填写要求' });
+  }
+  const trainingCase = findTrainingCase(submission.caseId);
+  if (trainingCase) {
+    checks.push(...treatmentReferenceChecks(trainingCase, submission.plan));
+    const complete = checks.every((check) => check.outcome === 'met');
+    return { source: 'rules', basis: 'case_reference', teacherApproved: false, rubricVersion: 'training-cases-v1', checks,
+      status: complete ? 'passed' : 'needs_revision', message: complete ? '已涵盖本病例参考处置要点。' : '请对照本次病例补充相应的处置要点。' };
   }
   if (rubric?.basis === 'case_reference') return evaluateCaseReference(submission, rubric, checks);
   const approved = Boolean(rubric && rubric.caseId === submission.caseId && rubric.approved === true && rubric.approvedBy?.trim() && rubric.reference?.trim() && Array.isArray(rubric.required) && rubric.required.length && rubric.required.every(usableRule) && Array.isArray(rubric.forbidden) && rubric.forbidden.every(usableRule) && Array.isArray(rubric.allowed) && rubric.allowed.every(usableRule));

@@ -9,7 +9,7 @@ const ask = (content: string, history: Array<{ role: string; content: string }> 
 describe('document-confirmed patient interview', () => {
   it('opens with the patient greeting and keeps the documented chief complaint', () => {
     expect(CASE_CHIEF_COMPLAINT).toBe('左上腹痛')
-    expect(PATIENT_OPENING).toBe('医生，我身体不舒服。您帮我看看吧。')
+    expect(PATIENT_OPENING).toBe('大夫，我肚子左上边这块儿疼。')
     expect(PATIENT_OPENING).not.toMatch(/天|小时|油腻|饮食|胀痛|呼吸/)
     expect(patientCase.chiefComplaint.replace(/[。.]$/, '')).toBe(CASE_CHIEF_COMPLAINT)
   })
@@ -124,11 +124,11 @@ describe('document-confirmed patient interview', () => {
   it('does not repeat old duration or food triggers in visible patient summaries', () => {
     for (const name of ['AuxiliaryExamPage.tsx', 'ClinicalDiagnosisPage.tsx']) {
       const source = readFileSync(new URL(`../src/clinical/${name}`, import.meta.url), 'utf8')
-      expect(source).toContain('{CASE_CHIEF_COMPLAINT}')
+      expect(source).toContain('{patient.chiefComplaint}')
       expect(source).not.toContain('油腻饮食后腹痛 2 天')
     }
     const source = readFileSync(new URL('../src/exam/PhysicalExamPage.tsx', import.meta.url), 'utf8')
-    expect(source).toContain('{CASE_CHIEF_COMPLAINT}')
+    expect(source).toContain('{patient.chiefComplaint}')
     expect(source).not.toContain('上腹部不适2周')
     expect(source).not.toContain('高血压（5年）')
   })

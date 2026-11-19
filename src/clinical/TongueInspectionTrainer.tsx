@@ -1,9 +1,11 @@
-import { useEffect, useReducer, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useReducer, useRef, useState, type FormEvent } from 'react'
 import { Check, Eye, Maximize2, Play, X } from 'lucide-react'
 import { CASE_APPEARANCE, CASE_TONGUE_SAMPLE_ID } from './caseData'
 import { isTongueAnswerCorrect, tongueSamples } from './tongueSamples'
 import { createTongueSequence, reduceTongueSequence, tongueFrameBlend } from './tongueSequence'
 import { useEncounterRecords } from '../records/EncounterRecordsProvider'
+import { useTrainingCase } from '../cases/selectedCase'
+import { PatientPortrait } from '../exam/ExamScene'
 import './tongueInspection.css'
 
 const actionSteps = [
@@ -12,9 +14,16 @@ const actionSteps = [
   { title: '伸舌', description: '患者伸舌，观察舌象。' },
 ]
 
-function PatientTongueMotion({ phase, open, tongue }: { phase: number; open: number; tongue: number }) {
-  return <svg className="tongue-patient-motion" viewBox="0 0 960 720" role="img" aria-label={`训练患者${actionSteps[phase].title}动作`}>
-    <image href={CASE_APPEARANCE.src} width="960" height="720" />
+// Lip centers in the portrait camera's resting pose, in a 400 × 300 reference frame.
+const mouthCenters: Record<string, [number, number]> = {
+  'lin-yue': [198, 235], 'chen-yang': [204, 225], 'zhou-ning': [201, 221],
+  'zhao-hang': [200, 226], 'sun-lan': [199, 219],
+}
+
+function PatientTongueMotion({ phase, open, tongue, onReady }: { phase: number; open: number; tongue: number; onReady: () => void }) {
+  const patient = useTrainingCase()
+  const label = `训练患者${actionSteps[phase].title}动作`
+  const motion = <>
     <g opacity={open}>
       <path d="M455 422 Q477 407 502 422 Q500 444 479 446 Q457 445 455 422Z" fill="#654049" stroke="#b78179" strokeWidth="2" />
       <path d="M462 422 Q478 414 495 422 L493 426 Q478 429 464 426Z" fill="#fff3ea" />
@@ -24,12 +33,25 @@ function PatientTongueMotion({ phase, open, tongue }: { phase: number; open: num
       <path d="M465 433 Q478 429 492 433 L491 446 Q490 457 479 458 Q468 457 466 446Z" fill="#d98f94" stroke="#b46b74" strokeWidth="1.3" />
       <path d="M479 435 Q478 441 479 447" fill="none" stroke="#bb747c" strokeWidth="1.1" strokeLinecap="round" />
     </g>
+  </>
+  if (patient.id === 'wang-xu') return <svg className="tongue-patient-motion" viewBox="0 0 960 720" role="img" aria-label={label}>
+    <image href={CASE_APPEARANCE.src} width="960" height="720" />{motion}
   </svg>
+  const [x, y] = mouthCenters[patient.id] ?? [200, 225]
+  return <div className="tongue-patient-motion" role="img" aria-label={label}>
+    <PatientPortrait still onReady={onReady} />
+    <svg className="tongue-portrait-mouth" viewBox="0 0 400 300" aria-hidden="true">
+      <g transform={`translate(${x} ${y}) scale(.45) translate(-479 -422)`}>{motion}</g>
+    </svg>
+  </div>
 }
 
-export function TongueInspectionTrainer() {
+export function TongueInspectionTrainer({ sampleId = CASE_TONGUE_SAMPLE_ID }: { sampleId?: string } = {}) {
   const { recordSubmission } = useEncounterRecords()
-  const [state, dispatch] = useReducer(reduceTongueSequence, CASE_TONGUE_SAMPLE_ID, createTongueSequence)
+  const patient = useTrainingCase()
+  const [state, dispatch] = useReducer(reduceTongueSequence, sampleId, createTongueSequence)
+  const [patientReady, setPatientReady] = useState(patient.id === 'wang-xu')
+  const onReady = useCallback(() => setPatientReady(true), [])
   const [reducedMotion, setReducedMotion] = useState(false)
   const [zoomed, setZoomed] = useState(false)
   const [observation, setObservation] = useState('')
@@ -46,10 +68,11 @@ export function TongueInspectionTrainer() {
       if (media.matches) dispatch({ type: 'complete' })
     }
     setReducedMotion(media.matches)
-    dispatch(media.matches ? { type: 'complete' } : { type: 'play' })
+    if (media.matches) dispatch({ type: 'complete' })
+    else if (patientReady) dispatch({ type: 'play' })
     media.addEventListener('change', update)
     return () => media.removeEventListener('change', update)
-  }, [])
+  }, [patientReady])
 
   useEffect(() => {
     if (!state.playing) return
@@ -78,7 +101,7 @@ export function TongueInspectionTrainer() {
       <div className="tongue-action-player">
         <div className="tongue-action-scene" aria-label={state.photoRevealed ? '资料舌象原图观察' : '患者张口伸舌动作演示'}>
           {state.progress === 1 ? <button className="tongue-observation-photo" type="button" onClick={() => setZoomed(true)} aria-label="放大舌象照片"><img key={sample.id} src={sample.image} alt={state.submitted ? sample.label : '患者舌象'} /><span><Maximize2 size={14} />点击看大图</span></button> : <>
-            <PatientTongueMotion phase={phase} open={frameBlend[1] + frameBlend[2]} tongue={frameBlend[2]} />
+            <PatientTongueMotion phase={phase} open={frameBlend[1] + frameBlend[2]} tongue={frameBlend[2]} onReady={onReady} />
             <div className="tongue-scene-caption"><span><Play size={13} />动作演示</span><small>{actionSteps[phase].description}</small></div>
           </>}
         </div>

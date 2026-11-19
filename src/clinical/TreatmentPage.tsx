@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Check, ClipboardList, FileCheck2, Pill, Plus, Stethoscope, Trash2 } from 'lucide-react'
+import { useTrainingCase } from '../cases/selectedCase'
 import { PatientPortrait } from '../exam/ExamScene'
-import { CASE_CHIEF_COMPLAINT, clinicalModules, type ClinicalModuleId } from './caseData'
+import { clinicalModules, type ClinicalModuleId } from './caseData'
 import type { MedicationRow, TreatmentPlan, TreatmentRow } from './treatmentPlan'
 import { requestTreatmentEvaluation, type TreatmentEvaluation } from './treatmentEvaluation'
 import { useEncounterRecords } from '../records/EncounterRecordsProvider'
@@ -19,6 +20,7 @@ export interface TreatmentPageProps {
 }
 
 export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFinish, onNavigate }: TreatmentPageProps) {
+  const patient = useTrainingCase()
   const { recordSubmission, getAssessmentSnapshot } = useEncounterRecords()
   const treatmentTableRef = useRef<HTMLDivElement>(null)
   const medicationTableRef = useRef<HTMLDivElement>(null)
@@ -27,7 +29,7 @@ export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFi
   const completedMedications = plan.medications.filter((row) => row.name.trim() && row.route.trim() && row.dose.trim()).length
   const completed = completedTreatments + completedMedications
   const total = plan.treatments.length + plan.medications.length
-  const signature = JSON.stringify({ plan, diagnosis })
+  const signature = JSON.stringify({ caseId: patient.id, plan, diagnosis })
   const activeSignature = useRef(signature)
   activeSignature.current = signature
   const assessmentRequest = useRef<{ controller: AbortController; kind: 'evaluation' | 'finish' } | null>(null)
@@ -55,7 +57,7 @@ export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFi
     try {
       const snapshot = getAssessmentSnapshot()
       if (!snapshot) throw new Error('Missing encounter snapshot')
-      const result = await requestCaseAssessment({ ...snapshot, clinicalDiagnosis: diagnosis, treatment: plan }, controller.signal)
+      const result = await requestCaseAssessment({ ...snapshot, clinicalDiagnosis: diagnosis, treatment: plan }, controller.signal, patient.id)
       if (controller.signal.aborted || activeSignature.current !== signature) return
       setCaseAssessment({ signature, result })
       setAssessmentOpen('finish')
@@ -105,14 +107,14 @@ export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFi
     setEvaluationError('')
     setCaseAssessmentError('')
     try {
-      const result = await requestTreatmentEvaluation({ caseId: 'wang-xu', diagnosis, plan }, controller.signal)
+      const result = await requestTreatmentEvaluation({ caseId: patient.id, diagnosis, plan }, controller.signal)
       if (!controller.signal.aborted && activeSignature.current === signature) {
         setEvaluation({ signature, result })
         const snapshot = getAssessmentSnapshot()
         let total: CaseAssessment | null = null
         if (snapshot) {
           try {
-            total = await requestCaseAssessment({ ...snapshot, clinicalDiagnosis: diagnosis, treatment: plan }, controller.signal)
+            total = await requestCaseAssessment({ ...snapshot, clinicalDiagnosis: diagnosis, treatment: plan }, controller.signal, patient.id)
             if (!controller.signal.aborted && activeSignature.current === signature) {
               setCaseAssessment({ signature, result: total })
               setAssessmentOpen('preview')
@@ -166,13 +168,13 @@ export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFi
 
   return <section className="treatment-workspace" aria-label="处置训练台">
     <aside className="four-rail">
-      <div className="four-rail-heading"><strong>接诊流程</strong><span>CASE 01</span></div>
+      <div className="four-rail-heading"><strong>接诊流程</strong><span>CASE {patient.number}</span></div>
       <nav aria-label="病例模块">{clinicalModules.map((module, index) => <button key={module.id} type="button" className={module.id === 'treatment' ? 'is-active' : ''} aria-current={module.id === 'treatment' ? 'step' : undefined} onClick={() => onNavigate(module.id)}><b>{module.short}</b><span>{module.label}</span>{index < 5 && <Check size={18} />}</button>)}</nav>
       <div className="four-rail-caption"><ClipboardList size={20} /><span>临床综合实训</span></div>
     </aside>
 
     <div className="treatment-main">
-      <header className="four-heading"><div className="four-title"><h1>处置</h1><p>治疗方案 · 用药清单</p></div><div className="four-patient-identity">王旭 <span>· 男 · 48 岁 · 门诊初诊</span></div><div className="four-progress"><span>{completed}/{total} 行已填写</span><div role="progressbar" aria-label="处置填写进度" aria-valuemin={0} aria-valuemax={total} aria-valuenow={completed}><i style={{ width: `${total ? completed / total * 100 : 0}%` }} /></div></div></header>
+      <header className="four-heading"><div className="four-title"><h1>处置</h1><p>治疗方案 · 用药清单</p></div><div className="four-patient-identity">{patient.name} <span>· {patient.sex} · {patient.age} 岁 · 门诊初诊</span></div><div className="four-progress"><span>{completed}/{total} 行已填写</span><div role="progressbar" aria-label="处置填写进度" aria-valuemin={0} aria-valuemax={total} aria-valuenow={completed}><i style={{ width: `${total ? completed / total * 100 : 0}%` }} /></div></div></header>
 
       <div className="treatment-lists">
         <section className="treatment-list-card" aria-labelledby="treatment-list-title">
@@ -192,9 +194,9 @@ export function TreatmentPage({ plan, diagnosis = {}, onPlanChange, onBack, onFi
     </div>
 
     <aside className="treatment-summary treatment-evaluation-summary" aria-label="患者与处置填写状态">
-      <header className="treatment-summary-heading"><h2>当前患者</h2><span>SP 01</span></header>
-      <section className="treatment-patient-card"><div className="treatment-patient-model"><PatientPortrait /></div><div className="treatment-patient-caption"><strong>王旭</strong><span>男 · 48 岁 · 门诊初诊</span><small><i />患者在场</small></div></section>
-      <section className="treatment-summary-section"><h3>主诉</h3><p>{CASE_CHIEF_COMPLAINT}</p></section>
+      <header className="treatment-summary-heading"><h2>当前患者</h2><span>SP {patient.number}</span></header>
+      <section className="treatment-patient-card"><div className="treatment-patient-model"><PatientPortrait /></div><div className="treatment-patient-caption"><strong>{patient.name}</strong><span>{patient.sex} · {patient.age} 岁 · 门诊初诊</span><small><i />患者在场</small></div></section>
+      <section className="treatment-summary-section"><h3>主诉</h3><p>{patient.chiefComplaint}</p></section>
       <section className="treatment-summary-section treatment-completion"><h3><FileCheck2 size={19} />清单填写状态</h3><dl><div><dt>处置项目</dt><dd><strong>{completedTreatments}</strong> / {plan.treatments.length} 行</dd></div><div><dt>用药方案</dt><dd><strong>{completedMedications}</strong> / {plan.medications.length} 行</dd></div></dl><p>一行中的全部内容填写后，计为已填写。</p></section>
       <div className="treatment-tip"><Stethoscope size={20} /><p>按当前训练病例填写处置与用药。同一类别有多项处置时可用分号或换行分隔，每种药单独填写一行。</p></div>
       {evaluationError && <p className="treatment-evaluation-error" role="alert">{evaluationError}</p>}

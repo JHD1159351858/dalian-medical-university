@@ -1,5 +1,7 @@
 import type { EncounterRecord, EncounterSnapshot, SubmissionKind } from './types'
 
+import { wangXu } from '../cases/selectedCase'
+
 type PendingStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 
 export function createEncounterRecorder(save: (owner: string, record: EncounterRecord) => Promise<void>) {
@@ -39,11 +41,11 @@ export function createEncounterRecorder(save: (owner: string, record: EncounterR
       if (owner) for (const record of cached(owner)) pending.set(record.id, { owner, record })
     },
     current: () => active,
-    begin(snapshot: EncounterSnapshot) {
+    begin(snapshot: EncounterSnapshot, patientCase: { id: string; name: string; age: number; sex: string } = wangXu) {
       if (!owner) return null
       if (active) return active
       active = {
-        id: crypto.randomUUID(), caseId: 'wang-xu', patient: { name: '王旭', age: 48, sex: '男' },
+        id: crypto.randomUUID(), caseId: patientCase.id, patient: { name: patientCase.name, age: patientCase.age, sex: patientCase.sex },
         startedAt: new Date().toISOString(), endedAt: null, status: 'in_progress',
         snapshot: structuredClone(snapshot), submissions: [],
       }

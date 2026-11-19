@@ -1,5 +1,5 @@
 export type Point = [number, number, number];
-// The exported in-place Walk covers 0.56m per 1.2s at animation timeScale=1.
+// The planted foot travels backwards at this speed in each in-place Walk clip.
 export const WALK_CLIP_SPEED = 0.56 / 1.2;
 export const DOCTOR_MOVE_SPEED = 1.1;
 export const PATIENT_MOVE_SPEED = 0.85;

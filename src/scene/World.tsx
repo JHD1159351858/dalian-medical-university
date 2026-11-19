@@ -3,7 +3,10 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { PerspectiveCamera, View, useGLTF } from '@react-three/drei';
 import { ACESFilmicToneMapping, OrthographicCamera, PCFSoftShadowMap, type PerspectiveCamera as PerspectiveCameraInstance } from 'three';
 import { Character } from './Character';
+import { patientModelUrl } from './patientModel';
 import { HospitalScene, type HospitalSceneProps } from './HospitalScene';
+
+import { useTrainingCase } from '../cases/selectedCase';
 
 type WorldProps = HospitalSceneProps & {
   patientView: RefObject<HTMLDivElement | null>; doctorView: RefObject<HTMLDivElement | null>;
@@ -55,7 +58,7 @@ function PrepareFrame({ diagnosis }: { diagnosis: boolean }) {
   return null;
 }
 
-function Portrait({ kind, speaking = false }: { kind: 'patient' | 'doctor'; speaking?: boolean }) {
+function Portrait({ kind, patientId, speaking = false }: { kind: 'patient' | 'doctor'; patientId?: string; speaking?: boolean }) {
   const cameraRef = useRef<PerspectiveCameraInstance>(null);
   return <>
     <PerspectiveCamera ref={cameraRef} makeDefault position={[0, 1.15, 3.6]} fov={32} />
@@ -64,7 +67,7 @@ function Portrait({ kind, speaking = false }: { kind: 'patient' | 'doctor'; spea
     <hemisphereLight args={['#ffffff', '#ccd3df', 1.5]} />
     <directionalLight position={[-3, 6, 5]} intensity={3} />
     <directionalLight position={[3, 2, -3]} intensity={1.4} color="#bedbff" />
-    <group rotation={[0, kind === 'patient' ? 0.08 : -0.12, 0]}><Character kind={kind} animation={speaking ? 'Talk' : 'Idle'} /></group>
+    <group rotation={[0, kind === 'patient' ? 0.08 : -0.12, 0]}><Character kind={kind} patientId={patientId} animation={speaking ? 'Talk' : 'Idle'} /></group>
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
       <circleGeometry args={[0.68, 64]} /><meshBasicMaterial color="#dfe7f1" transparent opacity={0.45} />
     </mesh>
@@ -72,6 +75,7 @@ function Portrait({ kind, speaking = false }: { kind: 'patient' | 'doctor'; spea
 }
 
 export default function World(props: WorldProps) {
+  const patient = useTrainingCase();
   const diagnosis = props.phase === 'diagnosis';
   const [viewsReady, setViewsReady] = useState(false);
   useEffect(() => { setViewsReady(Boolean(props.patientView.current && props.doctorView.current)); }, [diagnosis, props.patientView, props.doctorView]);
@@ -85,9 +89,9 @@ export default function World(props: WorldProps) {
       fallback={<div className="webgl-fallback" aria-hidden="true">当前浏览器无法显示三维场景，请启用硬件加速后重试。</div>}>
       <Suspense fallback={null}>
         <PrepareFrame diagnosis={diagnosis} />
-        <HospitalScene {...props} />
+        <HospitalScene {...props} patientName={patient.name} patientId={patient.id} />
         {diagnosis && viewsReady && <>
-          <View track={props.patientView as RefObject<HTMLDivElement>} index={1}><Portrait kind="patient" speaking={props.patientSpeaking} /></View>
+          <View track={props.patientView as RefObject<HTMLDivElement>} index={1}><Portrait kind="patient" patientId={patient.id} speaking={props.patientSpeaking} /></View>
           <View track={props.doctorView as RefObject<HTMLDivElement>} index={2}><Portrait kind="doctor" /></View>
         </>}
       </Suspense>
@@ -95,6 +99,6 @@ export default function World(props: WorldProps) {
   </SceneBoundary>;
 }
 
-export function clearModelCache() {
-  ['/models/hospital.glb', '/models/patient.glb', '/models/doctor.glb'].forEach((url) => useGLTF.clear(url));
+export function clearModelCache(patientId?: string) {
+  ['/models/hospital.glb', patientModelUrl(patientId), '/models/doctor.glb'].forEach((url) => useGLTF.clear(url));
 }

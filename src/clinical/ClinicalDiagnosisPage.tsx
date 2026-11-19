@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, Check, Circle, ClipboardList, FileText, Stethoscope } from 'lucide-react'
+import { useTrainingCase } from '../cases/selectedCase'
 import { PatientPortrait } from '../exam/ExamScene'
-import { CASE_CHIEF_COMPLAINT, clinicalModules, moduleItems, type ClinicalModuleId } from './caseData'
+import { clinicalModules, moduleItems, type ClinicalModuleId } from './caseData'
 
 export interface ClinicalDiagnosisPageProps {
   records: Record<string, string>
@@ -18,18 +19,19 @@ const placeholders: Record<string, string> = {
 }
 
 export function ClinicalDiagnosisPage({ records, onRecordChange, onBack, onNext, onNavigate }: ClinicalDiagnosisPageProps) {
+  const patient = useTrainingCase()
   const items = moduleItems.clinicalDiagnosis
   const completed = items.filter((item) => records[item.id]?.trim()).length
 
   return <section className="clinical-diagnosis-workspace" aria-label="诊断训练台">
     <aside className="four-rail">
-      <div className="four-rail-heading"><strong>接诊流程</strong><span>CASE 01</span></div>
+      <div className="four-rail-heading"><strong>接诊流程</strong><span>CASE {patient.number}</span></div>
       <nav aria-label="病例模块">{clinicalModules.map((module, index) => <button key={module.id} type="button" className={module.id === 'clinicalDiagnosis' ? 'is-active' : ''} aria-current={module.id === 'clinicalDiagnosis' ? 'step' : undefined} onClick={() => onNavigate(module.id)}><b>{module.short}</b><span>{module.label}</span>{index < 4 && <Check size={18} />}</button>)}</nav>
       <div className="four-rail-caption"><ClipboardList size={20} /><span>临床综合实训</span></div>
     </aside>
 
     <div className="clinical-diagnosis-main">
-      <header className="four-heading"><div className="four-title"><h1>诊断</h1><p>临床判断 · 四诊合参</p></div><div className="four-patient-identity">王旭 <span>· 男 · 48 岁 · 门诊初诊</span></div><div className="four-progress"><span>{completed}/{items.length} 已填写</span><div role="progressbar" aria-label="诊断填写进度" aria-valuemin={0} aria-valuemax={items.length} aria-valuenow={completed}><i style={{ width: `${completed / items.length * 100}%` }} /></div></div></header>
+      <header className="four-heading"><div className="four-title"><h1>诊断</h1><p>临床判断 · 四诊合参</p></div><div className="four-patient-identity">{patient.name} <span>· {patient.sex} · {patient.age} 岁 · 门诊初诊</span></div><div className="four-progress"><span>{completed}/{items.length} 已填写</span><div role="progressbar" aria-label="诊断填写进度" aria-valuemin={0} aria-valuemax={items.length} aria-valuenow={completed}><i style={{ width: `${completed / items.length * 100}%` }} /></div></div></header>
 
       <div className="clinical-diagnosis-grid">
         {items.map((item, index) => <section key={item.id} className="clinical-diagnosis-card" aria-labelledby={`clinical-diagnosis-title-${item.id}`}>
@@ -41,9 +43,9 @@ export function ClinicalDiagnosisPage({ records, onRecordChange, onBack, onNext,
     </div>
 
     <aside className="clinical-diagnosis-summary" aria-label="患者与诊断填写状态">
-      <header className="clinical-diagnosis-summary-heading"><h2>当前患者</h2><span>SP 01</span></header>
-      <section className="clinical-diagnosis-patient-card"><div className="clinical-diagnosis-patient-model"><PatientPortrait /></div><div className="clinical-diagnosis-patient-caption"><strong>王旭</strong><span>男 · 48 岁 · 门诊初诊</span><small><i />患者在场</small></div></section>
-      <section className="clinical-diagnosis-summary-section"><h3>主诉</h3><p>{CASE_CHIEF_COMPLAINT}</p></section>
+      <header className="clinical-diagnosis-summary-heading"><h2>当前患者</h2><span>SP {patient.number}</span></header>
+      <section className="clinical-diagnosis-patient-card"><div className="clinical-diagnosis-patient-model"><PatientPortrait /></div><div className="clinical-diagnosis-patient-caption"><strong>{patient.name}</strong><span>{patient.sex} · {patient.age} 岁 · 门诊初诊</span><small><i />患者在场</small></div></section>
+      <section className="clinical-diagnosis-summary-section"><h3>主诉</h3><p>{patient.chiefComplaint}</p></section>
       <section className="clinical-diagnosis-summary-section clinical-diagnosis-completion"><div><h3><FileText size={18} />诊断填写状态</h3><span>{completed}/{items.length}</span></div><ul>{items.map((item) => <li key={item.id} className={records[item.id]?.trim() ? 'is-complete' : ''}>{records[item.id]?.trim() ? <Check size={18} /> : <Circle size={18} />}<strong>{item.label}</strong><span>{records[item.id]?.trim() ? '已填写' : '待填写'}</span></li>)}</ul></section>
       <div className="clinical-diagnosis-tip"><Stethoscope size={20} /><p>结合问诊、四诊与检查结果，填写诊断及依据，完成后进入处置。</p></div>
     </aside>

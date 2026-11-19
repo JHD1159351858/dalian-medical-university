@@ -12,7 +12,7 @@ const statuses: Record<EncounterSummary['status'], string> = { in_progress: '接
 const submissionNames: Record<SubmissionKind, string> = { 'physical-exam': '体格检查提交', tongue: '舌诊判断提交', pulse: '脉诊判断提交', treatment: '处置方案提交' }
 const fieldNames: Record<string, string> = {
   ...Object.fromEntries(physicalExamItems.map(({ id, label }) => [id, label])),
-  notes: '检查笔记', submittedNotes: '已提交的检查记录', orderedIds: '已选择检查', history: '腹部触诊操作',
+  notes: '检查笔记', submittedNotes: '已提交的检查记录', orderedIds: '已选择检查', history: '腹部触诊操作', bedsideHistory: '床旁查体操作', action: '操作项目', finding: '查体所见',
   selected: '脉象判断', readings: '各部触诊所见', middle: '中指 · 关部', index: '食指 · 寸部', ring: '无名指 · 尺部', light: '轻取', deep: '深取',
   answer: '学生判断', observation: '观察依据', correct: '核对结果', result: '反馈结果', message: '反馈说明',
   diagnosis: '诊断记录', plan: '处置方案', treatments: '处置措施', medications: '用药记录', category: '类别', item: '措施', name: '药物名称', route: '给药途径', dose: '剂量',
@@ -55,7 +55,7 @@ function RecordedValue({ value, field = '' }: { value: unknown; field?: string }
 function ModuleRecords({ value, module }: { value: Record<string, string>; module: 'fourDiagnosis' | 'auxiliaryExam' | 'clinicalDiagnosis' }) {
   const entries = Object.entries(value).filter(([, text]) => text.trim())
   if (!entries.length) return <p className="enc-record-empty-value">尚未填写记录</p>
-  return <dl className="enc-record-fields">{entries.map(([id, text]) => <div key={id}><dt>{moduleItems[module].find((item) => item.id === id)?.label ?? '补充记录'}</dt><dd>{text}</dd></div>)}</dl>
+  return <dl className="enc-record-fields">{entries.map(([id, text]) => <div key={id}><dt>{moduleItems[module].find((item) => item.id === id)?.label ?? fieldNames[id] ?? (/[\u3400-\u9fff]/.test(id) ? id : '补充记录')}</dt><dd>{text}</dd></div>)}</dl>
 }
 
 export function EncounterRecordDetails({ record }: { record: EncounterRecord }) {
@@ -70,7 +70,10 @@ export function EncounterRecordDetails({ record }: { record: EncounterRecord }) 
     <section><h3>问诊对话</h3>{snapshot.messages.length ? <ol className="enc-record-messages">{snapshot.messages.map((message, index) => <li key={index}><strong>{message.role === 'user' ? '学生医生' : '患者'}</strong><p>{message.content}</p></li>)}</ol> : <p className="enc-record-empty-value">尚无问诊对话</p>}</section>
     <section><h3>体格检查</h3><RecordedValue value={snapshot.physicalExam} /></section>
     <section><h3>中医四诊</h3><ModuleRecords value={snapshot.fourDiagnosis} module="fourDiagnosis" /></section>
-    <section><h3>辅助检查</h3><ModuleRecords value={snapshot.auxiliaryExam} module="auxiliaryExam" /></section>
+    <section><h3>辅助检查</h3>
+      {snapshot.auxiliaryOrderedIds?.length ? <p>已开具：{snapshot.auxiliaryOrderedIds.map((id) => moduleItems.auxiliaryExam.find((item) => item.id === id)?.label ?? id).join('、')}</p> : null}
+      <ModuleRecords value={snapshot.auxiliaryExam} module="auxiliaryExam" />
+    </section>
     <section><h3>诊断记录</h3><ModuleRecords value={snapshot.clinicalDiagnosis} module="clinicalDiagnosis" /></section>
     <section><h3>处置与用药</h3><RecordedValue value={snapshot.treatment} /></section>
     <section><h3>历次提交 <small>{record.submissions.length} 次</small></h3>{record.submissions.length ? <ol className="enc-record-submissions">{record.submissions.map((submission) => {

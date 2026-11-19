@@ -1,6 +1,8 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, it, vi } from 'vitest'
+import { publicCases as cases } from '../server/trainingCases.mjs'
+import * as selectedCase from '../src/cases/selectedCase'
 import { ClinicalModulePage } from '../src/clinical/ClinicalModulePage'
 import { FourExaminationViewer } from '../src/clinical/FourExaminationViewer'
 import { nextListeningSample } from '../src/clinical/PatientListening'
@@ -118,4 +120,26 @@ it.each([
 
 it('keeps symptom interview suggestions out of the default observation view', () => {
   expect(render()).not.toContain('常用追问')
+})
+
+it.each(cases)('gives $name the interactive tongue sequence, their own case materials and the zoomable patient atlas', (patient) => {
+  const selected = vi.spyOn(selectedCase, 'useTrainingCase').mockReturnValue({ ...patient, number: '02' })
+  try {
+    const page = render()
+    const look = renderToStaticMarkup(createElement(FourExaminationViewer, { ...examinationProps, kind: 'look' }))
+    expect(page).toContain('项目卡通患者模型')
+    expect(page.match(/role="tab"/g)).toHaveLength(5)
+    expect(look).toContain('训练患者准备动作')
+    expect(look).toContain(`data-photo-id="${patient.four[0].tongueSampleId}"`)
+    expect(look).toContain('放大查看患者状态')
+    expect(look).toContain(`${patient.name}的患者状态`)
+    expect(look).toContain('项目卡通患者模型')
+    expect(look).not.toMatch(/case-portraits|wang-xu-appearance/)
+    expect(look).toContain('提交判断')
+    const opening = nextListeningSample(undefined, patient.opening)
+    expect(opening.text).toBe(patient.opening)
+    expect(nextListeningSample(opening, patient.opening).text).not.toBe(patient.opening)
+  } finally {
+    selected.mockRestore()
+  }
 })

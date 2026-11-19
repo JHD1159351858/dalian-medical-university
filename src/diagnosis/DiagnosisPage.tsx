@@ -2,7 +2,7 @@ import { FormEvent, KeyboardEvent, RefObject, useEffect, useRef } from 'react'
 import { ArrowLeft, LogOut, RotateCcw, Send, Square, Stethoscope, UserRound } from 'lucide-react'
 
 import type { ChatMessage } from './chat'
-import { PATIENT_OPENING } from '../clinical/caseData'
+import { useTrainingCase } from '../cases/selectedCase'
 
 export type ConversationStatus = 'checking' | 'input' | 'thinking' | 'replying' | 'talking' | 'unavailable' | 'error'
 
@@ -47,6 +47,7 @@ export function DiagnosisPage({
   onFinish,
   onBeginExam,
 }: DiagnosisPageProps) {
+  const patient = useTrainingCase()
   const logRef = useRef<HTMLDivElement>(null)
   const latestReply = [...messages].reverse().find((message) => message.role === 'assistant')?.content
   const canSend = status === 'input' || status === 'error'
@@ -73,7 +74,7 @@ export function DiagnosisPage({
           <ArrowLeft aria-hidden="true" size={17} /> 返回场景
         </button>
         <div className="diagnosis-title">
-          <span>OUTPATIENT · CASE 01</span>
+          <span>OUTPATIENT · CASE {patient.number}</span>
           <strong>门诊问诊记录</strong>
           <small>临床问诊训练台</small>
         </div>
@@ -89,13 +90,13 @@ export function DiagnosisPage({
 
       <div className="diagnosis-grid">
         <article className="identity-card patient-identity">
-          <div className="card-kicker">STANDARDIZED PATIENT <span>01</span></div>
+          <div className="card-kicker">STANDARDIZED PATIENT <span>{patient.number}</span></div>
           <div className="identity-heading">
             <span className="role-mark">SP</span>
-            <div><small>标准化病人</small><h2>王旭，48 岁</h2></div>
+            <div><small>标准化病人</small><h2>{patient.name}，{patient.age} 岁</h2></div>
           </div>
-          <div className="avatar-viewport" ref={patientView} aria-label="患者三维形象" />
-          <div className="case-facts"><span>男</span><span>门诊初诊</span><span>意识清楚</span></div>
+          <div className="avatar-viewport" ref={patientView} aria-label={patient.name + '的三维形象'} />
+          <div className="case-facts"><span>{patient.sex}</span><span>门诊初诊</span><span>意识清楚</span></div>
         </article>
 
         <article className="identity-card doctor-identity">
@@ -110,7 +111,7 @@ export function DiagnosisPage({
 
         <aside className="latest-reply">
           <div className="section-label">主诉摘要 <span>CHIEF COMPLAINT</span></div>
-          <blockquote>{latestReply ?? PATIENT_OPENING}</blockquote>
+          <blockquote>{latestReply ?? patient.opening}</blockquote>
           <p>围绕部位、性质、持续时间与伴随表现展开追问。</p>
           <div className="summary-rule"><i /><span>问诊目标</span><strong>采集现病史</strong></div>
         </aside>
@@ -130,11 +131,11 @@ export function DiagnosisPage({
               <div className="empty-conversation">
                 <UserRound aria-hidden="true" size={22} />
                 <strong>根据患者主诉继续追问</strong>
-                <span>例如：“您肚子具体哪个部位疼？疼痛是什么感觉？”</span>
+                <span>例如：“您主要是哪里不舒服？是什么感觉？”</span>
               </div>
             ) : messages.map((message, index) => (
               <div className={`message message-${message.role}`} key={`${message.role}-${index}`}>
-                <span>{message.role === 'user' ? '你' : '王旭'}</span>
+                <span>{message.role === 'user' ? '你' : patient.name}</span>
                 <p>{message.content}</p>
               </div>
             ))}
@@ -161,7 +162,7 @@ export function DiagnosisPage({
             {error && <p className="inline-error" role="alert">{error}</p>}
           </form>
           <div className="diagnosis-next-step">
-            <div><span>下一步</span><strong>完成问诊记录后，进行腹部触诊</strong></div>
+            <div><span>下一步</span><strong>完成问诊记录后，选择相应的体格检查</strong></div>
             <button type="button" onClick={onBeginExam}><Stethoscope aria-hidden="true" size={15} /> 开始体格检查</button>
           </div>
         </section>

@@ -1,4 +1,4 @@
-import type { PatientVoiceProfile } from './voiceProfiles'
+import { selectMandarinVoice, type PatientVoiceProfile } from './voiceProfiles'
 
 export type SpeechEmotion = 'happy' | 'sad' | 'angry' | 'surprised' | 'fear' | 'neutral'
 
@@ -81,16 +81,14 @@ export function startSpeechStream(
   const voiceOptions = optionsWithDefaults(options)
   const Context = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
   let context: AudioContext
-  try {
-    context = new Context({ sampleRate: 24000 })
-  } catch {
-    queueMicrotask(() => { if (run === speechRun) onFinish?.() })
-    return { push: () => undefined, finish: () => undefined, stop: () => undefined }
-  }
-
+  let playbackReady: Promise<void>
   const sources = new Set<AudioBufferSourceNode>()
   let socket: WebSocket | null = null
   let pendingText = ''
+  let unvoicedReply = ''
+  let useFallback = false
+  let fallbackRun: number | undefined
+  let phraseTimer: ReturnType<typeof setTimeout> | undefined
   let inputFinished = false
   let synthesisFinished = false
   let closed = false
@@ -104,18 +102,23 @@ export function startSpeechStream(
   let started = false
   const encoder = new TextEncoder()
 
-  const dispose = () => {
-    closed = true
+  const disconnect = () => {
+    clearTimeout(phraseTimer)
+    phraseTimer = undefined
     const connection = socket
     socket = null
     connection?.close()
+  }
+  const dispose = () => {
+    closed = true
+    disconnect()
     for (const source of sources) {
       source.onended = null
       source.stop()
       source.disconnect()
     }
     sources.clear()
-    void context.close().catch(() => undefined)
+    void context?.close().catch(() => undefined)
     if (activeStreamCleanup === dispose) activeStreamCleanup = null
   }
   activeStreamCleanup = dispose
@@ -125,13 +128,28 @@ export function startSpeechStream(
     dispose()
     onFinish?.()
   }
+  const finishFallback = () => {
+    if (!unvoicedReply.trim()) {
+      onFinish?.()
+      return
+    }
+    const playing = speakChinese(unvoicedReply, onFinish, options.emotion ?? emotionForSpeech(unvoicedReply), voiceOptions)
+    fallbackRun = speechRun
+    if (playing) onStart?.()
+    else onFinish?.()
+  }
   const fail = () => {
     if (closed || run !== speechRun) return
-    dispose()
-    onFinish?.()
+    if (started) {
+      disconnect()
+      synthesisFinished = true
+      complete()
+    } else {
+      dispose()
+      useFallback = true
+      if (inputFinished) finishFallback()
+    }
   }
-  const playbackReady = context.resume()
-  void playbackReady.catch(fail)
 
   const playPcm = (data: string) => {
     const decoded = atob(data)
@@ -158,11 +176,12 @@ export function startSpeechStream(
         source.disconnect()
         complete()
       }
-      const startAt = Math.max(nextStart, context.currentTime + 0.06)
+      const startAt = nextStart > context.currentTime ? nextStart : context.currentTime + 0.06
       source.start(startAt)
       nextStart = startAt + buffer.duration
       if (!started) {
         started = true
+        unvoicedReply = ''
         onStart?.()
       }
     }).catch(fail).finally(() => {
@@ -171,23 +190,36 @@ export function startSpeechStream(
     })
   }
 
-  const flushInput = () => {
+  const flushInput = (timerExpired = false) => {
     if (!ready || !socket || sessionFinishing || closed) return
     // The API's 1024-byte limit is conservatively applied per connection.
     let length = 0
     let bytes = 0
+    let boundary = 0
     for (const character of pendingText) {
       const size = encoder.encode(character).length
       if (sentBytes + bytes + size > 1024) break
       bytes += size
       length += character.length
+      if (/[。！？!?；;\n]/u.test(character) || (length >= 5 && /[，,、：:]/u.test(character))) boundary = length
     }
-    if (length) {
-      socket.send(JSON.stringify({ type: 'append', text: pendingText.slice(0, length) }))
-      pendingText = pendingText.slice(length)
-      sentBytes += bytes
+    const overflow = length < pendingText.length
+    // Keep a short unfinished clause for the next LLM delta. A long unpunctuated
+    // reply can still start promptly, and rollover prefers a linguistic boundary.
+    const sendLength = overflow
+      ? boundary || (sentBytes === 0 ? length : 0)
+      : inputFinished || timerExpired || length >= 40 ? length : boundary
+    if (sendLength) {
+      const text = pendingText.slice(0, sendLength)
+      socket.send(JSON.stringify({ type: 'append', text }))
+      pendingText = pendingText.slice(sendLength)
+      sentBytes += encoder.encode(text).length
+      clearTimeout(phraseTimer)
+      phraseTimer = undefined
     }
-    if (pendingText || inputFinished) {
+    if (overflow || inputFinished) {
+      clearTimeout(phraseTimer)
+      phraseTimer = undefined
       if (!sentBytes) {
         const connection = socket
         socket = null
@@ -198,6 +230,11 @@ export function startSpeechStream(
       }
       sessionFinishing = true
       socket.send(JSON.stringify({ type: 'finish' }))
+    } else if (pendingText.length >= 8 && phraseTimer === undefined) {
+      phraseTimer = setTimeout(() => {
+        phraseTimer = undefined
+        try { flushInput(true) } catch { fail() }
+      }, 420)
     }
   }
 
@@ -229,6 +266,7 @@ export function startSpeechStream(
           trailingByte = null
           if (pendingText) connect()
           else if (inputFinished) {
+            if (!started && !queuedAudio && unvoicedReply.trim()) { fail(); return }
             synthesisFinished = true
             complete()
           }
@@ -237,20 +275,29 @@ export function startSpeechStream(
         fail()
       }
     }
-    connection.onerror = fail
+    connection.onerror = () => { if (socket === connection) fail() }
     connection.onclose = () => { if (!closed && socket === connection) fail() }
   }
 
-  try { connect() } catch { queueMicrotask(fail) }
+  try {
+    context = new Context({ sampleRate: 24000 })
+    playbackReady = context.resume()
+    void playbackReady.catch(fail)
+    connect()
+  } catch { fail() }
   return {
     push(text) {
-      if (closed || inputFinished || run !== speechRun) return
+      if (!text || inputFinished || synthesisFinished || run !== speechRun) return
+      if (!started) unvoicedReply += text
+      if (closed) return
       pendingText += text
       try { if (!socket) connect(); flushInput() } catch { fail() }
     },
     finish() {
-      if (closed || inputFinished || run !== speechRun) return
+      if (inputFinished || run !== speechRun) return
       inputFinished = true
+      if (useFallback) { finishFallback(); return }
+      if (closed || synthesisFinished) return
       if (!socket && !pendingText) {
         synthesisFinished = true
         complete()
@@ -258,7 +305,7 @@ export function startSpeechStream(
         try { flushInput() } catch { fail() }
       }
     },
-    stop() { if (!closed && run === speechRun) stopSpeech() },
+    stop() { if ((fallbackRun ?? run) === speechRun) stopSpeech() },
   }
 }
 
@@ -272,6 +319,8 @@ export function emotionForSpeech(text: string): SpeechEmotion {
 
 export function preloadSpeech(text: string, options: Partial<SpeechOptions> = {}): Promise<boolean> {
   if (typeof window === 'undefined' || !window.fetch || !text.trim()) return Promise.resolve(false)
+  // Some browsers populate device voices asynchronously after the first request.
+  window.speechSynthesis?.getVoices?.()
   const key = cacheKey(text, options)
   if (audioCache.has(key)) return Promise.resolve(true)
   const pending = pendingPreloads.get(key)
@@ -307,34 +356,33 @@ export function playCachedSpeech(text: string, options: Partial<SpeechOptions> =
   return true
 }
 
-function speakWithBrowser(text: string, onEnd?: () => void): boolean {
+export function speakWithDeviceVoice(text: string, options: Partial<PatientVoiceProfile>, onEnd?: () => void, onError = onEnd): boolean {
   if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return false
+  const voice = selectMandarinVoice(window.speechSynthesis.getVoices(), options.patientId)
+  if (!voice) return false
   const utterance = new SpeechSynthesisUtterance(text)
-  utterance.lang = 'zh-CN'
-  utterance.rate = 0.94
-  const voices = window.speechSynthesis.getVoices()
-  utterance.voice = voices.find((voice) => voice.lang.toLowerCase().startsWith('zh')) ?? null
-  if (onEnd) {
-    let finished = false
-    let fallbackTimer = 0
-    const finish = () => {
-      if (finished) return
-      finished = true
-      if (activeBrowserCompletion === finish) activeBrowserCompletion = null
-      window.clearTimeout(fallbackTimer)
-      onEnd()
-    }
-    utterance.onend = finish
-    utterance.onerror = finish
-    fallbackTimer = window.setTimeout(finish, Math.max(2500, Math.min(12000, text.length * 320)))
-    activeBrowserCompletion = finish
+  utterance.voice = voice
+  utterance.lang = voice.lang
+  utterance.rate = options.speed ?? 0.95
+  const run = speechRun
+  let finished = false
+  let fallbackTimer = 0
+  const finish = (callback?: () => void) => {
+    if (finished) return
+    finished = true
+    window.clearTimeout(fallbackTimer)
+    if (activeBrowserCompletion === cancel) activeBrowserCompletion = null
+    if (run === speechRun) callback?.()
   }
+  const cancel = () => finish()
+  activeBrowserCompletion = cancel
+  utterance.onend = () => finish(onEnd)
+  utterance.onerror = () => finish(onError)
+  fallbackTimer = window.setTimeout(() => finish(onError), Math.max(4500, text.length * 420 + 2000))
   try {
     window.speechSynthesis.speak(utterance)
   } catch {
-    if (onEnd) {
-      utterance.onerror?.(new Event('error') as SpeechSynthesisErrorEvent)
-    }
+    cancel()
     return false
   }
   return true
@@ -344,7 +392,8 @@ export function speakChinese(text: string, onEnd?: () => void, emotion = emotion
   if (typeof window === 'undefined') return false
   stopSpeech()
   const voiceOptions = { ...voice, emotion }
-  if (audioCache.has(cacheKey(text, voiceOptions)) && playCachedSpeech(text, voiceOptions, onEnd)) return true
+  const key = cacheKey(text, voiceOptions)
+  if (audioCache.has(key) && playCachedSpeech(text, voiceOptions, onEnd)) return true
   const run = speechRun
   let finished = false
   const finish = () => {
@@ -352,16 +401,21 @@ export function speakChinese(text: string, onEnd?: () => void, emotion = emotion
     finished = true
     onEnd?.()
   }
+  let triedDevice = false
   const fallback = () => {
-    if (run !== speechRun) return
-    speakWithBrowser(text, finish)
+    if (finished || triedDevice || run !== speechRun) return
+    triedDevice = true
+    if (!speakWithDeviceVoice(text, voiceOptions, finish)) finish()
   }
 
-  if (!window.fetch || typeof Audio === 'undefined') return speakWithBrowser(text, onEnd)
+  if (!window.fetch || typeof Audio === 'undefined') return speakWithDeviceVoice(text, voiceOptions, finish)
   const controller = new AbortController()
   activeRequest = controller
-  requestAudio(text, voiceOptions, controller.signal).then((blob) => {
+  const preload = pendingPreloads.get(key)
+  const audioReady = preload ? preload.then(() => audioCache.get(key)) : requestAudio(text, voiceOptions, controller.signal)
+  audioReady.then((blob) => {
     if (run !== speechRun) return
+    if (!blob) { fallback(); return }
     activeUrl = URL.createObjectURL(blob)
     const audio = new Audio(activeUrl)
     activeAudio = audio

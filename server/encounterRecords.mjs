@@ -1,3 +1,5 @@
+import { casePatient } from './trainingCases.mjs';
+
 const MAX_BODY_BYTES = 512 * 1024;
 const METADATA_COLUMNS = 'id,student_id,case_id,patient_name,patient_age,patient_sex,started_at,ended_at,status,updated_at';
 const REGIONS = ['right-upper', 'upper', 'left-upper', 'right-middle', 'center', 'left-middle', 'right-lower', 'lower', 'left-lower'];
@@ -48,6 +50,9 @@ export function recordsConfiguration(env = process.env) {
 function physicalExam(value) {
   if (value === null) return true;
   if (!object(value) || !Array.isArray(value.orderedIds) || !value.orderedIds.every((id) => text(id, 120)) || !textMap(value.notes) || !textMap(value.submittedNotes) || !Array.isArray(value.history)) return false;
+  if (value.bedsideHistory !== undefined && (!Array.isArray(value.bedsideHistory) || !value.bedsideHistory.every(entry =>
+    object(entry) && text(entry.examId, 120) && text(entry.action, 120) && text(entry.finding, 2000)
+    && Number.isSafeInteger(entry.at) && entry.at >= 0))) return false;
   return value.history.every((entry) => object(entry) && ['pressure', 'rebound'].includes(entry.type) && REGIONS.includes(entry.region)
     && ['neutral', 'pain', 'severe-pain'].includes(entry.expression) && ['normal', 'tender', 'no-rebound', 'rebound-positive'].includes(entry.result)
     && typeof entry.isTeachingDemo === 'boolean' && Number.isSafeInteger(entry.at) && entry.at >= 0);
@@ -72,7 +77,9 @@ function validEncounter(value) {
   if (!validMetadata(value) || !object(value) || !object(value.snapshot) || !Array.isArray(value.submissions)) return false;
   const snapshot = value.snapshot;
   return Array.isArray(snapshot.messages) && snapshot.messages.every((message) => object(message) && ['user', 'assistant'].includes(message.role) && text(message.content))
-    && textMap(snapshot.fourDiagnosis) && textMap(snapshot.auxiliaryExam) && textMap(snapshot.clinicalDiagnosis) && treatment(snapshot.treatment) && physicalExam(snapshot.physicalExam)
+    && textMap(snapshot.fourDiagnosis) && textMap(snapshot.auxiliaryExam)
+    && (snapshot.auxiliaryOrderedIds === undefined || (Array.isArray(snapshot.auxiliaryOrderedIds) && snapshot.auxiliaryOrderedIds.length <= 7 && snapshot.auxiliaryOrderedIds.every((id) => text(id, 80))))
+    && textMap(snapshot.clinicalDiagnosis) && treatment(snapshot.treatment) && physicalExam(snapshot.physicalExam)
     && value.submissions.every((entry) => object(entry) && uuid(entry.id) && ['physical-exam', 'tongue', 'pulse', 'treatment'].includes(entry.kind) && iso(entry.at) && object(entry.payload));
 }
 
@@ -137,6 +144,12 @@ export async function encounterRecords(input, { env = process.env, fetchImpl = g
       if (Buffer.byteLength(JSON.stringify(input.body), 'utf8') > MAX_BODY_BYTES) return error(413, '接诊记录不能超过512KB。');
       if (!validEncounter(input.body)) return error(400, '接诊记录格式无效。');
       const record = input.body;
+      const patient = casePatient(record.caseId);
+      if (!patient || patient.name !== record.patient.name || patient.age !== record.patient.age || patient.sex !== record.patient.sex)
+        return error(400, '患者资料与本次训练病例不一致。');
+      if (record.submissions.some(({ payload }) => payload.caseAssessment !== undefined
+        && (!object(payload.caseAssessment) || payload.caseAssessment.caseId !== record.caseId)))
+        return error(400, '评分与本次训练病例不一致。');
       body = JSON.stringify({ id: record.id, student_id: owner, case_id: record.caseId, patient_name: record.patient.name, patient_age: record.patient.age, patient_sex: record.patient.sex, started_at: record.startedAt, ended_at: record.endedAt, status: record.status, snapshot: record.snapshot, submissions: record.submissions });
       url.searchParams.set('on_conflict', 'id');
       url.searchParams.set('select', '*');

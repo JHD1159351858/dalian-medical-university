@@ -393,5 +393,87 @@
     "Gown hem and long coat use supplementary coat bones with restrained motion; it is not a cloth simulation.",
     "The original source character surfaces and UV materials were retained through decimation; no replacement humanoid mesh was used.",
     "Talk is a body gesture clip, without facial blend shapes or lip sync."
-  ]
+  ],
+  "casePatientModels": {
+    "lin-yue": {
+      "file": "patients/lin-yue.glb",
+      "bytes": 6063296,
+      "sha256": "0c5e239365b6eb41eaaa566567a44defe98ee46cee5e53ec234d4d4d4920dc05",
+      "source": "authoring/blender-patients/scans/lin-yue.blend",
+      "originalFile": "b54c5361f18b9e22c11f246900c354ab.glb",
+      "originalSha256": "dd5a51e9672b975e4d7e475fbc326b624ca6ebff8f19b85632128271c4f1979c",
+      "sourceTriangles": 1500000,
+      "triangles": 100000,
+      "heightMeters": 1.65,
+      "clips": [
+        "Idle",
+        "Talk",
+        "Walk"
+      ]
+    },
+    "chen-yang": {
+      "file": "patients/chen-yang.glb",
+      "bytes": 5841964,
+      "sha256": "9ea00e2f0ec52c4e9929e3e9654b96e630d759c8451b6285e8f11ebc1b25b214",
+      "source": "authoring/blender-patients/scans/chen-yang.blend",
+      "originalFile": "7291a52e6cbe24e037e0d05b99f07c48.glb",
+      "originalSha256": "af77236cb92999f9e817852cb11276a3133d1639054f4d03e01e5b25f9df72b3",
+      "sourceTriangles": 1500000,
+      "triangles": 100000,
+      "heightMeters": 1.65,
+      "clips": [
+        "Idle",
+        "Talk",
+        "Walk"
+      ]
+    },
+    "zhou-ning": {
+      "file": "patients/zhou-ning.glb",
+      "bytes": 5999748,
+      "sha256": "ac0f5cc4550865d2e87c612f074ce11a260784063f4f609c987752ab569ef87b",
+      "source": "authoring/blender-patients/scans/zhou-ning.blend",
+      "originalFile": "fe0a19f0067178cff853f92a10b14151.glb",
+      "originalSha256": "b572ad63ca9ec5b980cc0812a4ab43383ba610eb2dabbf569a66ec5f4870d9fb",
+      "sourceTriangles": 1500000,
+      "triangles": 100000,
+      "heightMeters": 1.65,
+      "clips": [
+        "Idle",
+        "Talk",
+        "Walk"
+      ]
+    },
+    "zhao-hang": {
+      "file": "patients/zhao-hang.glb",
+      "bytes": 6144480,
+      "sha256": "080c9cc987906f1b210a6c7a0b270015fa40cd655cc196cd8e3c7169a33b0e14",
+      "source": "authoring/blender-patients/scans/zhao-hang.blend",
+      "originalFile": "6bd32baf845e69e0a8a00873ebf7bfc3.glb",
+      "originalSha256": "0218cbfbd789802d1127774be61653908dc901fc717b0b461ce079b11d7cd397",
+      "sourceTriangles": 1500000,
+      "triangles": 100000,
+      "heightMeters": 1.65,
+      "clips": [
+        "Idle",
+        "Talk",
+        "Walk"
+      ]
+    },
+    "sun-lan": {
+      "file": "patients/sun-lan.glb",
+      "bytes": 5765072,
+      "sha256": "19cae848c518031f9b991f61cf4e3a28264d1faf95b91157535d685868df9921",
+      "source": "authoring/blender-patients/scans/sun-lan.blend",
+      "originalFile": "cec91c62760e73d3d8987a86a49c54df.glb",
+      "originalSha256": "320a0bb0d95e1431f034aafab3de1615c5b3f09279972558462e804d1554fde4",
+      "sourceTriangles": 1500000,
+      "triangles": 100000,
+      "heightMeters": 1.65,
+      "clips": [
+        "Idle",
+        "Talk",
+        "Walk"
+      ]
+    }
+  }
 }

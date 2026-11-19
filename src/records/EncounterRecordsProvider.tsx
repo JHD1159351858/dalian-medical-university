@@ -4,6 +4,8 @@ import { listEncounters, loadEncounter, saveEncounter } from './recordsApi'
 import { getStudentClient, RecordsError, studentIdentity } from './studentSession'
 import type { EncounterList, EncounterRecord, EncounterSnapshot, PhysicalExamRecord, RecordsAccess, SaveState, SubmissionKind } from './types'
 
+import { useTrainingCase } from '../cases/selectedCase'
+
 interface RecordsContext {
   access: RecordsAccess
   studentId: string | null
@@ -37,6 +39,7 @@ export function EncounterRecordsProvider({ snapshot, phase, session, onIdentityC
   onIdentityChange: () => void
   children: ReactNode
 }) {
+  const patient = useTrainingCase()
   const [access, setAccess] = useState<RecordsAccess>('loading')
   const [studentId, setStudentId] = useState<string | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('idle')
@@ -113,7 +116,7 @@ export function EncounterRecordsProvider({ snapshot, phase, session, onIdentityC
     }
     if (access !== 'ready') return
     const nextSnapshot = { ...snapshot, physicalExam }
-    if (trainingPhases.has(phase)) recorder.begin(nextSnapshot)
+    if (trainingPhases.has(phase)) recorder.begin(nextSnapshot, patient)
     recorder.update(nextSnapshot)
     if (phase === 'exiting' || phase === 'completed') {
       recorder.finish(last.phase === 'treatment' ? 'completed' : 'ended')
@@ -124,7 +127,7 @@ export function EncounterRecordsProvider({ snapshot, phase, session, onIdentityC
     setSaveState('saving')
     const timer = window.setTimeout(() => { void flush() }, 800)
     return () => window.clearTimeout(timer)
-  }, [snapshot, physicalExam, phase, session, access, recorder, flush])
+  }, [snapshot, physicalExam, phase, session, access, recorder, flush, patient])
 
   useEffect(() => {
     const saveBeforeLeaving = () => { void flush() }
@@ -145,12 +148,12 @@ export function EncounterRecordsProvider({ snapshot, phase, session, onIdentityC
   const updatePhysicalExam = useCallback((value: PhysicalExamRecord) => { setPhysicalExam(value) }, [])
   const recordSubmission = useCallback((kind: SubmissionKind, payload: Record<string, unknown>) => {
     const latestSnapshot = { ...snapshot, physicalExam }
-    recorder.begin(latestSnapshot)
+    recorder.begin(latestSnapshot, patient)
     recorder.update(latestSnapshot)
     recorder.submit(kind, payload)
     if (kind === 'treatment' && payload.completed === true) recorder.finish('completed')
     void flush()
-  }, [recorder, flush, snapshot, physicalExam])
+  }, [recorder, flush, snapshot, physicalExam, patient])
 
   const loadList = useCallback(async (offset = 0) => {
     const owner = ownerRef.current

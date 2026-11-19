@@ -10,7 +10,7 @@ export const CASE_APPEARANCE = {
   width: 1448,
   height: 1086,
 } as const
-export const PATIENT_OPENING = '医生，我身体不舒服。您帮我看看吧。'
+export const PATIENT_OPENING = '大夫，我肚子左上边这块儿疼。'
 
 export const clinicalModules: Array<{ id: ClinicalModuleId; label: string; short: string }> = [
   { id: 'diagnosis', label: '问诊', short: '01' },

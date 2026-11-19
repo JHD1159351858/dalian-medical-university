@@ -130,6 +130,7 @@ const eslintConfig = defineConfig([
     // Build artifacts:
     'server.js',
     'dist/**',
+    '.preview/**',
     // Vendored assets, design artifacts and the separately executed legacy tests.
     'public/**',
     'design/**',

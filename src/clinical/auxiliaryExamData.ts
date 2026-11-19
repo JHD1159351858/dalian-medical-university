@@ -1,10 +1,12 @@
 import { biochemistryResults, bloodCountResults } from './auxiliaryLabResults'
+import { moduleItems } from './caseData'
+import type { TrainingCase } from '../cases/selectedCase'
 
 export interface LaboratoryResult {
   label: string
   code?: string
   value: string
-  unit: string
+  unit?: string
   flag?: 'H' | 'L' | 'N'
   reference?: string
 }
@@ -16,6 +18,8 @@ export interface AuxiliaryReport {
   findings?: string[]
   image?: { src: string; alt: string }
   values?: LaboratoryResult[]
+  simulated?: boolean
+  unavailable?: boolean
   note?: string
 }
 
@@ -27,4 +31,18 @@ export const auxiliaryReports: Record<string, AuxiliaryReport> = {
   enzymes: { category: '实验室检查', values: ['Lipase', 'AMY'].map((code) => biochemistryResults.find((entry) => entry.code === code)!) },
   blood: { category: '实验室检查', values: [...bloodCountResults, { label: '降钙素原', code: 'PCT（降钙素原）', value: '＞100', unit: 'ng/mL' }], note: '血常规数据按提供照片整理。降钙素原数值来自既有病例文本；血小板压积（PCT）与降钙素原（PCT）为不同检验项目。' },
   'liver-kidney': { category: '实验室检查', title: '生化检验报告 · 肝肾功能', values: biochemistryResults, note: '完整保留提供报告中的 26 项生化结果，包含肝肾功能、胰酶、心肌标志物和电解质。' },
+}
+
+export function getAuxiliaryExams(patient: TrainingCase): Array<{ id: string; label: string; report: AuxiliaryReport }> {
+  return moduleItems.auxiliaryExam.map(({ id, label }) => {
+    if (patient.id === 'wang-xu') return { id, label, report: auxiliaryReports[id] }
+
+    const entry = patient.auxiliary.find((finding) => finding.id === id || finding.label === label)
+    const category = auxiliaryReports[id].category
+    if (!entry) return { id, label, report: { category, unavailable: true, findings: ['本病例尚无此项检查资料。'] } }
+    const report = entry.values?.length
+      ? { category, simulated: true, values: entry.values, note: entry.result }
+      : { category, simulated: true, findings: [entry.result] }
+    return { id, label, report }
+  })
 }

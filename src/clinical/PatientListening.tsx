@@ -1,22 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { Play, Square } from 'lucide-react'
-import { playCachedSpeech, preloadSpeech, stopSpeech } from '../diagnosis/speech'
-import { PATIENT_VOICE_PROFILE } from '../diagnosis/voiceProfiles'
+import { playCachedSpeech, preloadSpeech, speakWithDeviceVoice, stopSpeech } from '../diagnosis/speech'
+import { useTrainingCase } from '../cases/selectedCase'
+import { getPatientVoiceProfile } from '../diagnosis/voiceProfiles'
 
-const samples = [
-  { text: '医生，我这儿疼。就是肚子左上边，您帮我看看吧。', speed: 0.94 },
-  { text: '嗯，您问吧。我听着呢，知道的我就跟您说。', speed: 0.96 },
-  { text: '好，我听明白了。您接着问，我跟您说。', speed: 0.98 },
-]
-type ListeningSample = (typeof samples)[number]
-let lastPlayedSample: ListeningSample | undefined
+const wangListeningOpening = '医生，我这儿疼。就是肚子左上边，您帮我看看吧。'
+type ListeningSample = { text: string; speed: number }
+const lastPlayedByPatient = new Map<string, ListeningSample>()
 
-export function nextListeningSample(previous?: ListeningSample) {
-  const previousIndex = previous ? samples.indexOf(previous) : -1
-  return samples[(previousIndex + 1) % samples.length]
+export function nextListeningSample(previous?: ListeningSample, opening = wangListeningOpening, speed = 0.94) {
+  const phrases = [opening, '嗯，您问吧。我听着呢，知道的我就跟您说。', '好，我听明白了。您接着问，我跟您说。']
+  const index = (phrases.indexOf(previous?.text ?? '') + 1) % phrases.length
+  return { text: phrases[index], speed: Number((speed + 0.02 * index).toFixed(2)) }
 }
 
 export function PatientListening({ muted, onStopReading }: { muted: boolean; onStopReading: () => void }) {
+  const patient = useTrainingCase()
   const playbackRun = useRef(0)
   const ownsPlayback = useRef(false)
   const [playback, setPlayback] = useState<'idle' | 'loading' | 'coze' | 'device' | 'error'>('idle')
@@ -44,8 +43,9 @@ export function PatientListening({ muted, onStopReading }: { muted: boolean; onS
       return
     }
 
-    const sample = nextListeningSample(lastPlayedSample)
-    const options = { ...PATIENT_VOICE_PROFILE, speed: sample.speed }
+    const profile = getPatientVoiceProfile(patient)
+    const sample = nextListeningSample(lastPlayedByPatient.get(patient.id), patient.id === 'wang-xu' ? undefined : patient.opening, profile.speed)
+    const options = { ...profile, speed: sample.speed }
     setPlayback('loading')
     const ready = await preloadSpeech(sample.text, options)
     if (run !== playbackRun.current) return
@@ -61,30 +61,17 @@ export function PatientListening({ muted, onStopReading }: { muted: boolean; onS
       ownsPlayback.current = true
       setPlayback('coze')
       if (playCachedSpeech(sample.text, options, finish)) {
-        lastPlayedSample = sample
+        lastPlayedByPatient.set(patient.id, sample)
         return
       }
       ownsPlayback.current = false
     }
 
-    const synthesis = window.speechSynthesis
-    const voice = synthesis?.getVoices().find((item) => /^zh(-|_)/i.test(item.lang) || item.lang.toLowerCase() === 'zh')
-    if (!voice || !('SpeechSynthesisUtterance' in window)) {
-      finish(true)
-      return
-    }
-    const utterance = new SpeechSynthesisUtterance(sample.text)
-    utterance.lang = voice.lang
-    utterance.voice = voice
-    utterance.rate = sample.speed
-    utterance.onend = () => finish()
-    utterance.onerror = () => finish(true)
     ownsPlayback.current = true
     setPlayback('device')
-    try {
-      synthesis.speak(utterance)
-      lastPlayedSample = sample
-    } catch {
+    if (speakWithDeviceVoice(sample.text, options, finish, () => finish(true))) {
+      lastPlayedByPatient.set(patient.id, sample)
+    } else {
       finish(true)
     }
   }

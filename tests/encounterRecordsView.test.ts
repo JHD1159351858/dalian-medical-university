@@ -78,3 +78,9 @@ it('shows a saved zero-point final score once, with all six modules and feedback
   expect(html.match(/尚未填写处置方案。/g)).toHaveLength(1)
   expect(html).not.toContain('这次接诊未保存整体评分。')
 })
+
+it('shows ordered investigations even before the student writes a report note', () => {
+  const withOrders = { ...record, snapshot: { ...record.snapshot, auxiliaryOrderedIds: ['ultrasound', 'blood'], auxiliaryExam: {} } }
+  const html = renderToStaticMarkup(createElement(EncounterRecordDetails, { record: withOrders }))
+  expect(html).toContain('已开具：腹部 B 超、血常规 / PCT')
+})

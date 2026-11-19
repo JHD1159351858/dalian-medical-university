@@ -14,10 +14,13 @@ function speechUrl(env) {
   return url;
 }
 
-export function attachSpeechStream(server, { env = /** @type {Record<string, string | undefined>} */ (process.env), timeoutMs = 45_000 } = {}) {
+/** @param {import('node:http').Server} server
+ * @param {{ env?: Record<string, string | undefined>, timeoutMs?: number, allowRequest?: (request: import('node:http').IncomingMessage) => boolean }} options */
+export function attachSpeechStream(server, { env = process.env, timeoutMs = 45_000, allowRequest } = {}) {
   const socketServer = new WebSocketServer({ noServer: true, maxPayload: 8_192 });
   server.on('upgrade', (request, socket, head) => {
     if (request.url?.split('?')[0] !== '/api/speech-stream') return;
+    if (allowRequest && !allowRequest(request)) return socket.destroy();
     socketServer.handleUpgrade(request, socket, head, (connection) => socketServer.emit('connection', connection, request));
   });
   socketServer.on('connection', (client) => {

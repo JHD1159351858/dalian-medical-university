@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import caseRubric from '../server/treatment-rubric.json'
+import patients from '../server/training-cases.json'
 import treatmentPresets from '../shared/treatment-presets.json'
 import { CASE_APPEARANCE, CASE_TONGUE_SAMPLE_ID, PATIENT_OPENING } from '../src/clinical/caseData'
 import { tongueSamples } from '../src/clinical/tongueSamples'
@@ -8,29 +9,89 @@ import { mockAuthentication } from './helpers/mockStudentAuth'
 import type { EncounterRecord } from '../src/records/types'
 
 
-async function enterConsultation(page: Page) {
+async function enterConsultation(page: Page, caseIndex = 0) {
+  // Only control the single 32-bit draw used by the case picker, leaving UUIDs and the scene untouched.
+  await page.addInitScript((index) => {
+    const original = crypto.getRandomValues.bind(crypto)
+    crypto.getRandomValues = <T extends ArrayBufferView>(arr: T): T => {
+      if (arr instanceof Uint32Array && arr.length === 1) {
+        arr[0] = Math.floor((index + 0.5) / 6 * 0x100000000)
+        return arr
+      }
+      return original(arr)
+    }
+  }, caseIndex)
   await mockAuthentication(page, true)
   await page.goto('/')
   await page.getByRole('button', { name: '开始实训', exact: true }).click()
   await page.getByRole('button', { name: '静音', exact: true }).click()
   await expect.poll(() => page.evaluate(() => (window as any).__hospitalScene?.phase), { timeout: 50_000 }).toBe('waiting')
-  for (let attempt = 0; attempt < 80; attempt++) {
-    const state = await page.evaluate(() => (window as any).__hospitalScene)
-    if (state?.eligible) break
-    if (!state?.patient || !state.doctor || !state.camera) throw new Error('场景导航未就绪')
-    const dx = state.patient.position[0] - state.doctor.position[0], dz = state.patient.position[2] - state.doctor.position[2]
-    const fx = state.camera.target[0] - state.camera.position[0], fz = state.camera.target[2] - state.camera.position[2]
-    const length = Math.hypot(fx, fz)
-    const forward = (dx * fx + dz * fz) / length, right = (-dx * fz + dz * fx) / length
-    const keys = [forward > .08 ? 'w' : forward < -.08 ? 's' : '', right > .08 ? 'd' : right < -.08 ? 'a' : ''].filter(Boolean)
-    try { for (const key of keys) await page.keyboard.down(key); await page.waitForTimeout(170) }
-    finally { for (const key of keys) await page.keyboard.up(key) }
+  const reception = page.getByText('按 F，主动开始接诊', { exact: true })
+  // From the default camera, the reception point is diagonally behind the doctor.
+  await page.keyboard.down('s')
+  await page.keyboard.down('a')
+  try {
+    await expect(reception).toBeVisible({ timeout: 15_000 })
+  } finally {
+    await page.keyboard.up('a')
+    await page.keyboard.up('s')
   }
-  await expect.poll(() => page.evaluate(() => (window as any).__hospitalScene?.eligible)).toBe(true)
   await page.keyboard.press('f')
   await page.getByRole('button', { name: '开始问诊', exact: true }).click({ timeout: 30_000 })
   await expect(page.getByLabel('问诊训练台')).toBeVisible()
 }
+
+test('keeps the drawn patient from interview through scoring and draws another for the next round', async ({ page }) => {
+  let saved: EncounterRecord | undefined
+  await page.route('**/api/encounters*', (route) => {
+    if (route.request().method() === 'PUT') {
+      saved = route.request().postDataJSON() as EncounterRecord
+      return route.fulfill({ status: 204 })
+    }
+    return route.fulfill({ json: { records: [], hasMore: false } })
+  })
+  const lin = patients.find((caseData) => caseData.id === 'lin-yue')!
+  const abdomen = lin.physical.find((item) => item.label === '腹部视触诊')!
+  const ultrasound = lin.auxiliary.find((item) => item.label === '腹部 B 超')!
+  await enterConsultation(page, 1)
+  await expect(page.getByRole('heading', { name: '林悦，28 岁' })).toBeVisible()
+  await expect(page.getByLabel('林悦的三维形象')).toBeVisible()
+  await expect(page.getByLabel('林悦的三维形象').locator('img')).toHaveCount(0)
+  await expect(page.locator('.world-diagnosis canvas')).toBeVisible()
+  await page.getByLabel('向患者提问').fill(lin.history[0].question)
+  await page.getByRole('button', { name: '发送问题' }).click()
+  await expect(page.locator('.message-log')).toContainText(lin.history[0].answer)
+  await page.getByRole('button', { name: '开始体格检查' }).click()
+  await page.getByRole('button', { name: '开具检查', exact: true }).click()
+  await page.getByRole('checkbox', { name: '腹部视触诊' }).check()
+  await page.getByRole('button', { name: '确认开单' }).click()
+  await page.getByRole('button', { name: '查看电脑', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: '医院信息系统' })).toContainText(abdomen.result)
+  await page.getByRole('button', { name: '关闭电脑' }).click()
+  await page.getByRole('button', { name: /腹部视触诊.*已开单/ }).click()
+  await page.getByLabel('腹部视触诊记录', { exact: true }).fill(abdomen.result)
+  await page.getByRole('button', { name: '提交本项记录' }).click()
+  await page.getByRole('button', { name: '完成检查', exact: true }).click()
+  await page.getByRole('button', { name: '进入中医四诊', exact: true }).click()
+  await page.getByRole('button', { name: '进入辅助检查', exact: true }).click()
+  await page.getByRole('tab', { name: /腹部 B 超/ }).click()
+  await page.getByRole('button', { name: '开具腹部 B 超', exact: true }).click()
+  await expect(page.getByRole('tabpanel')).toContainText(ultrasound.result)
+  await page.getByLabel('检查记录', { exact: true }).fill(ultrasound.result)
+  await page.getByRole('button', { name: '进入诊断', exact: true }).click()
+  await page.locator('#clinical-diagnosis-input-primary').fill(lin.diagnosis)
+  await page.getByRole('button', { name: '进入处置', exact: true }).click()
+  await page.getByRole('button', { name: '完成病例', exact: true }).click()
+  const dialog = page.getByRole('dialog', { name: '病例参考评分' })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '确认完成' }).click()
+  await expect.poll(() => saved?.status).toBe('completed')
+  expect(saved).toMatchObject({ caseId: 'lin-yue', patient: { name: '林悦' }, snapshot: { auxiliaryOrderedIds: ['ultrasound'], auxiliaryExam: { ultrasound: ultrasound.result }, clinicalDiagnosis: { primary: lin.diagnosis } } })
+  expect(saved?.submissions.at(-1)?.payload.caseAssessment).toMatchObject({ caseId: 'lin-yue', score: expect.any(Number) })
+  expect((saved?.submissions.at(-1)?.payload.caseAssessment as { score: number }).score).toBeGreaterThan(0)
+  await page.getByRole('button', { name: '开始下一轮', exact: true }).click({ timeout: 45000 })
+  await expect(page.locator('.episode-rail dd').first()).not.toHaveText('02')
+})
 
 test('scores a blank case before finishing and shows the saved score in reception records', async ({ page }) => {
   let saved: EncounterRecord | undefined

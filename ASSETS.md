@@ -2,6 +2,26 @@
 
 运行时资源在 `public/models/`；完整来源、当前导出文件大小与 SHA-256 以 `public/models/asset-manifest.json` 为准。
 
+## 病例患者的行走模型
+
+王旭的模型 `public/models/patient.glb` 是本组的尺寸与面数基准（1.65 米，100,000 个三角面）。以下五份原始 GLB 来自项目上一级目录，每份含约 150 万个三角面。Blender 保留每人的原始几何、UV 和材质，将贴图缩小至 2048 像素，减面并完成骨骼绑定。每个网页 GLB 内含站立、行走和交谈动作。原件、网页文件的 SHA-256 均列于资源清单的 `casePatientModels`。
+
+| 病例 | 提供的原始文件 | 运行时文件 |
+| --- | --- | --- |
+| 林悦 | `b54c5361f18b9e22c11f246900c354ab.glb` | `patients/lin-yue.glb` |
+| 陈阳 | `7291a52e6cbe24e037e0d05b99f07c48.glb` | `patients/chen-yang.glb` |
+| 周宁 | `fe0a19f0067178cff853f92a10b14151.glb` | `patients/zhou-ning.glb` |
+| 赵航 | `6bd32baf845e69e0a8a00873ebf7bfc3.glb` | `patients/zhao-hang.glb` |
+| 孙兰 | `cec91c62760e73d3d8987a86a49c54df.glb` | `patients/sun-lan.glb` |
+
+可编辑的新场景位于 `authoring/blender-patients/scans/`。从项目根目录使用 Blender 5.2 LTS 可重新生成：
+
+```sh
+blender --background --factory-startup --python-exit-code 1 --python authoring/blender-patients/import_scans.py
+```
+
+可在命令末尾追加 `-- --case lin-yue` 只处理一例，或指定 `--source-dir` 读取其他原件目录。之前制作的手工角色保存在 `authoring/blender-patients/scenes/`。
+
 ## 原始资源
 
 | 文件 | 原始路径 | 大小 | 格式 |
@@ -20,7 +40,7 @@
 | 医生 | `doctor.glb` | 1.72 m、约 100,000 三角面、1 skin、22 骨骼、`Idle`/`Walk`/`Talk` |
 | 医院 | `hospital.glb` | 41 mesh / 41 draw calls、45,486 三角面；材质/PBR 随导出保留 |
 
-运行时坐标为 +Y 向上、+Z 朝前、地面为 0、单位为米；医院源坐标转换为 `(x, y, z) -> (x, z, -y)`。原始步行片段周期为 1.2 秒、步幅 0.56 m，1 倍播放对应 0.4667 m/s。当前医生速度为 1.1 m/s、患者为 0.85 m/s，按实际移动速度同步缩放骨骼动画播放速度（稳定巡行约 2.36 倍／1.82 倍），受阻时停步；root motion 关闭，由场景控制移动。此次调整未改写人物 GLB 或动画源文件。
+运行时坐标为 +Y 向上、+Z 朝前、地面为 0、单位为米。医院源坐标转换为 `(x, y, z) -> (x, z, -y)`。医生与王旭的原始步行周期为 1.2 秒，每周期前进 0.56 m。六位患者的诊室巡行速度均为 0.85 m/s，医生为 1.1 m/s。新增五位患者各有独立的步幅与步频，赵航与孙兰步幅略短。按鞋底接地点求解髋、膝和踝关节的姿势，场景根据实际移动速度同步播放步行动画，受阻时停步。
 
 角色使用原始派生网格的连续解剖区域权重，每顶点最多 4 个影响，不是自动热力绑定；长衣通过附加衣摆骨骼作受限运动，没有布料模拟。`Talk` 为肢体动作，不含面部 blend shape 或口型同步。
 

@@ -24,6 +24,8 @@ const ACTOR_RADIUS = 0.3;
 const up = new Vector3(0, 1, 0);
 
 export type HospitalSceneProps = {
+  patientName?: string;
+  patientId?: string;
   phase: Phase;
   patientSpeaking: boolean;
   movementInput: RefObject<{ x: number; y: number }>;
@@ -67,6 +69,8 @@ export function HospitalScene({
   onDoorInteractionChange,
   onOpenRecords,
   recordsOpen = false,
+  patientName = '王旭',
+  patientId = 'wang-xu',
 }: HospitalSceneProps) {
   const hospital = useGLTF('/models/hospital.glb');
   const scene = useMemo(() => hospital.scene.clone(true), [hospital.scene]);
@@ -269,8 +273,11 @@ export function HospitalScene({
         <button className="reception-records-hotspot" type="button" aria-label="查看接诊记录" aria-haspopup="dialog" onPointerDown={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); onOpenRecords(); }}>接诊记录</button>
       </Html>}
       <group ref={patient} visible={phase !== 'completed'} position={phase === 'exiting' ? patientOutboundPath[0] : patientStart} rotation={[0, Math.PI, 0]}>
-        <Character kind="patient" animation={recordsOpen ? 'Idle' : patientMoving ? 'Walk' : patientSpeaking ? 'Talk' : 'Idle'} speed={patientSpeed} onLoaded={onPatientLoaded} />
-        {phase === 'waiting' && <Html position={[0, 1.95, 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}><div style={{ background: '#ffffffed', color: '#235587', border: '1px solid #bed6ed', borderRadius: 18, padding: '6px 12px', fontSize: 12, boxShadow: '0 4px 16px #12345b15' }}>王旭 · 等待接诊</div></Html>}
+        <Character kind="patient" patientId={patientId} animation={recordsOpen ? 'Idle' : patientMoving ? 'Walk' : patientSpeaking ? 'Talk' : 'Idle'} speed={patientSpeed} onLoaded={onPatientLoaded} />
+        {phase === 'waiting' && <Html position={[0, 1.95, 0]} center style={{ pointerEvents: 'none', whiteSpace: 'nowrap' }}><div style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#ffffffed', color: '#235587', border: '1px solid #bed6ed', borderRadius: 18, padding: '6px 12px', fontSize: 12, boxShadow: '0 4px 16px #12345b15' }}>
+          {patientId !== 'wang-xu' && <img src={`/case-portraits/${patientId}.webp`} width={24} height={24} style={{ objectFit: 'cover', borderRadius: '50%' }} alt="" />}
+          {patientName} · 等待接诊
+        </div></Html>}
       </group>
       <DoctorController
         phase={phase}

@@ -514,7 +514,7 @@ test.describe('touch movement controls', () => {
         await reception.tap();
         await page.getByRole('button', { name: '开始问诊', exact: true }).click({ timeout: 30_000 });
         await expect(page.getByLabel('问诊训练台')).toBeVisible();
-        const patient = await page.getByLabel('患者三维形象').boundingBox();
+        const patient = await page.locator('.patient-identity').getByLabel(/的三维形象$/).boundingBox();
         const doctor = await page.getByLabel('医生三维形象').boundingBox();
         expect(patient?.x).toBeLessThan(doctor?.x ?? 0);
         await page.getByRole('textbox', { name: '向患者提问' }).scrollIntoViewIfNeeded();
@@ -552,7 +552,7 @@ test('ending reception sends the patient out through the doors before the next r
 
 test('failed model download can be retried', async ({ page }) => {
   let fail = true;
-  await page.route('**/models/patient.glb', (route) => fail ? route.fulfill({ status: 503, body: 'test failure' }) : route.continue());
+  await page.route(/\/models\/(?:patient|patients\/[^/?]+)\.glb(?:\?.*)?$/, (route) => fail ? route.fulfill({ status: 503, body: 'test failure' }) : route.continue());
   await page.goto('/');
   await page.getByRole('button', { name: '开始实训', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('三维资源加载失败');

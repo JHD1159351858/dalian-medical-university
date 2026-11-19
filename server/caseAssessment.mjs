@@ -1,6 +1,7 @@
 import standard from './case-standard.json' with { type: 'json' };
 import treatmentRubric from './treatment-rubric.json' with { type: 'json' };
 import { evaluateTreatment } from './treatmentEvaluation.mjs';
+import { findTrainingCase, matchesReference, treatmentReferenceChecks } from './trainingCases.mjs';
 
 /** @param {unknown} value
  * @returns {value is Record<string, unknown>} */
@@ -35,7 +36,7 @@ function occurrences(actual, phrase) {
   while (expected && (start = actual.indexOf(expected, start)) !== -1) {
     const before = actual.slice(Math.max(0, start - 18), start);
     const after = actual.slice(start + expected.length, start + expected.length + 12);
-    const negated = /(?:无|未见|没有|否认|不是|并非|不考虑|不支持|不符合|排除|不)(?:明显|存在|出现|发生|诊断|提示|符合|为|是|有|的){0,3}$/.test(before)
+    const negated = /(?:无|未见|没有|否认|不是|并非|不考虑|不支持|不符合|排除|不)(?:明显|存在|出现|发生|诊断|提示|符合|为|是|有|的|季节性|急性|单纯性|左|右){0,5}$/.test(before)
       || /^(?:不成立|未证实|已排除|不支持)/.test(after);
     if (negated) negative = true;
     else positive = true;
@@ -71,19 +72,65 @@ function treatmentChecks(snapshot, maxScore) {
   }];
 }
 
+function trainingModules(patient, snapshot) {
+  const questions = snapshot.messages.filter((message) => message.role === 'user').map((message) => normalize(message.content));
+  const findings = (items, notes) => items.map((item) => ({
+    id: item.id, label: item.label, met: matchesReference(notes?.[item.id] ?? notes?.[item.label] ?? '', item.keywords), expected: item.result,
+  }));
+  const evidence = {
+    diagnosis: patient.history.map((topic) => ({
+      label: topic.label, met: questions.some((question) => topic.keywords.some((word) => question.includes(normalize(word)))), expected: topic.question,
+    })),
+    physicalExam: findings(patient.physical, { ...snapshot.physicalExam?.submittedNotes, ...snapshot.physicalExam?.notes }),
+    auxiliaryExam: findings(patient.auxiliary.filter((item) => item.requiredForScore !== false), snapshot.auxiliaryExam),
+    treatment: treatmentReferenceChecks(patient, snapshot.treatment).map((check) => ({ label: check.label, met: check.outcome === 'met', expected: check.reference })),
+  };
+  return standard.modules.map(({ id, label, maxScore, criteria }) => {
+    if (id === 'clinicalDiagnosis' || id === 'fourDiagnosis') {
+      const checks = criteria.map(({ id: field, path, maxScore: points }) => {
+        if (id === 'fourDiagnosis') {
+          const fieldLabel = { look: '望诊', listen: '闻诊', ask: '问诊', feel: '切诊', summary: '四诊总结' }[field];
+          const groups = field === 'summary' ? patient.diagnosisEvidence.tcm
+            : [patient.four.find((item) => item.label === fieldLabel).keywords];
+          return scoreCriterion(snapshot, { id: field, label: fieldLabel, path: 'fourDiagnosis.' + fieldLabel, maxScore: points, groups });
+        }
+        const includesDiagnosis = field === 'primary' || field === 'summary';
+        const groups = patient.diagnosisEvidence[field];
+        return scoreCriterion(snapshot, {
+          id: field, path, maxScore: points,
+          label: { primary: '西医主要诊断及依据', secondary: '西医次要诊断及依据', tcm: '中医四诊辨证依据', summary: '诊断总结与依据' }[field],
+          groups: includesDiagnosis ? [patient.diagnosisKeywords, ...groups] : groups,
+          forbidden: includesDiagnosis ? patient.diagnosisConflicts : [],
+        });
+      });
+      return { id, label, maxScore, checks, score: checks.reduce((sum, check) => sum + check.score, 0) };
+    }
+    const points = evidence[id];
+    const checks = points.map((point, index) => {
+      const weight = (id === 'physicalExam' && criteria.find((criterion) => criterion.id === point.id)?.maxScore)
+        || Math.floor(maxScore * (index + 1) / points.length) - Math.floor(maxScore * index / points.length);
+      return { id: point.id ?? id + '-' + index, label: point.label, maxScore: weight, score: point.met ? weight : 0,
+        feedback: point.met ? '已覆盖本病例参考要点。' : '可对照本病例参考内容：' + point.expected };
+    });
+    return { id, label, score: checks.reduce((sum, check) => sum + check.score, 0), maxScore, checks };
+  });
+}
+
 /** @param {unknown} submission */
 export function assessCase(submission) {
   if (!object(submission) || typeof submission.caseId !== 'string') return { status: 400, body: { error: '病例评分请求格式无效。' } };
-  if (submission.caseId !== standard.caseId) return { status: 404, body: { error: '未找到该病例的参考评分标准。' } };
+  const trainingCase = findTrainingCase(submission.caseId);
+  if (submission.caseId !== standard.caseId && !trainingCase) return { status: 404, body: { error: '未找到该病例的参考评分标准。' } };
   if (Buffer.byteLength(JSON.stringify(submission), 'utf8') > 512 * 1024 || !validSnapshot(submission.snapshot)) return { status: 400, body: { error: '病例记录格式无效或超过512KB。' } };
   const snapshot = submission.snapshot;
-  const modules = standard.modules.map((module) => {
+  const modules = trainingCase ? trainingModules(trainingCase, snapshot) : standard.modules.map((module) => {
     const checks = module.id === 'treatment' ? treatmentChecks(snapshot, module.maxScore) : module.criteria.map((criterion) => scoreCriterion(snapshot, criterion));
     return { id: module.id, label: module.label, score: Math.round(checks.reduce((sum, check) => sum + check.score, 0) * 100) / 100, maxScore: module.maxScore, checks };
   });
   return {
     status: 200,
-    body: { caseId: standard.caseId, version: standard.version, source: 'case_reference', teacherApproved: false,
-      score: Math.round(modules.reduce((sum, module) => sum + module.score, 0) * 100) / 100, maxScore: 100, modules, scopeNote: standard.scopeNote },
+    body: { caseId: submission.caseId, version: trainingCase ? 'abdominal-cases-2026-11-v1' : standard.version, source: 'case_reference', teacherApproved: false,
+      score: Math.round(modules.reduce((sum, module) => sum + module.score, 0) * 100) / 100, maxScore: 100, modules,
+      scopeNote: trainingCase ? '按本次模拟患者的六个训练环节核对问诊和书面记录中的参考要点。' : standard.scopeNote },
   };
 }

@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type Server } from 'node:http';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createApp } from '../server/index.mjs';
 import { recordsConfiguration } from '../server/encounterRecords.mjs';
+import trainingCases from '../server/training-cases.json';
 
 const servers: Server[] = [];
 const alice = '11111111-1111-4111-8111-111111111111';
@@ -145,12 +146,36 @@ it.each(['express', 'next'] as const)('%s saves a completed partial case without
   expect(h.rows.get(recordId)?.student_id).toBe(alice);
 });
 
+it('round-trips case-specific bedside actions and rejects malformed findings', async () => {
+  const h = await harness('express');
+  const { id: caseId, name, age, sex } = trainingCases[0];
+  const examId = '神经系统查体';
+  const action = { examId, action: '观察双侧瞳孔', finding: '瞳孔等大等圆', at: 12345 };
+  const physicalExam = { orderedIds: [examId], notes: { [examId]: '学生所见' }, submittedNotes: {}, history: [], bedsideHistory: [action] };
+  const snapshot = { ...encounter().snapshot, physicalExam, auxiliaryOrderedIds: ['ultrasound'] };
+  const record = { ...encounter(), caseId, patient: { name, age, sex }, snapshot };
+  expect((await h.call('PUT', '', record)).status).toBe(200);
+  expect((await (await h.call('GET', '?id=' + recordId)).json()).record.snapshot).toEqual(snapshot);
+  expect((await h.call('PUT', '', { ...record, snapshot: { ...snapshot, auxiliaryOrderedIds: [123] } })).status).toBe(400);
+  expect((await h.call('PUT', '', { ...record, snapshot: { ...snapshot, physicalExam: { ...physicalExam, bedsideHistory: [{ ...action, finding: 123 }] } } })).status).toBe(400);
+});
+
 it.each(['express', 'next'] as const)('%s rejects missing or invalid sessions before accessing records', async (adapter) => {
   const h = await harness(adapter);
   expect((await h.call('GET', '', undefined, null)).status).toBe(401);
   expect((await h.call('GET', '', undefined, 'invalid')).status).toBe(401);
   expect(h.authCalls).toEqual(['Bearer invalid']);
   expect(h.databaseCalls).toHaveLength(0);
+});
+
+it.each(['express', 'next'] as const)('%s saves the selected training patient and rejects inconsistent metadata', async (adapter) => {
+  const h = await harness(adapter);
+  const { id: caseId, name, age, sex } = trainingCases[0];
+  expect((await h.call('PUT', '', { ...encounter(), caseId })).status).toBe(400);
+  const wrongScore = { id: '44444444-4444-4444-8444-444444444444', kind: 'treatment', at: encounter().startedAt, payload: { caseAssessment: { caseId: 'wang-xu' } } };
+  expect((await h.call('PUT', '', { ...encounter(), caseId, patient: { name, age, sex }, submissions: [wrongScore] })).status).toBe(400);
+  expect((await h.call('PUT', '', { ...encounter(), caseId, patient: { name, age, sex } })).status).toBe(200);
+  expect((await (await h.call('GET', '?id=' + recordId)).json()).record).toMatchObject({ caseId, patient: { name, age, sex } });
 });
 
 it.each(['express', 'next'] as const)('%s upserts one owned record, assigns the authenticated owner and returns camelCase data', async (adapter) => {

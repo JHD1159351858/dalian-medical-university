@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { Activity, ArrowLeft, ArrowRight, Check, ClipboardList, Ear, Eye, MessageCircle, Send, Square, UserRound } from 'lucide-react'
+import { useTrainingCase } from '../cases/selectedCase'
 import { PatientPortrait } from '../exam/ExamScene'
 import type { ChatMessage } from '../diagnosis/chat'
 import type { ConversationStatus } from '../diagnosis/DiagnosisPage'
@@ -28,7 +29,7 @@ const tools = [
   { id: 'look', label: '望诊', detail: '神色 · 形态 · 舌象', icon: Eye },
   { id: 'listen', label: '闻诊', detail: '声音 · 呼吸 · 气味', icon: Ear },
   { id: 'ask', label: '问诊', detail: '寒热 · 饮食 · 二便', icon: MessageCircle },
-  { id: 'feel', label: '切诊', detail: '脉象 · 腹部按诊', icon: Activity },
+  { id: 'feel', label: '切诊', detail: '脉象 · 按诊', icon: Activity },
   { id: 'summary', label: '四诊总结', detail: '四诊合参', icon: ClipboardList },
 ] as const
 
@@ -36,7 +37,7 @@ const guidance: Record<FourExaminationKind, [string, string][]> = {
   look: [['神色', '观察面色、神志、精神状态'], ['形态', '观察体型、姿态、动态表现'], ['舌质', '观察舌体的颜色、形态'], ['舌苔', '观察舌苔的颜色、厚薄、润燥']],
   listen: [['声音', '关注语声、咳嗽等声音表现'], ['呼吸', '留意呼吸节律及异常声音'], ['气味', '记录患者描述或检查中发现的异常气味']],
   ask: [['寒热', '询问发热、畏寒与汗出'], ['饮食', '了解食欲、口渴与饮食情况'], ['二便', '询问大小便的变化'], ['追问', '打开问诊对话，核对患者的回答']],
-  feel: [['脉象', '记录脉象的检查所见'], ['按诊', '记录腹部按诊的部位与反应'], ['依据', '结合问诊与检查所见进行记录']],
+  feel: [['脉象', '记录脉象的检查所见'], ['按诊', '记录触诊的部位与患者反应'], ['依据', '结合问诊与检查所见进行记录']],
 }
 
 const statusCopy: Record<ConversationStatus, string> = {
@@ -54,12 +55,16 @@ const interviewQuestions = [
 ]
 
 export function FourDiagnosisPage({ messages, draft, status, error, muted, records, onDraftChange, onRecordChange, onSend, onStopReading, onBack, onNext, onNavigate }: FourDiagnosisPageProps) {
+  const patient = useTrainingCase()
+  const original = patient.id === 'wang-xu'
+  const recordKey = (id: string) => original ? id : (tools.find((tool) => tool.id === id)?.label ?? id)
+  const questions = original ? interviewQuestions : patient.interviewQuestions ?? []
   const [selected, setSelected] = useState<FourExaminationKind | 'summary'>('look')
   const [examination, setExamination] = useState<FourExaminationKind | null>(null)
   const logRef = useRef<HTMLDivElement>(null)
   const questionRef = useRef<HTMLTextAreaElement>(null)
   const activeItem = moduleItems.fourDiagnosis.find((item) => item.id === selected)!
-  const completed = tools.filter((tool) => records[tool.id]?.trim()).length
+  const completed = tools.filter((tool) => records[recordKey(tool.id)]?.trim()).length
   const canSend = status === 'input' || status === 'error'
   const inputDisabled = ['checking', 'unavailable', 'thinking', 'replying'].includes(status)
 
@@ -80,25 +85,25 @@ export function FourDiagnosisPage({ messages, draft, status, error, muted, recor
 
   const interviewOpen = examination === 'ask'
   const patientConversation = <>
-    <header className="four-chat-heading"><h2>AI 患者 · 王旭</h2><span>教学模拟</span><div className={`four-chat-status four-status-${status}`}><i />{statusCopy[status]}</div>{status === 'talking' && <button type="button" className="four-stop-reading" onClick={onStopReading}><Square size={13} />停止朗读</button>}</header>
+    <header className="four-chat-heading"><h2>{original ? 'AI 患者' : '模拟患者'} · {patient.name}</h2><span>教学模拟</span><div className={`four-chat-status four-status-${status}`}><i />{statusCopy[status]}</div>{status === 'talking' && <button type="button" className="four-stop-reading" onClick={onStopReading}><Square size={13} />停止朗读</button>}</header>
     {interviewOpen && <section className="four-suggested-questions" aria-label="常用追问">
       <strong>常用追问</strong><span>点击填入问题，核对后发送</span>
-      <div>{interviewQuestions.map((question) => <button key={question} type="button" disabled={inputDisabled} onClick={() => { onDraftChange(question); questionRef.current?.focus() }}>{question}</button>)}</div>
+      <div>{questions.map((question) => <button key={question} type="button" disabled={inputDisabled} onClick={() => { onDraftChange(question); questionRef.current?.focus() }}>{question}</button>)}</div>
     </section>}
     <div className="four-chat-messages" ref={logRef} aria-live="polite">
-      {messages.length ? messages.map((message, index) => <div key={index} className={`four-message four-message-${message.role}`}><div className="four-message-avatar">{message.role === 'user' ? <UserRound size={19} /> : '王'}</div><div><span>{message.role === 'user' ? '学生' : '王旭'}</span><p>{message.content}</p></div></div>) : <div className="four-chat-empty"><MessageCircle size={34} /><strong>从一句问题开始</strong><p>向王旭提问，采集四诊信息。</p></div>}
+      {messages.length ? messages.map((message, index) => <div key={index} className={`four-message four-message-${message.role}`}><div className="four-message-avatar">{message.role === 'user' ? <UserRound size={19} /> : patient.name.slice(0, 1)}</div><div><span>{message.role === 'user' ? '学生' : patient.name}</span><p>{message.content}</p></div></div>) : <div className="four-chat-empty"><MessageCircle size={34} /><strong>从一句问题开始</strong><p>向{patient.name}提问，采集四诊信息。</p></div>}
       {status === 'thinking' && <p className="four-chat-thinking">患者正在回忆，请稍候…</p>}
     </div>
     <form className="four-chat-composer" onSubmit={submit}>
       <label htmlFor="four-patient-question">向患者提问</label>
-      <div><textarea ref={questionRef} id="four-patient-question" value={draft} onChange={(event) => onDraftChange(event.target.value)} onKeyDown={handleKeyDown} placeholder="向王旭提问…" maxLength={4000} disabled={inputDisabled} rows={2} /><button type="submit" aria-label="发送问题" disabled={!canSend || !draft.trim()}><Send size={22} /><span>发送</span></button></div>
+      <div><textarea ref={questionRef} id="four-patient-question" value={draft} onChange={(event) => onDraftChange(event.target.value)} onKeyDown={handleKeyDown} placeholder={`向${patient.name}提问…`} maxLength={4000} disabled={inputDisabled} rows={2} /><button type="submit" aria-label="发送问题" disabled={!canSend || !draft.trim()}><Send size={22} /><span>发送</span></button></div>
       {error && <p className="four-chat-error" role="alert">{error}</p>}
     </form>
   </>
 
   return <section className="four-workspace" aria-label="中医四诊训练台">
     <aside className="four-rail">
-      <div className="four-rail-heading"><strong>接诊流程</strong><span>CASE 01</span></div>
+      <div className="four-rail-heading"><strong>接诊流程</strong><span>CASE {patient.number}</span></div>
       <nav aria-label="病例模块">{clinicalModules.map((module, index) => <button key={module.id} type="button" className={module.id === 'fourDiagnosis' ? 'is-active' : ''} aria-current={module.id === 'fourDiagnosis' ? 'step' : undefined} onClick={() => onNavigate(module.id)}><b>{module.short}</b><span>{module.label}</span>{index < 2 && <Check size={18} />}</button>)}</nav>
       <div className="four-rail-caption"><ClipboardList size={20} /><span>临床综合实训</span></div>
     </aside>
@@ -106,11 +111,11 @@ export function FourDiagnosisPage({ messages, draft, status, error, muted, recor
     <div className="four-main">
       <header className="four-heading">
         <div className="four-title"><h1>中医四诊</h1><p>望闻问切 · 证候采集</p></div>
-        <div className="four-patient-identity">王旭 <span>· 男 · 48 岁 · 门诊初诊</span></div>
+        <div className="four-patient-identity">{patient.name} <span>· {patient.sex} · {patient.age} 岁 · 门诊初诊</span></div>
         <div className="four-progress"><span>{completed}/5 已记录</span><div role="progressbar" aria-label="四诊记录进度" aria-valuemin={0} aria-valuemax={5} aria-valuenow={completed}><i style={{ width: `${completed / 5 * 100}%` }} /></div></div>
       </header>
 
-      <div className="four-tools" role="tablist" aria-label="四诊项目">{tools.map(({ id, label, detail, icon: Icon }) => <button key={id} id={`four-tool-${id}`} type="button" role="tab" aria-selected={selected === id} aria-controls="four-current-task" className={selected === id ? 'is-active' : ''} onClick={() => setSelected(id)}><Icon size={30} /><span><strong>{label}{records[id]?.trim() && <Check size={13} aria-label="已记录" />}</strong><small>{detail}</small></span></button>)}</div>
+      <div className="four-tools" role="tablist" aria-label="四诊项目">{tools.map(({ id, label, detail, icon: Icon }) => <button key={id} id={`four-tool-${id}`} type="button" role="tab" aria-selected={selected === id} aria-controls="four-current-task" className={selected === id ? 'is-active' : ''} onClick={() => setSelected(id)}><Icon size={30} /><span><strong>{label}{records[recordKey(id)]?.trim() && <Check size={13} aria-label="已记录" />}</strong><small>{detail}</small></span></button>)}</div>
 
       <section className="four-patient-stage" aria-label="患者观察场景">
         <span className="four-standard-patient">标准化病人</span>
@@ -121,14 +126,14 @@ export function FourDiagnosisPage({ messages, draft, status, error, muted, recor
             <h2>{selected === 'summary' ? '四诊总结' : `${activeItem.label}要点`}</h2>
             {selected !== 'summary' && <button type="button" className="four-view-examination" onClick={() => setExamination(selected)}>{selected === 'ask' ? <MessageCircle size={17} /> : <Eye size={17} />}{fourExaminations[selected].button}</button>}
           </div>
-          {selected === 'summary' ? <dl>{tools.slice(0, 4).map((tool) => <div key={tool.id}><dt>{tool.label}</dt><dd>{records[tool.id]?.trim() || '尚未填写记录'}</dd></div>)}</dl> : <dl>{guidance[selected].map(([label, detail]) => <div key={label}><dt>{label}</dt><dd>{detail}</dd></div>)}</dl>}
+          {selected === 'summary' ? <dl>{tools.slice(0, 4).map((tool) => <div key={tool.id}><dt>{tool.label}</dt><dd>{records[recordKey(tool.id)]?.trim() || '尚未填写记录'}</dd></div>)}</dl> : <dl>{guidance[selected].map(([label, detail]) => <div key={label}><dt>{label}</dt><dd>{detail}</dd></div>)}</dl>}
           <p>{selected === 'summary' ? '结合四诊记录，在下方整理证候依据。' : fourExaminations[selected].prompt}</p>
         </aside>
       </section>
 
       <section className="four-record" aria-label="当前四诊记录">
-        <div><h2>{selected === 'summary' ? '四诊总结' : `${activeItem.label}记录`}</h2><span>{activeItem.detail}</span></div>
-        <textarea aria-label="检查记录" placeholder="补充你的检查所见或判断…" value={records[selected] ?? ''} onChange={(event) => onRecordChange(selected, event.target.value)} />
+        <div><h2>{selected === 'summary' ? '四诊总结' : `${activeItem.label}记录`}</h2><span>{selected === 'feel' ? '脉象与按诊所见' : activeItem.detail}</span></div>
+        <textarea aria-label="检查记录" placeholder="补充你的检查所见或判断…" value={records[recordKey(selected)] ?? ''} onChange={(event) => onRecordChange(recordKey(selected), event.target.value)} />
       </section>
     </div>
 
@@ -138,8 +143,8 @@ export function FourDiagnosisPage({ messages, draft, status, error, muted, recor
     {examination && <FourExaminationViewer
       kind={examination}
       muted={muted}
-      record={records[examination] ?? ''}
-      onRecordChange={(value) => onRecordChange(examination, value)}
+      record={records[recordKey(examination)] ?? ''}
+      onRecordChange={(value) => onRecordChange(recordKey(examination), value)}
       interview={interviewOpen ? <section className="four-dialog-chat" aria-label="AI 患者聊天">{patientConversation}</section> : undefined}
       onStopReading={onStopReading}
       onClose={() => setExamination(null)}

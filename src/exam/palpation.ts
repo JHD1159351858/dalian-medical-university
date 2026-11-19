@@ -1,4 +1,5 @@
 import type { SpeechEmotion } from '../diagnosis/speech'
+import { wangPalpation, type PalpationFindings } from './caseExamItems'
 
 export type PalpationRegion = 'right-upper' | 'upper' | 'left-upper' | 'right-middle' | 'center' | 'left-middle' | 'right-lower' | 'lower' | 'left-lower'
 
@@ -10,28 +11,21 @@ export type PalpationResponse = {
   isTeachingDemo: boolean
 }
 
-export function palpationSpeech(response: PalpationResponse): { text: string; emotion: SpeechEmotion } {
-  if (response.result === 'tender') return { text: '这里有点疼。', emotion: 'sad' }
-  if (response.result === 'rebound-positive') return { text: '松开时剧烈疼痛。', emotion: 'sad' }
+export function palpationSpeech(response: PalpationResponse, findings = wangPalpation): { text: string; emotion: SpeechEmotion } {
+  if (response.result === 'tender') return { text: findings.painSpeech, emotion: 'sad' }
+  if (response.result === 'rebound-positive') return { text: (!response.isTeachingDemo && findings.releaseSpeech) || '松开时剧烈疼痛。', emotion: 'sad' }
   return { text: '这里没有明显不适。', emotion: 'neutral' }
 }
 
-export function resolvePalpationResponse(region: PalpationRegion, holdDurationMs: number, teachingDemo = false): PalpationResponse {
-  const isLeftUpper = region === 'left-upper'
+export function resolvePalpationResponse(region: PalpationRegion, holdDurationMs: number, teachingDemo = false, findings: PalpationFindings = wangPalpation): PalpationResponse {
+  const tender = findings.tender.includes(region)
   if (holdDurationMs >= 1000) {
+    const positive = teachingDemo || findings.rebound.includes(region)
     return {
-      type: 'rebound',
-      region,
-      expression: teachingDemo ? 'severe-pain' : isLeftUpper ? 'severe-pain' : 'pain',
-      result: teachingDemo ? 'rebound-positive' : 'no-rebound',
-      isTeachingDemo: teachingDemo,
+      type: 'rebound', region, isTeachingDemo: teachingDemo,
+      result: positive ? 'rebound-positive' : 'no-rebound',
+      expression: positive || (findings === wangPalpation && tender) ? 'severe-pain' : tender || findings === wangPalpation ? 'pain' : 'neutral',
     }
   }
-  return {
-    type: 'pressure',
-    region,
-    expression: isLeftUpper ? 'pain' : 'neutral',
-    result: isLeftUpper ? 'tender' : 'normal',
-    isTeachingDemo: false,
-  }
+  return { type: 'pressure', region, expression: tender ? 'pain' : 'neutral', result: tender ? 'tender' : 'normal', isTeachingDemo: false }
 }

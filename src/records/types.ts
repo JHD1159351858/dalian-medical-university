@@ -2,7 +2,15 @@ import type { ChatMessage } from '../diagnosis/chat'
 import type { PalpationResponse } from '../exam/palpation'
 import type { TreatmentPlan } from '../clinical/treatmentPlan'
 
+export interface BedsideExamEntry {
+  examId: string
+  action: string
+  finding: string
+  at: number
+}
+
 export interface PhysicalExamRecord {
+  bedsideHistory?: BedsideExamEntry[]
   orderedIds: string[]
   notes: Record<string, string>
   submittedNotes: Record<string, string>
@@ -13,6 +21,7 @@ export interface EncounterSnapshot {
   messages: ChatMessage[]
   fourDiagnosis: Record<string, string>
   auxiliaryExam: Record<string, string>
+  auxiliaryOrderedIds?: string[]
   clinicalDiagnosis: Record<string, string>
   treatment: TreatmentPlan
   physicalExam: PhysicalExamRecord | null

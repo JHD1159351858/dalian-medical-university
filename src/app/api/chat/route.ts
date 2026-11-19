@@ -1,5 +1,5 @@
 import caseData from '../../../../server/case.json';
-import { patientInterviewReply } from '../../../../server/patientInterview.mjs';
+import { casePatient, interviewEventStream, interviewReplyFor } from '../../../../server/trainingCases.mjs';
 import { chatConfigured, requestCozeChatReply, validMessages } from '../../../../server/patientServices.mjs';
 
 // 每次问诊都需读取本次请求的消息和服务状态。
@@ -26,11 +26,13 @@ export async function POST(request: Request) {
     return Response.json({ error: '消息格式无效。' }, { status: 400 });
   }
   const streaming = payload.stream === true;
-  const knownReply = patientInterviewReply(messages, caseData);
+  const caseId = payload.caseId === undefined ? 'wang-xu' : payload.caseId;
+  if (!casePatient(caseId)) return Response.json({ error: '未找到该训练病例。' }, { status: 404 });
+  const knownReply = interviewReplyFor(caseId, messages);
   if (knownReply !== null) {
     const result = { reply: knownReply, source: 'case_rules' };
     if (!streaming) return Response.json(result);
-    return new Response(`event: delta\ndata: ${JSON.stringify({ text: knownReply })}\n\nevent: done\ndata: ${JSON.stringify(result)}\n\n`, { headers: eventHeaders });
+    return new Response(interviewEventStream(knownReply), { headers: eventHeaders });
   }
   if (!chatConfigured(process.env)) return Response.json({ error: '聊天服务尚未配置。' }, { status: 503 });
 

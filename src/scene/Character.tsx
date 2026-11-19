@@ -3,33 +3,38 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { AnimationMixer, LinearFilter, Mesh, MeshStandardMaterial, LoopRepeat, type Object3D } from 'three';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
+import { patientModelUrl } from './patientModel';
 
 export type CharacterKind = 'patient' | 'doctor';
 export type CharacterAnimation = 'Idle' | 'Walk' | 'Talk';
 
-export function Character({ kind, animation = 'Idle', speed, onLoaded }: {
+export function Character({ kind, patientId, animation = 'Idle', speed, onLoaded, still = false }: {
   kind: CharacterKind;
+  patientId?: string;
   animation?: CharacterAnimation;
   speed?: RefObject<number>;
+  still?: boolean;
   onLoaded?: (root: Object3D) => void;
 }) {
-  const asset = useGLTF(`/models/${kind}.glb`);
+  const modelUrl = kind === 'patient' ? patientModelUrl(patientId) : '/models/doctor.glb';
+  const asset = useGLTF(modelUrl);
   const character = useMemo(() => {
     const instance = clone(asset.scene);
     instance.traverse((object) => {
-      if (object instanceof Mesh) {
-        object.castShadow = true; object.receiveShadow = true; object.frustumCulled = false;
-        const materials = Array.isArray(object.material) ? object.material : [object.material];
-        materials.forEach((material) => {
-          if (!(material instanceof MeshStandardMaterial)) return;
-          // The scan atlas has narrow UV islands; mipmaps blend their empty borders into distant hair.
-          [material.map, material.normalMap, material.roughnessMap, material.metalnessMap].forEach((texture) => {
-            if (!texture || texture.minFilter === LinearFilter) return;
-            texture.generateMipmaps = false;
-            texture.minFilter = LinearFilter;
-            texture.needsUpdate = true;
-          });
-        });
+      if (!(object instanceof Mesh)) return;
+      object.castShadow = true;
+      object.receiveShadow = true;
+      object.frustumCulled = false;
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) {
+        if (!(material instanceof MeshStandardMaterial)) continue;
+        // Keep the original scan atlases from bleeding into adjoining UV islands.
+        for (const texture of [material.map, material.normalMap, material.roughnessMap, material.metalnessMap]) {
+          if (!texture || texture.minFilter === LinearFilter) continue;
+          texture.generateMipmaps = false;
+          texture.minFilter = LinearFilter;
+          texture.needsUpdate = true;
+        }
       }
     });
     return instance;
@@ -49,7 +54,7 @@ export function Character({ kind, animation = 'Idle', speed, onLoaded }: {
   }, [animation, asset.animations, kind, mixer]);
   useEffect(() => () => { mixer.stopAllAction(); mixer.uncacheRoot(character); }, [mixer, character]);
   useFrame((_, delta) => {
-    if (document.hidden) return;
+    if (document.hidden || still) return;
     if (animation === 'Walk' && previous.current) previous.current.setEffectiveTimeScale(speed?.current ?? 1);
     mixer.update(Math.min(delta, 0.05));
   });

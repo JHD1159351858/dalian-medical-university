@@ -19,7 +19,6 @@ export default function TownHome() {
       return;
     }
     useGLTF.preload('/models/hospital.glb');
-    useGLTF.preload('/models/patient.glb');
     useGLTF.preload('/models/doctor.glb');
     setMode('diving');
   };

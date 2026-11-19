@@ -1,12 +1,23 @@
 import { ContactShadows, PerspectiveCamera } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { useRef } from 'react'
-import { Mesh, type Group } from 'three'
+import { useTrainingCase } from '../cases/selectedCase'
 import { Character } from '../scene/Character'
-import type { PalpationResponse } from './palpation'
+import type { PalpationRegion, PalpationResponse } from './palpation'
 
-export function ExamScene({ response, pressing }: { response: PalpationResponse | null; pressing: boolean }) {
-  return <Canvas className="exam-scene-canvas" dpr={[1, 1.5]} shadows={{ type: 2 }}>
+// The six patients share Wang Xu's scale. Coordinates are relative to the recumbent body.
+const abdominalPoints: Record<PalpationRegion, [number, number]> = {
+  'right-upper': [-0.085, 0.66], upper: [0, 0.66], 'left-upper': [0.085, 0.66],
+  'right-middle': [-0.085, 0.57], center: [0, 0.57], 'left-middle': [0.085, 0.57],
+  'right-lower': [-0.085, 0.48], lower: [0, 0.48], 'left-lower': [0.085, 0.48],
+}
+
+export function ExamScene({ response, pressing, region = 'center' }: {
+  response: PalpationResponse | null; pressing: boolean; region?: PalpationRegion
+}) {
+  const patient = useTrainingCase()
+  const active = pressing || response?.expression === 'pain' || response?.expression === 'severe-pain'
+  const [x, y] = abdominalPoints[pressing ? region : response?.region ?? region]
+  return <Canvas data-patient-id={patient.id} className="exam-scene-canvas" dpr={[1, 1.5]} shadows={{ type: 2 }}>
     <color attach="background" args={['#eaf1fb']} />
     <ambientLight intensity={1.8} />
     <hemisphereLight args={['#ffffff', '#b8c9df', 1.7]} />
@@ -15,19 +26,24 @@ export function ExamScene({ response, pressing }: { response: PalpationResponse 
     <PerspectiveCamera makeDefault position={[2.15, 3.8, 3.1]} fov={32} onUpdate={(camera) => camera.lookAt(0, 0.72, 0.35)} />
     <ExamBed />
     <group position={[-0.2, 0.82, 0.65]} rotation={[-Math.PI / 2, 0, 0]}>
-      <PainBody response={response} pressing={pressing} />
+      <Character kind="patient" patientId={patient.id} animation="Idle" />
+      {active && <mesh position={[x, y, 0.23]} renderOrder={1}>
+        <ringGeometry args={[0.035, 0.05, 32]} />
+        <meshBasicMaterial color={response?.expression === 'severe-pain' ? '#cf756a' : '#dda197'} transparent opacity={0.72} depthTest={false} depthWrite={false} />
+      </mesh>}
     </group>
     <ContactShadows position={[0, 0.06, 0.45]} opacity={0.13} scale={5} blur={2.8} far={4} />
   </Canvas>
 }
 
-export function PatientPortrait() {
-  return <Canvas className="exam-scene-canvas" dpr={[1, 1.5]}>
+export function PatientPortrait({ still = false, onReady }: { still?: boolean; onReady?: () => void } = {}) {
+  const patient = useTrainingCase()
+  return <Canvas data-patient-id={patient.id} className="exam-scene-canvas" dpr={[1, 1.5]}>
     <ambientLight intensity={2} />
     <hemisphereLight args={['#ffffff', '#bdcfea', 1.8]} />
     <directionalLight position={[-2, 5, 4]} intensity={2.8} />
     <PerspectiveCamera makeDefault position={[0, 1.3, 2.3]} fov={32} onUpdate={(camera) => camera.lookAt(0, 1.12, 0)} />
-    <group position={[0, 0, 0]}><Character kind="patient" animation="Idle" /></group>
+    <Character patientId={patient.id} kind="patient" animation="Idle" still={still} onLoaded={onReady} />
   </Canvas>
 }
 
@@ -53,18 +69,5 @@ function ExamBed() {
       <cylinderGeometry args={[0.05, 0.05, 0.32, 16]} />
       <meshStandardMaterial color="#adc1da" roughness={0.8} />
     </mesh>))}
-  </group>
-}
-
-function PainBody({ response, pressing }: { response: PalpationResponse | null; pressing: boolean }) {
-  const group = useRef<Group>(null)
-  const mesh = useRef<Mesh>(null)
-  const active = pressing || response?.expression === 'pain' || response?.expression === 'severe-pain'
-  return <group ref={group}>
-    <Character kind="patient" animation="Idle" />
-    {active && <mesh ref={mesh} position={[0, 0.03, 0.32]} rotation={[Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[0.07, response?.expression === 'severe-pain' ? 0.12 : 0.1, 40]} />
-      <meshBasicMaterial color={response?.expression === 'severe-pain' ? '#cf756a' : '#dda197'} transparent opacity={0.72} />
-    </mesh>}
   </group>
 }

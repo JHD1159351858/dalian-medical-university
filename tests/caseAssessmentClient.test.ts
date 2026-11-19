@@ -25,3 +25,13 @@ it('does not display a score outside the server contract or claim success after 
   await expect(requestCaseAssessment(snapshot, new AbortController().signal)).rejects.toThrow('暂时无法核对')
   await expect(requestCaseAssessment(snapshot, new AbortController().signal)).rejects.toThrow('暂时无法核对')
 })
+
+it('checks that the returned score belongs to the selected patient before showing it', async () => {
+  const ownScore = { ...assessment(), caseId: 'lin-yue' }
+  const fetchMock = vi.fn().mockResolvedValueOnce(Response.json(ownScore)).mockResolvedValueOnce(Response.json(assessment()))
+  vi.stubGlobal('fetch', fetchMock)
+  const { signal } = new AbortController()
+  await expect(requestCaseAssessment(snapshot, signal, 'lin-yue')).resolves.toMatchObject(ownScore)
+  expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ caseId: 'lin-yue', snapshot })
+  await expect(requestCaseAssessment(snapshot, signal, 'lin-yue')).rejects.toThrow('暂时无法核对')
+})

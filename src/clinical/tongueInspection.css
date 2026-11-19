@@ -3,6 +3,7 @@
 .tongue-action-player { min-width: 0; overflow: hidden; border: 1px solid #cadce5; border-radius: 9px; background: #263e4c; }
 .tongue-action-scene { position: relative; width: 100%; aspect-ratio: 4 / 3; max-height: min(54vh, calc(100dvh - 450px)); min-height: 280px; overflow: hidden; background: #b7c9d0; }
 .tongue-patient-motion { position: absolute; inset: 0; display: block; width: 100%; height: 100%; background: #cedde5; }
+.tongue-portrait-mouth { position: absolute; top: 0; left: 50%; height: 100%; width: auto; max-width: none; transform: translateX(-50%); pointer-events: none; }
 .tongue-scene-caption { position: absolute; top: 16px; right: 16px; left: 16px; display: flex; align-items: start; justify-content: space-between; gap: 20px; color: #fff; text-shadow: 0 1px 4px #132d3e80; pointer-events: none; }
 .tongue-scene-caption > span { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; padding: 7px 10px; border: 1px solid #ffffff60; border-radius: 4px; background: #173d5580; font-size: 12px; }
 .tongue-scene-caption > small { max-width: 260px; padding: 7px 10px; color: #fff; border-radius: 4px; background: #173d5570; font-size: 12px; line-height: 1.6; }

@@ -4,8 +4,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createServer } from 'node:http';
+import { Readable } from 'node:stream';
 import { attachSpeechStream } from './speechStream.mjs';
-import { patientInterviewReply } from './patientInterview.mjs';
+import { casePatient, interviewEventStream, interviewReplyFor, publicCases } from './trainingCases.mjs';
 import { evaluateTreatment, validEvaluationAdvice, validTreatmentSubmission } from './treatmentEvaluation.mjs';
 import { chatConfigured, speechConfigured, validMessages, cozeHeaders, cozeSpeechUrl, validSpeechRequest, speechSpeed, speechVoiceId, speechPatientId, requestCozeChatReply } from './patientServices.mjs';
 import { getPulseExam, submitPulseExam } from './pulseExam.mjs';
@@ -16,7 +17,6 @@ import { chaoxingAuth } from './chaoxingAuth.mjs';
 export { attachSpeechStream };
 
 const caseData = readFileSync(new URL('./case.json', import.meta.url), 'utf8');
-const parsedCaseData = JSON.parse(caseData);
 const defaultTreatmentRubric = JSON.parse(readFileSync(new URL('./treatment-rubric.json', import.meta.url), 'utf8'));
 
 export function createApp({ env = /** @type {Record<string, string | undefined>} */ (process.env), fetchImpl = globalThis.fetch, timeoutMs = 45_000, treatmentRubric = defaultTreatmentRubric } = {}) {
@@ -29,6 +29,7 @@ export function createApp({ env = /** @type {Record<string, string | undefined>}
   app.use(express.json({ limit: '512kb' }));
 
   app.get('/api/health', (_request, response) => response.json({ configured: chatConfigured(env), tts: speechConfigured(env), interview: true }));
+  app.get('/api/training-cases', (_request, response) => response.json({ cases: publicCases }));
 
   for (const [path, action, method] of [
     ['/api/auth/chaoxing', 'start', 'get'],
@@ -81,12 +82,15 @@ export function createApp({ env = /** @type {Record<string, string | undefined>}
     const stream = request.body?.stream === true;
     if (!validMessages(messages)) return response.status(400).json({ error: '消息格式无效。' });
     if (messages.at(-1).role !== 'user') return response.status(400).json({ error: '消息格式无效。' });
-    const knownReply = patientInterviewReply(messages, parsedCaseData);
+    const caseId = request.body.caseId === undefined ? 'wang-xu' : request.body.caseId;
+    if (!casePatient(caseId)) return response.status(404).json({ error: '未找到该训练病例。' });
+    const knownReply = interviewReplyFor(caseId, messages);
     if (knownReply !== null) {
       if (!stream) return response.json({ reply: knownReply, source: 'case_rules' });
       response.set({ 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-cache, no-transform' });
-      response.write(`event: delta\ndata: ${JSON.stringify({ text: knownReply })}\n\n`);
-      return response.end(`event: done\ndata: ${JSON.stringify({ reply: knownReply, source: 'case_rules' })}\n\n`);
+      const events = Readable.fromWeb(interviewEventStream(knownReply));
+      response.once('close', () => events.destroy());
+      return events.pipe(response);
     }
     if (!chatConfigured(env)) return response.status(503).json({ error: '聊天服务尚未配置。' });
 

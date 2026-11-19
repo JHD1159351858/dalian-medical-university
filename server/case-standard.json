@@ -872,7 +872,7 @@
       "messages": [
         {
           "role": "assistant",
-          "content": "医生，我身体不舒服。您帮我看看吧。"
+          "content": "大夫，我肚子左上边这块儿疼。"
         },
         {
           "role": "user",

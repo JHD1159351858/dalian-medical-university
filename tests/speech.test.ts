@@ -123,10 +123,9 @@ it('streams text after readiness and plays audio before the reply is complete', 
   socket.ready()
   expect(socket.sent).toEqual([
     { type: 'start', voiceId: 'voice-a', speed: 0.95, emotion: 'neutral' },
-    { type: 'append', text: '左上' },
   ])
   stream.push('腹疼。')
-  expect(socket.sent.at(-1)).toEqual({ type: 'append', text: '腹疼。' })
+  expect(socket.sent.at(-1)).toEqual({ type: 'append', text: '左上腹疼。' })
   socket.receive({ type: 'audio', data: pcm([0, 32767, -32768]) })
   await vi.waitFor(() => expect(started).toHaveBeenCalledOnce())
   const context = FakeContext.instances[0]
@@ -187,6 +186,72 @@ it('ends unavailable speech once without preventing the text caller from finishi
   stream.finish()
   expect(finished).toHaveBeenCalledOnce()
   expect(FakeContext.instances[0].close).toHaveBeenCalledOnce()
+})
+
+it('sends a complete clause as it arrives and bounds the wait for unpunctuated speech', () => {
+  setup()
+  vi.useFakeTimers()
+  try {
+    const stream = startSpeechStream()
+    const socket = FakeSocket.instances[0]
+    socket.ready()
+    for (const character of '医生，我这两天没睡好，到了晚上更疼一些') stream.push(character)
+    expect(socket.sent.slice(1)).toEqual([{ type: 'append', text: '医生，我这两天没睡好，' }])
+    vi.advanceTimersByTime(500)
+    expect(socket.sent.at(-1)).toEqual({ type: 'append', text: '到了晚上更疼一些' })
+    stream.push('。')
+    stream.finish()
+    expect(socket.sent.at(-1)).toEqual({ type: 'finish' })
+  } finally {
+    vi.useRealTimers()
+  }
+})
+
+it('uses one full-answer HTTP synthesis if streaming fails before the first audio', async () => {
+  setup()
+  const fetchAudio = vi.fn(async () => ({ ok: true, blob: async () => new Blob(['audio']) }))
+  vi.stubGlobal('fetch', fetchAudio)
+  window.fetch = fetchAudio as unknown as typeof fetch
+  const pause = vi.fn()
+  const play = vi.fn(async () => undefined)
+  vi.stubGlobal('Audio', class { play = play; pause = pause })
+  const stream = startSpeechStream({ voiceId: 'regular-patient-voice' })
+  const socket = FakeSocket.instances[0]
+  socket.ready()
+  stream.push('最近两天，')
+  socket.onerror?.()
+  stream.push('上腹疼得厉害。')
+  expect(fetchAudio).not.toHaveBeenCalled()
+  stream.finish()
+  stream.finish()
+  expect(fetchAudio).toHaveBeenCalledOnce()
+  expect(fetchAudio).toHaveBeenCalledWith('/api/tts', expect.objectContaining({
+    body: expect.stringContaining('"text":"最近两天，上腹疼得厉害。"'),
+  }))
+  await vi.waitFor(() => expect(play).toHaveBeenCalledOnce())
+  stream.stop()
+  expect(pause).toHaveBeenCalledOnce()
+})
+
+it('lets buffered audio drain on a late streaming failure without repeating it', async () => {
+  setup()
+  const fetchAudio = vi.fn()
+  vi.stubGlobal('fetch', fetchAudio)
+  window.fetch = fetchAudio
+  const finished = vi.fn()
+  const stream = startSpeechStream({}, undefined, finished)
+  const socket = FakeSocket.instances[0]
+  socket.ready()
+  stream.push('昨天夜里更疼。')
+  socket.receive({ type: 'audio', data: pcm([100, 200]) })
+  await vi.waitFor(() => expect(FakeContext.instances[0].sources).toHaveLength(1))
+  socket.onerror?.()
+  stream.push('现在好了一点。')
+  stream.finish()
+  expect(finished).not.toHaveBeenCalled()
+  FakeContext.instances[0].sources[0].onended?.()
+  expect(finished).toHaveBeenCalledOnce()
+  expect(fetchAudio).not.toHaveBeenCalled()
 })
 
 it('continues long UTF-8 replies across connections without losing text or overlapping audio', async () => {

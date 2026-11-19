@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
+import { useTrainingCase } from '../cases/selectedCase'
 import type { AuxiliaryReport, LaboratoryResult } from './auxiliaryExamData'
 
 export function LaboratoryTable({ values }: { values: LaboratoryResult[] }) {
@@ -11,14 +12,22 @@ export function LaboratoryTable({ values }: { values: LaboratoryResult[] }) {
   </table>
 }
 
+export function AuxiliaryReportContent({ report }: { report: AuxiliaryReport }) {
+  return <>
+    {report.values ? <LaboratoryTable values={report.values} /> : <ol className="aux-report-findings">{report.findings?.map((finding, index) => <li key={finding}><span>{String(index + 1).padStart(2, '0')}</span><p>{finding}</p></li>)}</ol>}
+    {report.note && <p className="aux-report-note">{report.note}</p>}
+  </>
+}
+
 export function AuxiliaryReportViewer({ title, report, onClose }: { title: string; report: AuxiliaryReport; onClose: () => void }) {
+  const patient = useTrainingCase()
   const dialogRef = useRef<HTMLDialogElement>(null)
   useEffect(() => { dialogRef.current?.showModal() }, [])
 
   return <dialog ref={dialogRef} className={`aux-report-dialog ${report.image ? 'is-imaging' : ''}`} aria-labelledby="aux-viewer-title" onCancel={onClose} onClick={(event) => { if (event.target === event.currentTarget) onClose() }}>
-    <header><div><span>{report.category} · 病例资料</span><h2 id="aux-viewer-title">{report.title ?? title}</h2></div><button type="button" aria-label="关闭检查报告" onClick={onClose}><X size={24} /></button></header>
-    <div className="aux-report-patient"><span>患者 <b>王旭</b></span><span>性别 <b>男</b></span><span>年龄 <b>48 岁</b></span>{report.values && <span className="aux-report-source">检验结果及参考值按提供资料整理</span>}</div>
-    <div className="aux-viewer-content">{report.image ? <figure><img src={report.image.src} alt={report.image.alt} /><figcaption>{report.image.alt} · 原始病例影像</figcaption></figure> : report.values && <LaboratoryTable values={report.values} />}{report.note && <p className="aux-report-note">{report.note}</p>}</div>
-    <footer><span>{report.image ? '查看影像后，返回填写检查所见。' : '↑ 偏高 · ↓ 偏低 · — 原资料未列出'}</span><button type="button" onClick={onClose}>返回并记录</button></footer>
+    <header><div><span>{report.category} · {report.simulated ? '教学模拟报告' : '病例资料'}</span><h2 id="aux-viewer-title">{report.title ?? title}</h2></div><button type="button" aria-label="关闭检查报告" onClick={onClose}><X size={24} /></button></header>
+    <div className="aux-report-patient"><span>患者 <b>{patient.name}</b></span><span>性别 <b>{patient.sex}</b></span><span>年龄 <b>{patient.age} 岁</b></span>{report.values && !report.simulated && <span className="aux-report-source">检验结果按病例资料整理</span>}</div>
+    <div className="aux-viewer-content">{report.image ? <figure><img src={report.image.src} alt={report.image.alt} /><figcaption>{report.image.alt} · 原始病例影像</figcaption></figure> : <AuxiliaryReportContent report={report} />}</div>
+    <footer><span>{report.values ? '↑ 偏高 · ↓ 偏低 · — 原资料未列出' : '查看后，返回填写检查记录。'}</span><button type="button" onClick={onClose}>返回并记录</button></footer>
   </dialog>
 }

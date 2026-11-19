@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type PointerEvent, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type PointerEvent, type ReactNode, type RefObject } from 'react'
 import { useProgress } from '@react-three/drei'
 import { RotateCcw, ShieldCheck, Stethoscope, Volume2, VolumeX } from 'lucide-react'
 
@@ -6,16 +6,18 @@ import { requestReply, checkChatAvailability, type ChatMessage } from './diagnos
 import { DiagnosisPage, type ConversationStatus } from './diagnosis/DiagnosisPage'
 import { PhysicalExamPage } from './exam/PhysicalExamPage'
 import { ClinicalModulePage } from './clinical/ClinicalModulePage'
-import { PATIENT_OPENING, type ClinicalModuleId } from './clinical/caseData'
+import { type ClinicalModuleId } from './clinical/caseData'
 import { createInitialTreatmentPlan } from './clinical/treatmentPlan'
 import { initialFlow, transition } from './flow'
 import World, { clearModelCache } from './scene/World'
 import type { DoorAction } from './scene/collision'
 import { emotionForSpeech, preloadSpeech, speakChinese, startSpeechStream, stopSpeech, type SpeechStreamController } from './diagnosis/speech'
-import { PATIENT_VOICE_PROFILE } from './diagnosis/voiceProfiles'
+import { getPatientVoiceProfile } from './diagnosis/voiceProfiles'
 import { EncounterRecordsProvider, useEncounterRecords } from './records/EncounterRecordsProvider'
 import { EncounterRecordsDialog } from './records/EncounterRecordsDialog'
 import { RequireStudentSession, StudentAccount } from './auth/StudentAuthProvider'
+
+import { TrainingCaseProvider, useTrainingCase } from './cases/selectedCase'
 
 const phaseLabels = {
   loading: '载入临床场景',
@@ -34,7 +36,9 @@ const phaseLabels = {
   completed: '本次接诊已结束',
 } as const
 
-function App({ autoStart = false }: { autoStart?: boolean }) {
+export function ClinicWorkspace({ autoStart = false, redraw, accountControls }: { autoStart?: boolean; redraw: () => void; accountControls: ReactNode }) {
+  const patient = useTrainingCase()
+  const voice = useMemo(() => getPatientVoiceProfile(patient), [patient])
   const [flow, sendFlow] = useReducer(transition, initialFlow)
   const [muted, setMuted] = useState(false)
   const mutedRef = useRef(false)
@@ -46,6 +50,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
   const [conversationError, setConversationError] = useState('')
   const [fourDiagnosisRecords, setFourDiagnosisRecords] = useState<Record<string, string>>({})
   const [auxiliaryExamRecords, setAuxiliaryExamRecords] = useState<Record<string, string>>({})
+  const [auxiliaryOrderedIds, setAuxiliaryOrderedIds] = useState<string[]>([])
   const [clinicalDiagnosisRecords, setClinicalDiagnosisRecords] = useState<Record<string, string>>({})
   const [treatmentPlan, setTreatmentPlan] = useState(createInitialTreatmentPlan)
   const [canInteract, setCanInteract] = useState(false)
@@ -53,7 +58,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
   const [interactionRequest, setInteractionRequest] = useState(0)
   const [arrivalNotice, setArrivalNotice] = useState(false)
   const [recordsOpen, setRecordsOpen] = useState(false)
-  const encounterSnapshot = useMemo(() => ({ messages, fourDiagnosis: fourDiagnosisRecords, auxiliaryExam: auxiliaryExamRecords, clinicalDiagnosis: clinicalDiagnosisRecords, treatment: treatmentPlan }), [messages, fourDiagnosisRecords, auxiliaryExamRecords, clinicalDiagnosisRecords, treatmentPlan])
+  const encounterSnapshot = useMemo(() => ({ messages, fourDiagnosis: fourDiagnosisRecords, auxiliaryExam: auxiliaryExamRecords, auxiliaryOrderedIds, clinicalDiagnosis: clinicalDiagnosisRecords, treatment: treatmentPlan }), [messages, fourDiagnosisRecords, auxiliaryExamRecords, auxiliaryOrderedIds, clinicalDiagnosisRecords, treatmentPlan])
   const movementInput = useRef({ x: 0, y: 0 })
   const patientView = useRef<HTMLDivElement>(null)
   const doctorView = useRef<HTMLDivElement>(null)
@@ -100,10 +105,10 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
   }, [arrivalNotice])
 
   useEffect(() => {
-    if (flow.phase !== 'waiting') return
-    const emotion = emotionForSpeech(PATIENT_OPENING)
-    void preloadSpeech(PATIENT_OPENING, { ...PATIENT_VOICE_PROFILE, emotion })
-  }, [flow.phase])
+    if (flow.phase !== 'waiting' || muted) return
+    const emotion = emotionForSpeech(patient.opening)
+    void preloadSpeech(patient.opening, { ...voice, emotion })
+  }, [flow.phase, muted, patient.opening, voice])
 
   const handleArrive = useCallback(() => {
     sendFlow({ type: 'ARRIVED' })
@@ -137,7 +142,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
 
   useEffect(() => {
     if (flow.phase !== 'patientSpeech') return
-    setMessages((current) => current.length ? current : [{ role: 'assistant', content: PATIENT_OPENING }])
+    setMessages((current) => current.length ? current : [{ role: 'assistant', content: patient.opening }])
     let minimumElapsed = false
     let voiceFinished = muted
     let advanced = false
@@ -150,16 +155,16 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
     const minimumTimer = window.setTimeout(() => {
       minimumElapsed = true
       finish()
-    }, Math.max(2200, PATIENT_OPENING.length * 160))
+    }, Math.max(2200, patient.opening.length * 160))
     const fallbackTimer = window.setTimeout(() => {
       voiceFinished = true
       finish()
-    }, Math.max(8500, PATIENT_OPENING.length * 400))
+    }, Math.max(8500, patient.opening.length * 400))
     if (!muted) {
-      const started = speakChinese(PATIENT_OPENING, () => {
+      const started = speakChinese(patient.opening, () => {
         voiceFinished = true
         finish()
-      }, emotionForSpeech(PATIENT_OPENING), PATIENT_VOICE_PROFILE)
+      }, emotionForSpeech(patient.opening), voice)
       if (!started) voiceFinished = true
     }
     finish()
@@ -168,7 +173,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
       window.clearTimeout(fallbackTimer)
       stopSpeech()
     }
-  }, [flow.phase, muted])
+  }, [flow.phase, muted, patient.opening, voice])
 
   const sendQuestion = async () => {
     const question = draft.trim()
@@ -186,7 +191,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
     setDraft('')
     let partialReply = ''
     const speechStream = mutedRef.current ? null : startSpeechStream(
-      PATIENT_VOICE_PROFILE,
+      voice,
       () => {
         if (id === requestId.current && !controller.signal.aborted) setConversationStatus('talking')
       },
@@ -206,7 +211,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
         if (speechStream && speechStreamRef.current === speechStream) {
           speechStream.push(text)
         }
-      }, controller.signal)
+      }, controller.signal, patient.id)
       if (id !== requestId.current || controller.signal.aborted) return
       setMessages([...nextMessages, { role: 'assistant', content: reply }])
       requestRef.current = null
@@ -249,12 +254,14 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
 
   const resetTraining = () => {
     abortConversation()
+    redraw()
     setRecordsOpen(false)
     setMessages([])
     setDraft('')
     setConversationError('')
     setFourDiagnosisRecords({})
     setAuxiliaryExamRecords({})
+    setAuxiliaryOrderedIds([])
     setClinicalDiagnosisRecords({})
     setTreatmentPlan(createInitialTreatmentPlan())
     setArrivalNotice(false)
@@ -265,7 +272,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
   }
 
   const retryScene = () => {
-    clearModelCache()
+    clearModelCache(patient.id)
     setSceneError('')
     setSceneAttempt((attempt) => attempt + 1)
   }
@@ -327,8 +334,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
           <div><strong>大连医科大学</strong><span>临床问诊实训</span></div>
         </div>
         <div className="header-actions">
-          <EncounterSaveStatus />
-          <StudentAccount returnTo="/training" />
+          {accountControls}
           <span className="session-chip"><ShieldCheck aria-hidden="true" size={15} /> 教学模拟环境</span>
           <button className="icon-text-button" type="button" onClick={toggleMute}>
             {muted ? <VolumeX aria-hidden="true" size={17} /> : <Volume2 aria-hidden="true" size={17} />}
@@ -336,7 +342,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
           </button>
           {!isDiagnosis && flow.phase !== 'loading' && (
             <button className="icon-text-button" type="button" onClick={resetTraining}>
-              <RotateCcw aria-hidden="true" size={16} /> {isFourDiagnosis || isAuxiliaryExam || isClinicalDiagnosis || isTreatment ? '重置训练' : '重播场景'}
+              <RotateCcw aria-hidden="true" size={16} /> {isFourDiagnosis || isAuxiliaryExam || isClinicalDiagnosis || isTreatment ? '重置训练' : '重新抽取病例'}
             </button>
           )}
         </div>
@@ -411,6 +417,8 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
             } : undefined}
             auxiliaryExam={isAuxiliaryExam ? {
               records: auxiliaryExamRecords,
+              orderedIds: auxiliaryOrderedIds,
+              onOrderChange: setAuxiliaryOrderedIds,
               onRecordChange: (id, value) => setAuxiliaryExamRecords((current) => ({ ...current, [id]: value })),
               onBack: () => sendFlow({ type: 'BACK' }),
               onNext: () => sendFlow({ type: 'BEGIN_CLINICAL_DIAGNOSIS' }),
@@ -435,14 +443,14 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
         ) : (
           <section className={`hospital-interface ${canMove ? 'is-playing' : ''}`}>
             <div className="scene-index" aria-label="当前训练阶段">
-              <span>情境实训 · 01</span>
+              <span>情境实训 · {patient.number}</span>
               <strong>{phaseLabels[flow.phase]}</strong>
             </div>
 
             <aside className="episode-rail">
               <div className="rail-heading"><span>OUTPATIENT</span><strong>门诊接诊</strong></div>
               <dl>
-                <div><dt>病例</dt><dd>01</dd></div>
+                <div><dt>病例</dt><dd>{patient.number}</dd></div>
                 <div><dt>地点</dt><dd>综合门诊</dd></div>
                 <div><dt>目标</dt><dd>完成主诉与现病史采集</dd></div>
               </dl>
@@ -476,14 +484,14 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
               {flow.phase === 'completed' && <div className="prompt-card compact-prompt">
                 <span className="prompt-kicker">本轮训练完成</span>
                 <h2>患者已离院</h2>
-                <p>准备好后，可以重新开始本病例的问诊训练。</p>
+                <p>开始下一轮后，将随机接诊另一位患者。</p>
                 <button className="primary-button" type="button" onClick={resetTraining}>开始下一轮</button>
               </div>}
-              {flow.phase === 'patientSpeech' && <div className="subtitle-card"><span>王旭</span><p>{PATIENT_OPENING}</p></div>}
+              {flow.phase === 'patientSpeech' && <div className="subtitle-card"><span>{patient.name}</span><p>{patient.opening}</p></div>}
               {flow.phase === 'doctorDialog' && (
                 <div className="prompt-card compact-prompt doctor-reply-card">
-                  <span className="prompt-kicker">{flow.hasConsulted ? '继续问诊' : '王旭 · 患者主诉'}</span>
-                  <blockquote>{flow.hasConsulted ? '根据已有问诊记录继续提问。' : PATIENT_OPENING}</blockquote>
+                  <span className="prompt-kicker">{flow.hasConsulted ? '继续问诊' : `${patient.name} · 患者主诉`}</span>
+                  <blockquote>{flow.hasConsulted ? '根据已有问诊记录继续提问。' : patient.opening}</blockquote>
                   <button className="primary-button" type="button" onClick={() => sendFlow({ type: 'BEGIN_DIAGNOSIS' })}>{flow.hasConsulted ? '继续问诊' : '开始问诊'}</button>
                 </div>
               )}
@@ -494,7 +502,7 @@ function App({ autoStart = false }: { autoStart?: boolean }) {
                 </div>
               )}
             </div>
-            {arrivalNotice && <div className="arrival-notice" role="status"><Stethoscope size={19} aria-hidden="true" /><div><strong>有病人前来就诊</strong><span>王旭已到达接诊点，等待你主动接诊。</span></div></div>}
+            {arrivalNotice && <div className="arrival-notice" role="status"><Stethoscope size={19} aria-hidden="true" /><div><strong>有病人前来就诊</strong><span>{patient.name}已到达接诊点，等待你主动接诊。</span></div></div>}
             {canMove && <HospitalControls movementInput={movementInput} waiting={flow.phase === 'waiting'} eligible={canInteract} doorAction={doorAction} resume={flow.hasConsulted} onInteract={requestInteraction} />}
           </section>
         )}
@@ -514,7 +522,8 @@ function EncounterSaveStatus() {
 }
 
 export default function AuthenticatedApp({ autoStart = false }: { autoStart?: boolean }) {
-  return <RequireStudentSession><App autoStart={autoStart} /></RequireStudentSession>
+  const accountControls = <><EncounterSaveStatus /><StudentAccount returnTo="/training" /></>
+  return <RequireStudentSession><TrainingCaseProvider>{(redraw) => <ClinicWorkspace autoStart={autoStart} redraw={redraw} accountControls={accountControls} />}</TrainingCaseProvider></RequireStudentSession>
 }
 
 function HospitalControls({ movementInput: movementInputRef, waiting, eligible, doorAction, resume, onInteract }: {

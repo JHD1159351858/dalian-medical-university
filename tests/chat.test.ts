@@ -28,7 +28,7 @@ it('sends a streaming request and reports SSE deltas before the completed reply'
 
   await vi.waitFor(() => expect(deltas).toEqual(['左']))
   expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
-    messages: [{ role: 'assistant', content: PATIENT_OPENING }, { role: 'user', content: '哪里疼？' }], stream: true,
+    caseId: 'wang-xu', messages: [{ role: 'assistant', content: PATIENT_OPENING }, { role: 'user', content: '哪里疼？' }], stream: true,
   })
   finish()
   expect(await result).toBe('左上腹疼。')
